@@ -3545,6 +3545,7 @@ let rec is_nonexpansive exp =
   | Texp_unreachable
   | Texp_function _
   | Texp_array (_, []) -> true
+  | Texp_typed_hole -> true
   | Texp_let(_rec_flag, pat_exp_list, body) ->
       List.for_all (fun vb -> is_nonexpansive vb.vb_expr) pat_exp_list &&
       is_nonexpansive body
@@ -3666,7 +3667,8 @@ and is_nonexpansive_struct_item item =
 and is_nonexpansive_mod mexp =
   match mexp.mod_desc with
   | Tmod_ident _
-  | Tmod_functor _ -> true
+  | Tmod_functor _
+  | Tmod_typed_hole -> true
   | Tmod_unpack (e, _) -> is_nonexpansive e
   | Tmod_constraint (m, _, _, _) -> is_nonexpansive_mod m
   | Tmod_structure str -> List.for_all is_nonexpansive_struct_item str.str_items
@@ -4035,6 +4037,7 @@ let check_partial_application ~statement exp =
             | Texp_apply _ | Texp_send _ | Texp_new _ | Texp_letop _ ->
                 Location.prerr_warning exp_loc
                   Warnings.Ignored_partial_application
+            | Texp_typed_hole -> ()
           end
         in
         check exp
@@ -8779,3 +8782,8 @@ let check_partial ?lev a b c cases =
 let type_expect env e ty = type_expect env e ty
 let type_exp env e = type_exp env e
 let type_argument env e t1 t2 = type_argument env e t1 t2
+
+(* drop ~splitting_mode for external API *)
+let partial_pred ~lev ?explode env expected_ty p =
+  (* TODO: Maybe to be change. *)
+  partial_pred ~lev ?explode ~splitting_mode:Backtrack_or env expected_ty p

@@ -2356,10 +2356,11 @@ let components_of_module_maker
               Named (param, force_modtype (modtype scoping sub ty_arg)));
           fcomp_res = force_modtype (modtype scoping sub ty_res);
           fcomp_shape = cm_shape;
-          fcomp_cache = Hashtbl.create 17;
-          fcomp_subst_cache = Hashtbl.create 17 })
+          fcomp_cache = stamped_create 17;
+          fcomp_subst_cache = stamped_create 17 })
   | MtyL_ident _ -> Error No_components_abstract
   | MtyL_alias p -> Error (No_components_alias p)
+  | MtyL_for_hole -> Error No_components_abstract
 
 
 let scrape_alias env mty = scrape_alias env mty
@@ -4379,7 +4380,7 @@ let cleanup_usage_tables ~stamp =
 let () =
   Location.register_error_of_exn
     (function
-      | Error err ->  Some (report_error_doc err)
+      | Error.In_context err ->  Some (report_error_doc err)
       | _ ->
           None
     )

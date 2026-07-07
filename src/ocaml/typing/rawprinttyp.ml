@@ -18,6 +18,7 @@
 
 open Format
 open Types
+open Asttypes
 let longident = Pprintast.longident
 
 let raw_list pr ppf = function
@@ -260,6 +261,7 @@ and modtype ppf mty =
       fprintf ppf "@[<hov>Mty_functor(@,%a,@,%a)@]"
         raw_func_param fp
         modtype mty
+  | Mty_for_hole -> fprintf ppf "Mty_for_hole"
 
 and raw_func_param ppf = function
     Unit -> fprintf ppf "Unit"

@@ -219,7 +219,7 @@ let iter_on_occurrences
       | Texp_send _
       | Texp_assert _ | Texp_lazy _
       | Texp_object _ | Texp_pack _ | Texp_letop _ | Texp_unreachable
-      | Texp_struct_item _ -> ());
+      | Texp_struct_item _ | Texp_typed_hole -> ());
       default_iterator.expr sub e);
 
   (* Remark: some types get iterated over twice due to how constraints are
@@ -286,7 +286,7 @@ let iter_on_occurrences
       (match mod_desc with
       | Tmod_ident (path, lid) -> f ~namespace:Module mod_env path lid
       | Tmod_structure _ | Tmod_functor _ | Tmod_apply _ | Tmod_apply_unit _
-      | Tmod_constraint _ | Tmod_unpack _ -> ());
+      | Tmod_constraint _ | Tmod_unpack _ | Tmod_typed_hole -> ());
       default_iterator.module_expr sub me);
 
   open_description =
@@ -427,7 +427,7 @@ let read filename =
            in
            Some cmi, cmt
          else
-           raise(Cmi_format.Error(Cmi_format.Not_an_interface filename))
+           raise Magic_numbers.Cmi.(Error(Not_an_interface filename))
        in
        cmi, cmt
     )
@@ -440,7 +440,7 @@ let read_cmt filename =
 let read_cmi filename =
   match read filename with
       None, _ ->
-        raise (Cmi_format.Error (Cmi_format.Not_an_interface filename))
+        raise Magic_numbers.Cmi.(Error (Not_an_interface filename))
     | Some cmi, _ -> cmi
 
 let saved_types = ref []
@@ -491,7 +491,7 @@ let save_cmt target binary_annots initial_env cmi shape =
            cmt_modname = Unit_info.Artifact.modname target;
            cmt_annots;
            cmt_declaration_dependencies = Uid.Deps.get ();
-           cmt_comments = Lexer.comments ();
+           cmt_comments = [];
            cmt_args;
            cmt_sourcefile = sourcefile;
            cmt_builddir = Location.rewrite_absolute_path (Sys.getcwd ());

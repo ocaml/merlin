@@ -1177,6 +1177,7 @@ module Aliases = struct
       | Tfield(_, _, _, ty2) ->
           mark_loops_rec visited ty2
       | Tnil -> ()
+      | Texpand (_, _, _) -> () (* MAYBE: @xvw to be checked *)
       | Tsubst _ -> ()  (* we do not print arguments *)
       | Tlink _ -> fatal_error "Printtyp.mark_loops_rec (2)"
       | Tpoly (ty, tyl) ->
@@ -2259,6 +2260,8 @@ let trees_of_type_expansion mode Errortrace.{ty = t; expanded = t'} =
     Aliases.mark_loops t';
     (* beware order matter due to side effect,
        e.g. when printing object types *)
+    let first = tree_of_typexp mode t in
+    let second = tree_of_typexp mode t' in
     { ty = first
     ; expanded = if first = second then None else Some second
     ; manifest

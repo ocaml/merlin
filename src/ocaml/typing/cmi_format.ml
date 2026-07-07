@@ -82,38 +82,17 @@ let read_cmi filename =
       raise (Error e)
 
 let output_cmi filename oc cmi =
+  ignore (filename, oc, cmi); ""
+(*
 (* beware: the provided signature must have been substituted for saving *)
   output_string oc Config.cmi_magic_number;
-  Compression.output_value oc ((cmi.cmi_name, cmi.cmi_sign) : header);
+  Marshal.(to_channel oc ((cmi.cmi_name, cmi.cmi_sign) : header) [Compression]);
   flush oc;
-  let crc = Digest.BLAKE128.file filename in
+  let crc = Digest.file filename in
   let crcs = (cmi.cmi_name, Some crc) :: cmi.cmi_crcs in
   output_value oc (crcs : crcs);
   output_value oc (cmi.cmi_flags : flags);
   crc
+*)
 
-(* Error report *)
-
-open Format_doc
-
-let report_error_doc ppf = function
-  | Not_an_interface filename ->
-      fprintf ppf "%a@ is not a compiled interface"
-        Location.Doc.quoted_filename filename
-  | Wrong_version_interface (filename, older_newer) ->
-      fprintf ppf
-        "%a@ is not a compiled interface for this version of OCaml.@.\
-         It seems to be for %s version of OCaml."
-        Location.Doc.quoted_filename filename older_newer
-  | Corrupted_interface filename ->
-      fprintf ppf "Corrupted compiled interface@ %a"
-        Location.Doc.quoted_filename filename
-
-let () =
-  Location.register_error_of_exn
-    (function
-      | Error err -> Some (Location.error_of_printer_file report_error_doc err)
-      | _ -> None
-    )
-
-let report_error = Format_doc.compat report_error_doc
+(* Error report moved to src/ocaml/typing/magic_numbers.ml *)
