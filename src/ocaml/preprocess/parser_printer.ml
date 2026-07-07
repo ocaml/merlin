@@ -210,11 +210,12 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_bar_llist_extension_constructor_declaration_) -> "reversed_bar_llist_extension_constructor_declaration_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_bar_llist_extension_constructor_) -> "reversed_bar_llist_extension_constructor_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_reversed_bar_llist_constructor_declaration_) -> "reversed_bar_llist_constructor_declaration_"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_record_update_expr) -> "record_update_expr"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_record_expr_content) -> "record_expr_content"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_rec_flag) -> "rec_flag"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_private_virtual_flags) -> "private_virtual_flags"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_private_flag) -> "private_flag"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_primitive_declaration) -> "primitive_declaration"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_primitive_description) -> "primitive_description"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_post_item_attribute) -> "post_item_attribute"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_possibly_poly_core_type_no_attr_) -> "possibly_poly_core_type_no_attr_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_possibly_poly_core_type_) -> "possibly_poly_core_type_"
@@ -564,11 +565,12 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_bar_llist_extension_constructor_declaration_ -> (fun _ -> "reversed_bar_llist_extension_constructor_declaration_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_bar_llist_extension_constructor_ -> (fun _ -> "reversed_bar_llist_extension_constructor_")
   | MenhirInterpreter.N MenhirInterpreter.N_reversed_bar_llist_constructor_declaration_ -> (fun _ -> "reversed_bar_llist_constructor_declaration_")
+  | MenhirInterpreter.N MenhirInterpreter.N_record_update_expr -> (fun _ -> "record_update_expr")
   | MenhirInterpreter.N MenhirInterpreter.N_record_expr_content -> (fun _ -> "record_expr_content")
   | MenhirInterpreter.N MenhirInterpreter.N_rec_flag -> (fun _ -> "rec_flag")
   | MenhirInterpreter.N MenhirInterpreter.N_private_virtual_flags -> (fun _ -> "private_virtual_flags")
   | MenhirInterpreter.N MenhirInterpreter.N_private_flag -> (fun _ -> "private_flag")
-  | MenhirInterpreter.N MenhirInterpreter.N_primitive_declaration -> (fun _ -> "primitive_declaration")
+  | MenhirInterpreter.N MenhirInterpreter.N_primitive_description -> (fun _ -> "primitive_description")
   | MenhirInterpreter.N MenhirInterpreter.N_post_item_attribute -> (fun _ -> "post_item_attribute")
   | MenhirInterpreter.N MenhirInterpreter.N_possibly_poly_core_type_no_attr_ -> (fun _ -> "possibly_poly_core_type_no_attr_")
   | MenhirInterpreter.N MenhirInterpreter.N_possibly_poly_core_type_ -> (fun _ -> "possibly_poly_core_type_")
