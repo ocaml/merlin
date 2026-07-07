@@ -1,0 +1,15 @@
+--- ocaml_505/utils/domainstate.ml	2026-07-07 01:48:43.521971910 +0200
++++ ocaml_506_typing_recovery/utils/domainstate.ml	2026-07-07 02:21:40.477726481 +0200
+@@ -134,7 +134,6 @@
+ let idx__memprof = curr in let curr = curr + 1 in
+ let idx__memprof_young_trigger = curr in let curr = curr + 1 in
+ let idx__extra_params = curr in let curr = curr + 1 in
+-
+   let _ = curr in
+   function
+ | Domain_young_limit -> idx__young_limit
+@@ -203,4 +202,3 @@
+ | Domain_memprof -> idx__memprof
+ | Domain_memprof_young_trigger -> idx__memprof_young_trigger
+ | Domain_extra_params -> idx__extra_params
+-

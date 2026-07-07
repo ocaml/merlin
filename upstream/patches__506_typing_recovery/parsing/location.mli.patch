@@ -1,0 +1,11 @@
+--- ocaml_505/parsing/location.mli	2026-07-07 01:48:43.510538861 +0200
++++ ocaml_506_typing_recovery/parsing/location.mli	2026-07-07 02:21:01.032916040 +0200
+@@ -360,6 +360,8 @@
+ val errorf: ?loc:t -> ?sub:msg list -> ?footnote:delayed_msg ->
+   ('a, Format_doc.formatter, unit, error) format4 -> 'a
+ 
++val multiple_errors : ?loc:t -> ?footnote:delayed_msg -> error list -> error
++
+ val aligned_error_hint:
+   ?loc:t -> ?sub:msg list -> ?footnote:delayed_msg ->
+   ('a, Format_doc.formatter, unit, Format_doc.t option ->  error) format4 -> 'a

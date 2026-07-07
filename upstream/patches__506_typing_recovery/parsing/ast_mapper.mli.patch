@@ -1,0 +1,11 @@
+--- ocaml_505/parsing/ast_mapper.mli	2026-07-07 01:48:43.509116732 +0200
++++ ocaml_506_typing_recovery/parsing/ast_mapper.mli	2026-07-07 02:21:01.013804774 +0200
+@@ -95,6 +95,8 @@
+   package_type: mapper -> package_type -> package_type;
+   pat: mapper -> pattern -> pattern;
+   payload: mapper -> payload -> payload;
++  primitive_description: mapper -> primitive_description
++                         -> primitive_description;
+   signature: mapper -> signature -> signature;
+   signature_item: mapper -> signature_item -> signature_item;
+   structure: mapper -> structure -> structure;

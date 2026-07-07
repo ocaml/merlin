@@ -1,0 +1,10 @@
+--- ocaml_505/typing/ident.mli	2026-07-07 01:48:43.513538859 +0200
++++ ocaml_506_typing_recovery/typing/ident.mli	2026-07-07 02:21:16.948725337 +0200
+@@ -83,6 +83,7 @@
+    val refresh: t -> t
+ 
+    val name: t -> string
++   val print: Format.formatter -> t -> unit
+    val same: t -> t -> bool
+ 
+    type change

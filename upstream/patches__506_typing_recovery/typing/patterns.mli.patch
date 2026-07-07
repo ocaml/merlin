@@ -1,0 +1,13 @@
+--- ocaml_505/typing/patterns.mli	2026-07-07 01:48:43.515538857 +0200
++++ ocaml_506_typing_recovery/typing/patterns.mli	2026-07-07 02:21:16.969144487 +0200
+@@ -97,9 +97,7 @@
+ 
+   val arity : t -> int
+ 
+-  (** [deconstruct p] returns the head of [p] and the list of sub patterns.
+-
+-      @raise [Invalid_arg _] if [p] is an or- or an exception-pattern.  *)
++  (** [deconstruct p] returns the head of [p] and the list of sub patterns.*)
+   val deconstruct : Simple.pattern -> t * pattern list
+ 
+   (** reconstructs a pattern, putting wildcards as sub-patterns. *)

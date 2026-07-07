@@ -1,0 +1,16 @@
+--- ocaml_505/typing/path.ml	2026-07-07 01:48:43.515538857 +0200
++++ ocaml_506_typing_recovery/typing/path.ml	2026-07-07 02:21:16.968208880 +0200
+@@ -128,6 +128,13 @@
+     | () -> None
+     | exception Escape id -> Some id
+ 
++let rec contains_unscoped_ident = function
++  | Pident id -> Ident.find_unscoped id <> None
++  | Pdot (p, _) -> contains_unscoped_ident p
++  | Papply (p1, p2) ->
++      contains_unscoped_ident p1 || contains_unscoped_ident p2
++  | Pextra_ty (p, _) -> contains_unscoped_ident p
++
+ let kfalse _ = false
+ 
+ let maybe_escape s =

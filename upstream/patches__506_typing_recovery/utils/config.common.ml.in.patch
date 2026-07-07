@@ -1,0 +1,19 @@
+--- ocaml_505/utils/config.common.ml.in	2026-07-07 01:48:43.521971910 +0200
++++ ocaml_506_typing_recovery/utils/config.common.ml.in	2026-07-07 02:21:40.469484866 +0200
+@@ -24,7 +24,7 @@
+    from values in ../build-aux/ocaml_version.m4 - do not edit these lines
+    directly. *)
+ let is_official_release = false
+-let release_number = 21
++let release_number = 22
+ 
+ external standard_library_default : unit -> string = "%standard_library_default"
+ 
+@@ -182,6 +182,7 @@
+   p_bool "native_dynlink" native_dynlink;
+   p_bool "naked_pointers" naked_pointers;
+   p_bool "with_codegen_invariants" with_codegen_invariants;
++  p_int "reserved_header_bits" reserved_header_bits;
+ 
+   p "exec_magic_number" exec_magic_number;
+   p "cmi_magic_number" cmi_magic_number;

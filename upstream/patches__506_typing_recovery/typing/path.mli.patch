@@ -1,0 +1,10 @@
+--- ocaml_505/typing/path.mli	2026-07-07 01:48:43.515538857 +0200
++++ ocaml_506_typing_recovery/typing/path.mli	2026-07-07 02:21:16.968324206 +0200
+@@ -69,6 +69,7 @@
+ val subst: (Ident.t * t) list -> t -> t
+ val check_for_unbound_unscoped_idents:
+   Ident.Unscoped.Set.t -> t -> Ident.Unscoped.t option
++val contains_unscoped_ident: t -> bool
+ 
+ val flatten : t -> [ `Contains_apply | `Ok of Ident.t * string list ]
+ 

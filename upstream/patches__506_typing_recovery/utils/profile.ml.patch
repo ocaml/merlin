@@ -1,0 +1,10 @@
+--- ocaml_505/utils/profile.ml	2026-07-07 01:48:43.522538850 +0200
++++ ocaml_506_typing_recovery/utils/profile.ml	2026-07-07 02:21:40.493627978 +0200
+@@ -188,7 +188,6 @@
+   !r
+ 
+ type row = R of string * (float * display) list * row list
+-type column = [ `Time | `Alloc | `Top_heap | `Abs_top_heap ]
+ 
+ let rec rows_of_hierarchy ~nesting make_row name measure_diff hierarchy env =
+   let rows =

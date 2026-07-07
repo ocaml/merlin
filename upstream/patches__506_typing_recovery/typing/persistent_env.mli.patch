@@ -1,0 +1,11 @@
+--- ocaml_505/typing/persistent_env.mli	2026-07-07 01:48:43.515538857 +0200
++++ ocaml_506_typing_recovery/typing/persistent_env.mli	2026-07-07 02:21:16.970307618 +0200
+@@ -25,7 +25,7 @@
+   | Inconsistent_import of modname * filepath * filepath
+   | Need_recursive_types of modname
+ 
+-exception Error of error
++type exn += private Error of error
+ 
+ val report_error: error Format_doc.format_printer
+ val report_error_doc: error Format_doc.printer

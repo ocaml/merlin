@@ -1,0 +1,18 @@
+--- ocaml_505/utils/clflags.ml	2026-07-07 01:48:43.521971910 +0200
++++ ocaml_506_typing_recovery/utils/clflags.ml	2026-07-07 02:21:40.466268521 +0200
+@@ -104,6 +104,7 @@
+ and strict_sequence = ref false         (* -strict-sequence *)
+ and strict_formats = ref true           (* -strict-formats *)
+ and applicative_functors = ref true     (* -no-app-funct *)
++and typing_recovery = ref false          (* -typing-recovery *)
+ and make_runtime = ref false            (* -make-runtime *)
+ and c_compiler = ref (None: string option) (* -cc *)
+ and no_auto_link = ref false            (* -noautolink *)
+@@ -113,6 +114,7 @@
+ and error_size = ref 500                (* -error-size *)
+ and float_const_prop = ref true         (* -no-float-const-prop *)
+ and no_alias_deps = ref false           (* -no-alias-deps *)
++let bytecode_hints = ref false          (* -no-bytecode-hints *)
+ let unique_ids = ref true               (* -d(no-)unique-ids *)
+ let canonical_ids = ref false           (* -d(no-)canonical-ids *)
+ let locations = ref true                (* -d(no-)locations *)

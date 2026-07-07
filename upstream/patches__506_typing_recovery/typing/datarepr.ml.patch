@@ -1,0 +1,11 @@
+--- ocaml_505/typing/datarepr.ml	2026-07-07 01:48:43.513022109 +0200
++++ ocaml_506_typing_recovery/typing/datarepr.ml	2026-07-07 02:21:16.933685349 +0200
+@@ -179,7 +179,7 @@
+       cstr_uid = ext.ext_uid;
+     }
+ 
+-let none =
++let none : type_expr =
+   create_expr (Ttuple []) ~level:(-1) ~scope:Btype.generic_level ~id:(-1)
+     (* Clearly ill-formed type *)
+ 

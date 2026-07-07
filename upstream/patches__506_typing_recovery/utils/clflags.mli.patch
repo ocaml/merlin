@@ -1,0 +1,36 @@
+--- ocaml_505/utils/clflags.mli	2026-07-07 01:48:43.521971910 +0200
++++ ocaml_506_typing_recovery/utils/clflags.mli	2026-07-07 02:21:40.466453577 +0200
+@@ -68,6 +68,8 @@
+     The default is set if no round is provided. *)
+ val use_inlining_arguments_set : ?round:int -> inlining_arguments -> unit
+ 
++type profile_column = [ `Time | `Alloc | `Top_heap | `Abs_top_heap ]
++
+ val objfiles : string list ref
+ val ccobjs : string list ref
+ val dllibs : (suffixed:bool * string) list ref
+@@ -125,6 +127,7 @@
+ val strict_sequence : bool ref
+ val strict_formats : bool ref
+ val applicative_functors : bool ref
++val typing_recovery : bool ref
+ val make_runtime : bool ref
+ val c_compiler : string option ref
+ val no_auto_link : bool ref
+@@ -134,6 +137,7 @@
+ val error_size : int ref
+ val float_const_prop : bool ref
+ val no_alias_deps : bool ref
++val bytecode_hints : bool ref
+ val unique_ids : bool ref
+ val canonical_ids : bool ref
+ val locations : bool ref
+@@ -205,7 +209,7 @@
+ val keep_docs : bool ref
+ val keep_locs : bool ref
+ val opaque : bool ref
+-val profile_columns : [ `Time | `Alloc | `Top_heap | `Abs_top_heap ] list ref
++val profile_columns : profile_column list ref
+ val flambda_invariant_checks : bool ref
+ val unbox_closures : bool ref
+ val unbox_closures_factor : int ref

@@ -1,0 +1,11 @@
+--- ocaml_505/utils/domainstate.mli.c	2026-07-07 01:48:43.521971910 +0200
++++ ocaml_506_typing_recovery/utils/domainstate.mli.c	2026-07-07 02:21:40.478541300 +0200
+@@ -18,7 +18,7 @@
+ 
+ type t =
+ #define DOMAIN_STATE(type, name) | Domain_##name
+-#include "domain_state.tbl"
++#include "caml/domain_state.tbl"
+ #undef DOMAIN_STATE
+ 
+ val idx_of_field : t -> int
