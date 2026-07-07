@@ -406,19 +406,24 @@ let check_label_name ?(raw_escape=false) lexbuf name =
 
 (* Update the current location with file name and line number. *)
 
-let update_loc lexbuf _file line absolute chars =
+(* [chars] is the number of characters between the beginning of the
+   line and the current position. *)
+let update_loc lexbuf ~lines ~chars =
   let pos = lexbuf.lex_curr_p in
-  let new_file = pos.pos_fname
-    (*match file with
-      | None -> pos.pos_fname
-      | Some s -> s*)
-  in
   lexbuf.lex_curr_p <- { pos with
-    pos_fname = new_file;
-    pos_lnum = if absolute then line else pos.pos_lnum + line;
+    pos_lnum = pos.pos_lnum + lines;
     pos_bol = pos.pos_cnum - chars;
   }
 
+(* This should only be called on the beginning of a new line --
+   otherwise we would add a [chars] parameter like [update_loc]. *)
+let set_loc lexbuf ~file ~line =
+  let pos = lexbuf.lex_curr_p in
+  lexbuf.lex_curr_p <- { pos with
+    pos_fname = file;
+    pos_lnum = line;
+    pos_bol = pos.pos_cnum;
+  }
 
 (* TODO Merlin should we support this ?*)
 let handle_docstrings = ref false
@@ -573,10 +578,10 @@ rule token state = parse
       match state.preprocessor with
       | None -> fail lexbuf (Illegal_character bs)
       | Some _ ->
-        update_loc lexbuf None 1 false 0;
+        update_loc lexbuf ~lines:1 ~chars:0;
         token state lexbuf }
   | newline
-      { update_loc lexbuf None 1 false 0;
+      { update_loc lexbuf ~lines:1 ~chars:0;
         match state.preprocessor with
         | None -> token state lexbuf
         | Some _ -> return EOL
@@ -671,7 +676,7 @@ rule token state = parse
         let idloc = compute_quoted_string_idloc orig_loc 3 id in
         QUOTED_STRING_ITEM (id, idloc, s, loc, Some delim) }
   | "\'" newline "\'"
-    { update_loc lexbuf None 1 false 1;
+    { update_loc lexbuf ~lines:1 ~chars:1;
       (* newline is ('\013'* '\010') *)
       return (CHAR '\n') }
   | "\'" ([^ '\\' '\'' '\010' '\013'] as c) "\'"
@@ -727,9 +732,13 @@ rule token state = parse
       }
   | "#"
       { let at_beginning_of_line pos = (pos.pos_cnum = pos.pos_bol) in
-        if not (at_beginning_of_line lexbuf.lex_start_p)
-        then return HASH
-        else try directive state lexbuf with Failure _ -> return HASH
+      if at_beginning_of_line lexbuf.lex_start_p
+         && (match lex_directive state lexbuf with Return b -> b | _ -> false)
+      then
+        (* [lex_directive] silently updates location information on success;
+           continue to the next token *)
+       token state lexbuf
+      else return HASH
       }
   | "&"  { return AMPERSAND }
   | "&&" { return AMPERAMPER }
@@ -808,7 +817,7 @@ rule token state = parse
   | _ as illegal_char
       { fail lexbuf (Illegal_character illegal_char) }
 
-and directive state = parse
+and lex_directive state = parse
   | ([' ' '\t']* (['0'-'9']+ as num) [' ' '\t']*
         ("\"" ([^ '\010' '\013' '\"' ] * as name) "\"") as directive)
         [^ '\010' '\013'] *
@@ -822,9 +831,17 @@ and directive state = parse
            (* Documentation says that the line number should be
               positive, but we have never guarded against this and it
               might have useful hackish uses. *)
-            update_loc lexbuf (Some name) (line_num - 1) true 0;
-            token state lexbuf
+            set_loc lexbuf ~file:name ~line:(line_num - 1);
+            return true
       }
+  | ""
+      { (* hack: fix the location to include the `#` character we consumed
+           before calling [lex_directive]. *)
+        let pos = lexbuf.lex_start_p in
+        lexbuf.lex_start_p <- { pos with pos_cnum = pos.pos_cnum - 1 };
+        return false
+      }
+
 and comment state = parse
     "(*"
       { state.comment_start_loc <- (Location.curr lexbuf) :: state.comment_start_loc;
@@ -889,7 +906,7 @@ and comment state = parse
   | "\'\'"
       { store_lexeme state.buffer lexbuf; comment state lexbuf }
   | "\'" (newline as nl) "\'"
-      { update_loc lexbuf None 1 false 1;
+      { update_loc lexbuf ~lines:1 ~chars:1;
         store_string_char state.buffer '\'';
         store_normalized_newline state.buffer nl;
         store_string_char state.buffer '\'';
@@ -914,7 +931,7 @@ and comment state = parse
           fail_loc (Unterminated_comment start) loc
       }
   | newline as nl
-      { update_loc lexbuf None 1 false 0;
+      { update_loc lexbuf ~lines:1 ~chars:0;
         store_normalized_newline state.buffer nl;
         comment state lexbuf
       }
@@ -927,7 +944,7 @@ and string state = parse
     '\"'
       { return lexbuf.lex_start_p  }
   | '\\' (newline as nl) ([' ' '\t'] * as space)
-      { update_loc lexbuf None 1 false (String.length space);
+      { update_loc lexbuf ~lines:1 ~chars:(String.length space);
         if in_comment state then begin
           store_string_char state.buffer '\\';
           store_normalized_newline state.buffer nl;
@@ -966,7 +983,7 @@ and string state = parse
         end
       }
   | newline as nl
-      { update_loc lexbuf None 1 false 0;
+      { update_loc lexbuf ~lines:1 ~chars:0;
         store_normalized_newline state.buffer nl;
         string state lexbuf
       }
@@ -980,7 +997,7 @@ and string state = parse
 
 and quoted_string delim state = parse
   | newline as nl
-      { update_loc lexbuf None 1 false 0;
+      { update_loc lexbuf ~lines:1 ~chars:0;
         store_normalized_newline state.buffer nl;
         quoted_string delim state lexbuf
       }
@@ -1001,9 +1018,9 @@ and quoted_string delim state = parse
 
 and skip_sharp_bang state = parse
   | "#!" [^ '\n']* '\n' [^ '\n']* "\n!#\n"
-      { update_loc lexbuf None 3 false 0; token state lexbuf }
+      { update_loc lexbuf ~lines:3 ~chars:0; token state lexbuf }
   | "#!" [^ '\n']* '\n'
-      { update_loc lexbuf None 1 false 0; token state lexbuf }
+      { update_loc lexbuf ~lines:1 ~chars:0; token state lexbuf }
   | "" { token state lexbuf }
 
 {
