@@ -51,7 +51,10 @@ let cache : typedtree_items option cache_result option ref = s_ref None
 
 let fresh_env config =
   let env0 = Typer_raw.fresh_env () in
-  let env0 = Extension.register Mconfig.(config.merlin.extensions) env0 in
+  let target = Mconfig.unit_info config in
+  let env0 =
+    Extension.register target Mconfig.(config.merlin.extensions) env0
+  in
   let snap0 = Btype.snapshot () in
   let stamp0 = Ident.get_currentstamp () in
   let uid0 = Shape.Uid.get_current_stamp () in

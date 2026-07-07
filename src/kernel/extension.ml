@@ -123,8 +123,8 @@ let parse_sig =
     let lexer lexbuf = lexer (Lexer_raw.token_without_comments state lexbuf) in
     (Parser_raw.interface lexer lexbuf : Parsetree.signature)
 
-let type_sig env sg =
-  let sg = Typemod.type_interface env sg in
+let type_sig target env sg =
+  let sg = Typemod.type_interface target env sg in
   sg.Typedtree.sig_type
 
 (*
@@ -142,9 +142,9 @@ let add_hidden_signature env sign =
   List.fold_left ~f:add_item ~init:env sign
 *)
 
-let register exts env =
+let register target exts env =
   (* Log errors ? *)
-  let try_type sg' = try type_sig env sg' with _exn -> [] in
+  let try_type sg' = try type_sig target env sg' with _exn -> [] in
   let exts = List.filter_dup exts in
   let exts =
     List.filter_map
