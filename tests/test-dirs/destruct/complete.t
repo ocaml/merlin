@@ -178,7 +178,7 @@ Test 3.1
           "col": 15
         }
       },
-      "|`Yellow|`Red -> _"
+      "|`Yellow -> _"
     ],
     "notifications": []
   }

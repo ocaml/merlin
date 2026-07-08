@@ -47,7 +47,7 @@ After a # we complete methods names
     {
       "name": "bazs",
       "kind": "#",
-      "desc": "'a -> string",
+      "desc": "'_weak1 -> string",
       "info": "",
       "deprecated": false
     }
@@ -70,7 +70,7 @@ And filtering works with methods names
     {
       "name": "bazs",
       "kind": "#",
-      "desc": "'a -> string",
+      "desc": "'_weak1 -> string",
       "info": "",
       "deprecated": false
     }
@@ -102,7 +102,7 @@ It also works when inside modules
     {
       "name": "bazs",
       "kind": "#",
-      "desc": "'a -> string",
+      "desc": "'_weak1 -> string",
       "info": "",
       "deprecated": false
     }

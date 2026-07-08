@@ -136,7 +136,7 @@ new c with verbosity 1
       "line": 15,
       "col": 15
     },
-    "type": "unit -> < m : unit >",
+    "type": "unit -> c",
     "tail": "no"
   }
 

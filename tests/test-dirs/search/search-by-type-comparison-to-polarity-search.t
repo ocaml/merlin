@@ -125,24 +125,24 @@ map).
     "type": "(int -> 'a -> 'b) -> 'a list -> 'b list"
   }
   {
+    "name": "List.append_map",
+    "type": "('a -> 'b) -> 'a list -> 'b list -> 'b list"
+  }
+  {
     "name": "ListLabels.mapi",
     "type": "f:(int -> 'a -> 'b) -> 'a list -> 'b list"
   }
   {
-    "name": "Seq.map",
-    "type": "('a -> 'b) -> 'a Seq.t -> 'b Seq.t"
+    "name": "List.rev_append_map",
+    "type": "('a -> 'b) -> 'a list -> 'b list -> 'b list"
   }
   {
-    "name": "List.concat_map",
-    "type": "('a -> 'b list) -> 'a list -> 'b list"
+    "name": "ListLabels.append_map",
+    "type": "f:('a -> 'b) -> 'a list -> 'b list -> 'b list"
   }
   {
-    "name": "List.filter_map",
-    "type": "('a -> 'b option) -> 'a list -> 'b list"
-  }
-  {
-    "name": "ListLabels.concat_map",
-    "type": "f:('a -> 'b list) -> 'a list -> 'b list"
+    "name": "ListLabels.rev_append_map",
+    "type": "f:('a -> 'b) -> 'a list -> 'b list -> 'b list"
   }
 
 

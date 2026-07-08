@@ -37,7 +37,7 @@ That Foo is the module type Foo.S, not the module Foo
       "line": 11,
       "col": 21
     },
-    "type": "sig module type S = Empty val x : unit end",
+    "type": "'a",
     "tail": "no"
   }
 
