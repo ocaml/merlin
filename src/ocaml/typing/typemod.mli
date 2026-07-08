@@ -151,3 +151,4 @@ val report_error: Env.t -> loc:Location.t -> error -> Location.error
 (* merlin *)
 
 val normalize_signature : Types.signature -> unit
+val transl_signature : Env.t -> Parsetree.signature -> Typedtree.signature

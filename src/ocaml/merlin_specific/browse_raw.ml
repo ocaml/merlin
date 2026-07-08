@@ -695,6 +695,9 @@ let of_node = function
   | Include_declaration i -> of_module_expr i.incl_mod
   | Include_description i -> of_module_type i.incl_mod
   | Binding_op { bop_exp = _ } -> id_fold
+  | Primitive_description _ ->
+    (* MAYBE: to be improved *)
+    id_fold
 
 let fold_node f env node acc = of_node node env f acc
 
@@ -728,6 +731,7 @@ let string_of_node = function
   | Package_type _ -> "package_type"
   | Row_field _ -> "row_field"
   | Value_description _ -> "value_description"
+  | Primitive_description _ -> "primitive_description"
   | Type_declaration _ -> "type_declaration"
   | Type_kind _ -> "type_kind"
   | Type_extension _ -> "type_extension"

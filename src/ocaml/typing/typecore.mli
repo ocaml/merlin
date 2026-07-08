@@ -315,3 +315,6 @@ val partial_pred :
   type_expr ->
   Typedtree.pattern ->
   Typedtree.pattern option
+
+type delayed_check
+val delayed_checks: delayed_check list ref

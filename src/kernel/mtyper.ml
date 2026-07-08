@@ -104,8 +104,8 @@ let compatible_prefix result_items tree_items =
 
 let rec type_structure config caught env index = function
   | parsetree_item :: rest ->
-    let items, _, part_env =
-      Typemod.merlin_type_structure env [ parsetree_item ]
+    let items, _, _, _, part_env =
+      Typemod.type_structure env [ parsetree_item ]
     in
     let part_index =
       lazy (!index_items (Lazy.force index) config (`Impl items.str_items))
@@ -132,7 +132,7 @@ let rec type_structure config caught env index = function
 let rec type_signature config caught env index = function
   | parsetree_item :: rest ->
     let { Typedtree.sig_final_env = part_env; sig_items; sig_type } =
-      Typemod.merlin_transl_signature env [ parsetree_item ]
+      Typemod.transl_signature env [ parsetree_item ]
     in
     let part_index =
       lazy (!index_items (Lazy.force index) config (`Intf sig_items))
