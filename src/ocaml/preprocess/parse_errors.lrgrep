@@ -257,7 +257,7 @@ rule error_messages keywords = parse error
   { "Expected extension name after `[%`" }
 
 | [_* /generic_type_declaration(nonrec_flag,type_kind): TYPE ext list(attribute) NONREC type_parameters . LIDENT type_kind reversed_llist(preceded(CONSTRAINT,constrain)) list(post_item_attribute)
-      /structure_item: TYPE ext list(attribute) NONREC type_parameters . type_longident PLUSEQ private_flag reversed_bar_llist(extension_constructor) list(post_item_attribute)]
+      /local_structure_item: TYPE ext list(attribute) NONREC type_parameters . type_longident PLUSEQ private_flag reversed_bar_llist(extension_constructor) list(post_item_attribute)]
   { "Expected type identifier after `type nonrec`" }
 
 | /post_item_attribute: LBRACKETATAT . attr_id attr_payload RBRACKET
@@ -325,6 +325,11 @@ rule error_messages keywords = parse error
 | /generalized_constructor_arguments: COLON constructor_arguments MINUSGREATER . atomic_type
 | /function_type: LIDENT COLON tuple_type MINUSGREATER . function_type
 | /function_type: LIDENT COLON atomic_type STAR reversed_separated_nonempty_llist(STAR,labeled_tuple_typ_element) MINUSGREATER . function_type
+| /function_type: LPAREN MODULE ext list(attribute) UIDENT COLON module_type RPAREN MINUSGREATER . function_type
+| /function_type: LIDENT COLON LPAREN MODULE ext list(attribute) UIDENT COLON module_type RPAREN MINUSGREATER . function_type
+| /function_type: LPAREN reversed_nonempty_llist(typevar) DOT core_type RPAREN MINUSGREATER . function_type
+| /function_type: LIDENT COLON LPAREN reversed_nonempty_llist(typevar) DOT core_type RPAREN MINUSGREATER . function_type
+| /function_type: optlabel LPAREN reversed_nonempty_llist(typevar) DOT core_type RPAREN MINUSGREATER . function_type
   { "Expected type after `->`" }
 
 | [_* /function_type: optlabel . tuple_type MINUSGREATER function_type]
@@ -332,6 +337,25 @@ rule error_messages keywords = parse error
 
 | [_* /function_type: optlabel tuple_type . MINUSGREATER function_type]
   { "Expected `->` after parameter" }
+
+(* First-class module types and polymorphic argument types in arrows (5.x) *)
+| /function_type: LPAREN MODULE ext list(attribute) UIDENT COLON . module_type RPAREN MINUSGREATER function_type
+| /function_type: LIDENT COLON LPAREN MODULE ext list(attribute) UIDENT COLON . module_type RPAREN MINUSGREATER function_type
+  { "Expected module type after `:` in first-class module type" }
+
+| /function_type: LPAREN MODULE ext list(attribute) UIDENT COLON module_type RPAREN . MINUSGREATER function_type
+| /function_type: LIDENT COLON LPAREN MODULE ext list(attribute) UIDENT COLON module_type RPAREN . MINUSGREATER function_type
+| /function_type: LPAREN reversed_nonempty_llist(typevar) DOT core_type RPAREN . MINUSGREATER function_type
+| /function_type: LIDENT COLON LPAREN reversed_nonempty_llist(typevar) DOT core_type RPAREN . MINUSGREATER function_type
+| /function_type: optlabel LPAREN reversed_nonempty_llist(typevar) DOT core_type RPAREN . MINUSGREATER function_type
+  { "Expected `->` after parameter type" }
+
+| [_* /function_type: LPAREN reversed_nonempty_llist(typevar) DOT core_type . RPAREN MINUSGREATER function_type]
+| [_* /function_type: LIDENT COLON LPAREN reversed_nonempty_llist(typevar) DOT core_type . RPAREN MINUSGREATER function_type]
+| [_* /function_type: optlabel LPAREN reversed_nonempty_llist(typevar) DOT core_type . RPAREN MINUSGREATER function_type]
+| [_* /simple_param_pattern: LPAREN pattern COLON reversed_nonempty_llist(typevar) DOT core_type . RPAREN]
+| [_* /simple_param_pattern: LABEL LPAREN pattern COLON reversed_nonempty_llist(typevar) DOT core_type . RPAREN]
+  { "Expected closing `)` after polymorphic type" }
 
 (*| /atomic_type: mod_ext_longident DOT . delimited_type_supporting_local_open
   /mk_longident(mod_ext_longident,LIDENT): mod_ext_longident DOT . LIDENT
@@ -492,8 +516,7 @@ rule error_messages keywords = parse error
   /paren_module_expr: LPAREN . VAL _*
   { "Expected module expression or `val` after `(`" }
 
-| [_* /paren_module_expr: LPAREN VAL list(attribute) . fun_expr _*
-      /paren_module_expr: LPAREN VAL list(attribute) . FUNCTION _*]
+| [_* /paren_module_expr: LPAREN VAL list(attribute) . expr_colon_package_type RPAREN]
   { "Expected function or expression after `val` in parenthesized module" }
 
 | [_* /simple_expr: NEW ext list(attribute) . class_longident]
@@ -664,7 +687,7 @@ rule error_messages keywords = parse error
 | /simple_param_pattern: TILDE LPAREN . label_let_pattern RPAREN
   { "Expected labeled parameter after `~(`" }
 
-| /label_let_pattern: LIDENT COLON . core_type
+| /label_let_pattern: LIDENT COLON . possibly_poly(core_type)
   { "Expected type after `:` in labeled parameter" }
 
 | /simple_param_pattern: QUESTION . LPAREN label_let_pattern option(preceded(EQUAL,seq_expr)) RPAREN
@@ -678,9 +701,6 @@ rule error_messages keywords = parse error
 
 | /option(preceded(EQUAL,seq_expr)): EQUAL . seq_expr
   { "Expected expression after `=` in optional labeled parameter" }
-
-| [_* /fun_expr: LET OPEN BANG ext list(attribute) . module_expr IN seq_expr]
-  { "Expected module expression after `let open !`" }
 
 | [_* /module_expr: FUNCTOR list(attribute) . functor_args MINUSGREATER module_expr]
   { "Expected argument after `functor`" }
@@ -785,12 +805,9 @@ rule error_messages keywords = parse error
 | [_* /fun_expr: LET OPEN ext list(attribute) module_expr . IN seq_expr]
   { "Expected `in` after module expression" }*)
 
-| /fun_expr: LET OPEN BANG ext list(attribute) module_expr IN . seq_expr
 | /fun_expr: let_bindings(ext) IN . seq_expr
 | /fun_expr: LETOP letop_bindings IN . seq_expr
-| /fun_expr: LET OPEN ext list(attribute) module_expr IN . seq_expr
-| /fun_expr: LET MODULE ext list(attribute) module_name module_binding_body IN . seq_expr
-| /fun_expr: LET EXCEPTION ext list(attribute) constr_ident generalized_constructor_arguments list(attribute) IN . seq_expr
+| /fun_expr: LET ext list(attribute) local_structure_item IN . seq_expr
   { "Expected expression after `in`" }
 
 | /constr_extra_nonprefix_ident: LBRACKET . RBRACKET
@@ -905,7 +922,7 @@ rule error_messages keywords = parse error
 | /simple_param_pattern: OPTLABEL LPAREN . let_pattern option(preceded(EQUAL,seq_expr)) RPAREN
   { "Expected parameter after `?(`" }
 
-| /let_pattern: pattern COLON . core_type
+| /let_pattern: pattern COLON . possibly_poly(core_type)
   { "Expected type after `:` in let pattern" }
 
 | [_* /simple_param_pattern: OPTLABEL LPAREN let_pattern option(preceded(EQUAL,seq_expr)) . RPAREN]
@@ -954,15 +971,15 @@ rule error_messages keywords = parse error
 | /simple_expr: mod_longident DOT LPAREN MODULE ext list(attribute) module_expr COLON . module_type RPAREN
   { "Expected module type after `:` in parenthesized module expression" }
 
-| [_* /paren_module_expr: LPAREN VAL list(attribute) FUNCTION ext list(attribute) reversed_preceded_or_separated_nonempty_llist(BAR,match_case) COLON module_type . RPAREN
-      /paren_module_expr: LPAREN VAL list(attribute) FUNCTION ext list(attribute) reversed_preceded_or_separated_nonempty_llist(BAR,match_case) COLON module_type . COLONGREATER module_type RPAREN]
-| [_* /paren_module_expr: LPAREN VAL list(attribute) fun_expr COLON module_type . RPAREN
-      /paren_module_expr: LPAREN VAL list(attribute) fun_expr COLON module_type . COLONGREATER module_type RPAREN]
+| [_* /expr_colon_package_type: FUNCTION ext list(attribute) reversed_preceded_or_separated_nonempty_llist(BAR,match_case) COLON module_type . COLONGREATER module_type]
+| [_* /expr_colon_package_type: fun_expr COLON module_type . COLONGREATER module_type]
   { "Expected closing `)` or `:>` after parenthesized module expression with type annotation" }
 
 | [_* /simple_expr: mod_longident DOT LPAREN MODULE ext list(attribute) module_expr COLON module_type . RPAREN]
-| [_* /paren_module_expr: LPAREN VAL list(attribute) _* COLON module_type COLONGREATER module_type . RPAREN]
-| [_* /paren_module_expr: LPAREN VAL list(attribute) fun_expr COLONGREATER module_type . RPAREN]
+| [_* /expr_colon_package_type: FUNCTION ext list(attribute) reversed_preceded_or_separated_nonempty_llist(BAR,match_case) COLON module_type COLONGREATER module_type .]
+| [_* /expr_colon_package_type: FUNCTION ext list(attribute) reversed_preceded_or_separated_nonempty_llist(BAR,match_case) COLONGREATER module_type .]
+| [_* /expr_colon_package_type: fun_expr COLON module_type COLONGREATER module_type .]
+| [_* /expr_colon_package_type: fun_expr COLONGREATER module_type .]
   { "Expected closing `)` after parenthesized module expression with type annotation" }
 
 | /letop_binding_body: simple_pattern COLON . core_type EQUAL seq_expr
@@ -1109,6 +1126,11 @@ rule error_messages keywords = parse error
 | [_* /possibly_poly(core_type_no_attr): reversed_nonempty_llist(typevar) . DOT alias_type]
 | [_* /generalized_constructor_arguments: COLON reversed_nonempty_llist(typevar) . DOT _*]
 | [_* /possibly_poly(core_type): reversed_nonempty_llist(typevar) . DOT core_type]
+| [_* /function_type: LPAREN reversed_nonempty_llist(typevar) . DOT core_type RPAREN MINUSGREATER function_type]
+| [_* /function_type: LIDENT COLON LPAREN reversed_nonempty_llist(typevar) . DOT core_type RPAREN MINUSGREATER function_type]
+| [_* /function_type: optlabel LPAREN reversed_nonempty_llist(typevar) . DOT core_type RPAREN MINUSGREATER function_type]
+| [_* /simple_param_pattern: LPAREN pattern COLON reversed_nonempty_llist(typevar) . DOT core_type RPAREN]
+| [_* /simple_param_pattern: LABEL LPAREN pattern COLON reversed_nonempty_llist(typevar) . DOT core_type RPAREN]
   { "Expected `.` after type parameters" }
 
 | /let_binding_body_no_punning: val_ident COLON TYPE nonempty_list(mkrhs(LIDENT)) DOT . core_type EQUAL seq_expr
@@ -1119,6 +1141,11 @@ rule error_messages keywords = parse error
 | /possibly_poly(core_type): reversed_nonempty_llist(typevar) DOT . core_type
 | /method_: list(attribute) private_flag LIDENT COLON TYPE nonempty_list(mkrhs(LIDENT)) DOT . core_type EQUAL seq_expr
 | /method_: BANG list(attribute) private_flag LIDENT COLON TYPE nonempty_list(mkrhs(LIDENT)) DOT . core_type EQUAL seq_expr
+| /function_type: LPAREN reversed_nonempty_llist(typevar) DOT . core_type RPAREN MINUSGREATER function_type
+| /function_type: LIDENT COLON LPAREN reversed_nonempty_llist(typevar) DOT . core_type RPAREN MINUSGREATER function_type
+| /function_type: optlabel LPAREN reversed_nonempty_llist(typevar) DOT . core_type RPAREN MINUSGREATER function_type
+| /simple_param_pattern: LPAREN pattern COLON reversed_nonempty_llist(typevar) DOT . core_type RPAREN
+| /simple_param_pattern: LABEL LPAREN pattern COLON reversed_nonempty_llist(typevar) DOT . core_type RPAREN
   { "Expected type after `.`" }
 
 | [_* /let_binding_body_no_punning: val_ident COLON TYPE nonempty_list(mkrhs(LIDENT)) DOT core_type . EQUAL seq_expr]
@@ -1292,16 +1319,9 @@ rule error_messages keywords = parse error
 | [_* /simple_expr: LBRACE record_expr_content . RBRACE]
   { "Expected closing `}` after record content" }
 
-| [_* /fun_expr: LET OPEN ext list(attribute) . module_expr IN seq_expr]
-  { "Expected module expression after `let open`" }
-
-| [_* /fun_expr: LET MODULE ext list(attribute) . module_name module_binding_body IN seq_expr]
-  { "Expected module name after `let module`" }
-
-| [_* /fun_expr: LET MODULE ext list(attribute) module_name . module_binding_body IN seq_expr]
-| [_* /structure_item: MODULE ext list(attribute) REC module_name . module_binding_body list(post_item_attribute) list(and_module_binding)]
+| [_* /local_structure_item: MODULE ext list(attribute) module_name . module_binding_body list(post_item_attribute)]
+| [_* /local_structure_item: MODULE ext list(attribute) REC module_name . module_binding_body list(post_item_attribute) list(and_module_binding)]
 | [_* /list(and_module_binding): AND list(attribute) module_name . module_binding_body list(post_item_attribute) list(and_module_binding)]
-| [_* /structure_item: MODULE ext list(attribute) module_name . module_binding_body list(post_item_attribute)]
   { "Expected module binding body after module name" }
 
 | /module_binding_body: EQUAL . module_expr
@@ -1310,8 +1330,8 @@ rule error_messages keywords = parse error
 
 | /module_binding_body: COLON . module_type EQUAL module_expr
 | /simple_expr: LPAREN MODULE ext list(attribute) module_expr COLON . module_type RPAREN
-| /paren_module_expr: LPAREN VAL list(attribute) FUNCTION ext list(attribute) reversed_preceded_or_separated_nonempty_llist(BAR,match_case) COLON . module_type _*
-| /paren_module_expr: LPAREN VAL list(attribute) fun_expr COLON . module_type _*
+| /expr_colon_package_type: FUNCTION ext list(attribute) reversed_preceded_or_separated_nonempty_llist(BAR,match_case) COLON . module_type _*
+| /expr_colon_package_type: fun_expr COLON . module_type _*
 | /list(and_module_declaration): AND list(attribute) module_name COLON . module_type list(post_item_attribute) list(and_module_declaration)
   { "Expected module type after `:`" }
 
@@ -1323,9 +1343,6 @@ rule error_messages keywords = parse error
 
 | [_* /module_binding_body: functor_arg . module_binding_body]
   { "Expected module binding body after functor argument" }
-
-| [_* /fun_expr: LET EXCEPTION ext list(attribute) . constr_ident generalized_constructor_arguments list(attribute) IN seq_expr]
-  { "Expected constructor after `let exception`" }
 
 | /constr_extra_nonprefix_ident: LPAREN . RPAREN
   /constr_ident: LPAREN . COLONCOLON RPAREN
@@ -1386,20 +1403,18 @@ rule error_messages keywords = parse error
 | [_* /simple_expr: METAOCAML_BRACKET_OPEN seq_expr . METAOCAML_BRACKET_CLOSE]
   { "Expected closing bracket after expression" }
 
-| [_* /paren_module_expr: LPAREN VAL list(attribute) FUNCTION ext list(attribute) reversed_preceded_or_separated_nonempty_llist(BAR,match_case) . RPAREN
-      /paren_module_expr: LPAREN VAL list(attribute) FUNCTION ext list(attribute) reversed_preceded_or_separated_nonempty_llist(BAR,match_case) . COLON _*
-      /paren_module_expr: LPAREN VAL list(attribute) FUNCTION ext list(attribute) reversed_preceded_or_separated_nonempty_llist(BAR,match_case) . COLONGREATER module_type RPAREN
+| [_* /expr_colon_package_type: FUNCTION ext list(attribute) reversed_preceded_or_separated_nonempty_llist(BAR,match_case) . COLON module_type _*
+      /expr_colon_package_type: FUNCTION ext list(attribute) reversed_preceded_or_separated_nonempty_llist(BAR,match_case) . COLONGREATER module_type
       /reversed_labeled_tuple_body: FUNCTION ext list(attribute) reversed_preceded_or_separated_nonempty_llist(BAR,match_case) . COMMA _*]
-| [_* /paren_module_expr: LPAREN VAL list(attribute) fun_expr . RPAREN
-      /paren_module_expr: LPAREN VAL list(attribute) fun_expr . COLON _*
-      /paren_module_expr: LPAREN VAL list(attribute) fun_expr . COLONGREATER module_type RPAREN
+| [_* /expr_colon_package_type: fun_expr . COLON module_type _*
+      /expr_colon_package_type: fun_expr . COLONGREATER module_type
       /reversed_labeled_tuple_body: fun_expr . COMMA _*]
   { "Expected closing `)` after function expression" }
 
-| /paren_module_expr: LPAREN VAL list(attribute) FUNCTION ext list(attribute) reversed_preceded_or_separated_nonempty_llist(BAR,match_case) COLONGREATER . module_type RPAREN
-| /paren_module_expr: LPAREN VAL list(attribute) FUNCTION ext list(attribute) reversed_preceded_or_separated_nonempty_llist(BAR,match_case) COLON module_type COLONGREATER . module_type RPAREN
-| /paren_module_expr: LPAREN VAL list(attribute) fun_expr COLONGREATER . module_type RPAREN
-| /paren_module_expr: LPAREN VAL list(attribute) fun_expr COLON module_type COLONGREATER . module_type RPAREN
+| /expr_colon_package_type: FUNCTION ext list(attribute) reversed_preceded_or_separated_nonempty_llist(BAR,match_case) COLONGREATER . module_type
+| /expr_colon_package_type: FUNCTION ext list(attribute) reversed_preceded_or_separated_nonempty_llist(BAR,match_case) COLON module_type COLONGREATER . module_type
+| /expr_colon_package_type: fun_expr COLONGREATER . module_type
+| /expr_colon_package_type: fun_expr COLON module_type COLONGREATER . module_type
   { "Expected module type after `:>`" }
 
 | [_* /open_declaration: OPEN ext list(attribute) . module_expr list(post_item_attribute)]
@@ -1408,11 +1423,11 @@ rule error_messages keywords = parse error
 | /option(preceded(EQUAL,module_type)): EQUAL . module_type
   { "Expected module type after `=`" }
 
-| [_* /structure_item: MODULE ext list(attribute) . module_name module_binding_body list(post_item_attribute)
-      /structure_item: MODULE ext list(attribute) . REC module_name module_binding_body list(post_item_attribute) list(and_module_binding)]
+| [_* /local_structure_item: MODULE ext list(attribute) . module_name module_binding_body list(post_item_attribute)
+      /local_structure_item: MODULE ext list(attribute) . REC module_name module_binding_body list(post_item_attribute) list(and_module_binding)]
   { "Expected module name after `module`" }
 
-| /structure_item: MODULE ext list(attribute) REC . module_name module_binding_body list(post_item_attribute) list(and_module_binding)
+| /local_structure_item: MODULE ext list(attribute) REC . module_name module_binding_body list(post_item_attribute) list(and_module_binding)
 | /signature_item: MODULE ext list(attribute) REC . module_name COLON module_type list(post_item_attribute) list(and_module_declaration)
   { "Expected module name after `module rec`" }
 
@@ -1698,10 +1713,13 @@ rule error_messages keywords = parse error
 | [_* /nonempty_type_kind: PRIVATE LBRACE label_declarations . RBRACE]
   { "Expected closing `}` after record fields" }
 
-| [_* /structure_item: CLASS ext list(attribute) virtual_flag formal_class_parameters . LIDENT class_fun_binding list(post_item_attribute) list(and_class_declaration)]
+| /nonempty_type_kind: EXTERNAL . STRING
+  { "Expected a string literal after `external` in type definition" }
+
+| [_* /local_structure_item: CLASS ext list(attribute) virtual_flag formal_class_parameters . LIDENT class_fun_binding list(post_item_attribute) list(and_class_declaration)]
   { "Expected class name for class definition" }
 
-| /structure_item: CLASS ext list(attribute) virtual_flag formal_class_parameters LIDENT . class_fun_binding list(post_item_attribute) list(and_class_declaration)
+| /local_structure_item: CLASS ext list(attribute) virtual_flag formal_class_parameters LIDENT . class_fun_binding list(post_item_attribute) list(and_class_declaration)
 | /list(and_class_declaration): AND list(attribute) virtual_flag formal_class_parameters LIDENT . class_fun_binding list(post_item_attribute) list(and_class_declaration)
   { "Expected `=`, `:` or binding pattern after class name in class definition" }
 
@@ -1907,14 +1925,14 @@ rule error_messages keywords = parse error
       /reversed_separated_nontrivial_llist(COMMA,core_type): core_type . COMMA core_type]
   { "Expected closing `)` or `,` in type list" }
 
-| [_* /structure_item: TYPE ext list(attribute) type_parameters type_longident . PLUSEQ private_flag reversed_bar_llist(extension_constructor) list(post_item_attribute)]
-| [_* /structure_item: TYPE ext list(attribute) NONREC type_parameters type_longident . PLUSEQ private_flag reversed_bar_llist(extension_constructor) list(post_item_attribute)]
+| [_* /local_structure_item: TYPE ext list(attribute) type_parameters type_longident . PLUSEQ private_flag reversed_bar_llist(extension_constructor) list(post_item_attribute)]
+| [_* /local_structure_item: TYPE ext list(attribute) NONREC type_parameters type_longident . PLUSEQ private_flag reversed_bar_llist(extension_constructor) list(post_item_attribute)]
 | [_* /signature_item: TYPE ext list(attribute) type_parameters type_longident . PLUSEQ private_flag reversed_bar_llist(extension_constructor_declaration) list(post_item_attribute)]
 | [_* /signature_item: TYPE ext list(attribute) NONREC type_parameters type_longident . PLUSEQ private_flag reversed_bar_llist(extension_constructor_declaration) list(post_item_attribute)]
   { "Expected `+=` after type path" }
 
-| [_* /structure_item: TYPE ext list(attribute) type_parameters type_longident PLUSEQ private_flag . reversed_bar_llist(extension_constructor) list(post_item_attribute)]
-| [_* /structure_item: TYPE ext list(attribute) NONREC type_parameters type_longident PLUSEQ private_flag . reversed_bar_llist(extension_constructor) list(post_item_attribute)]
+| [_* /local_structure_item: TYPE ext list(attribute) type_parameters type_longident PLUSEQ private_flag . reversed_bar_llist(extension_constructor) list(post_item_attribute)]
+| [_* /local_structure_item: TYPE ext list(attribute) NONREC type_parameters type_longident PLUSEQ private_flag . reversed_bar_llist(extension_constructor) list(post_item_attribute)]
 | [_* /signature_item: TYPE ext list(attribute) type_parameters type_longident PLUSEQ private_flag . reversed_bar_llist(extension_constructor_declaration) list(post_item_attribute)]
 | [_* /signature_item: TYPE ext list(attribute) NONREC type_parameters type_longident PLUSEQ private_flag . reversed_bar_llist(extension_constructor_declaration) list(post_item_attribute)]
   { "Expected a constructor after `+=` in type extension" }
@@ -2075,7 +2093,7 @@ rule error_messages keywords = parse error
 | [_* /list(generic_and_type_declaration(type_kind)): AND list(attribute) type_parameters . LIDENT type_kind reversed_llist(preceded(CONSTRAINT,constrain)) list(post_item_attribute) list(generic_and_type_declaration(type_kind))]
 | [_* /list(generic_and_type_declaration(type_subst_kind)): AND list(attribute) type_parameters . LIDENT COLONEQUAL nonempty_type_kind reversed_llist(preceded(CONSTRAINT,constrain)) list(post_item_attribute) list(generic_and_type_declaration(type_subst_kind))]
 | [_* /generic_type_declaration(nonrec_flag,type_kind): TYPE ext list(attribute) type_parameters . LIDENT type_kind reversed_llist(preceded(CONSTRAINT,constrain)) list(post_item_attribute)
-      /structure_item: TYPE ext list(attribute) type_parameters . type_longident PLUSEQ private_flag reversed_bar_llist(extension_constructor) list(post_item_attribute)]
+      /local_structure_item: TYPE ext list(attribute) type_parameters . type_longident PLUSEQ private_flag reversed_bar_llist(extension_constructor) list(post_item_attribute)]
 | [_* /generic_type_declaration(no_nonrec_flag,type_subst_kind): TYPE ext list(attribute) type_parameters . LIDENT COLONEQUAL nonempty_type_kind reversed_llist(preceded(CONSTRAINT,constrain)) list(post_item_attribute)
       /generic_type_declaration(nonrec_flag,type_kind): TYPE ext list(attribute) type_parameters . LIDENT type_kind reversed_llist(preceded(CONSTRAINT,constrain)) list(post_item_attribute)
       /signature_item: TYPE ext list(attribute) type_parameters . type_longident PLUSEQ private_flag reversed_bar_llist(extension_constructor_declaration) list(post_item_attribute)]
