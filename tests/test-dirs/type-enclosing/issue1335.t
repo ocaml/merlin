@@ -89,7 +89,7 @@ provide better result.
           "line": 1,
           "col": 25
         },
-        "type": "type t1 = [ `A of [ `A of 'a | `B ] as 'a | `B ]",
+        "type": "type t1 = [ `A of t1 as 'a | `B ]",
         "tail": "no"
       }
     ],

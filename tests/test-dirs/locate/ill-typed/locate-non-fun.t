@@ -36,7 +36,7 @@ When some typing error happens
     "type": "typer",
     "sub": [],
     "valid": true,
-    "message": "This expression has type Float.t list but an expression was expected of type   unit"
+    "message": "This expression has type float list but an expression was expected of type   unit"
   }
 
 Merlin is still able to inspect part of the ill-typed tree

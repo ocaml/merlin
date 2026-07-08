@@ -160,6 +160,8 @@ With index 0 only the first type is shown:
     val map : ('a -> 'b) -> 'a list -> 'b list
     val mapi : (int -> 'a -> 'b) -> 'a list -> 'b list
     val rev_map : ('a -> 'b) -> 'a list -> 'b list
+    val append_map : ('a -> 'b) -> 'a list -> 'b list -> 'b list
+    val rev_append_map : ('a -> 'b) -> 'a list -> 'b list -> 'b list
     val filter_map : ('a -> 'b option) -> 'a list -> 'b list
     val filter_mapi : (int -> 'a -> 'b option) -> 'a list -> 'b list
     val concat_map : ('a -> 'b list) -> 'a list -> 'b list

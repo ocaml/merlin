@@ -85,7 +85,7 @@
         "line": 4,
         "col": 5
       },
-      "type": "[ `A | `B | `C ]",
+      "type": "more",
       "tail": "no"
     }
   ]
@@ -195,7 +195,7 @@ FIXME: Not satisfying, expected core not more
         "line": 9,
         "col": 7
       },
-      "type": "[ `A | `B | `C ]",
+      "type": "more",
       "tail": "no"
     },
     {

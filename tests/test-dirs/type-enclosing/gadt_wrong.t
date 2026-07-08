@@ -27,7 +27,7 @@ Initially from issue https://github.com/ocaml/merlin/issues/1125
         "line": 3,
         "col": 7
       },
-      "type": "(module Int)",
+      "type": "'a",
       "tail": "no"
     },
     {

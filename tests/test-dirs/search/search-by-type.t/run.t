@@ -97,33 +97,33 @@
     "doc": null
   }
   {
+    "name": "List.append_map",
+    "type": "('a -> 'b) -> 'a list -> 'b list -> 'b list",
+    "cost": 5,
+    "doc": null
+  }
+  {
     "name": "ListLabels.mapi",
     "type": "f:(int -> 'a -> 'b) -> 'a list -> 'b list",
     "cost": 5,
     "doc": null
   }
   {
-    "name": "Seq.map",
-    "type": "('a -> 'b) -> 'a Seq.t -> 'b Seq.t",
-    "cost": 10,
+    "name": "List.rev_append_map",
+    "type": "('a -> 'b) -> 'a list -> 'b list -> 'b list",
+    "cost": 5,
     "doc": null
   }
   {
-    "name": "List.concat_map",
-    "type": "('a -> 'b list) -> 'a list -> 'b list",
-    "cost": 10,
+    "name": "ListLabels.append_map",
+    "type": "f:('a -> 'b) -> 'a list -> 'b list -> 'b list",
+    "cost": 5,
     "doc": null
   }
   {
-    "name": "List.filter_map",
-    "type": "('a -> 'b option) -> 'a list -> 'b list",
-    "cost": 10,
-    "doc": null
-  }
-  {
-    "name": "ListLabels.concat_map",
-    "type": "f:('a -> 'b list) -> 'a list -> 'b list",
-    "cost": 10,
+    "name": "ListLabels.rev_append_map",
+    "type": "f:('a -> 'b) -> 'a list -> 'b list -> 'b list",
+    "cost": 5,
     "doc": null
   }
 

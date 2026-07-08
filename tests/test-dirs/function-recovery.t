@@ -44,9 +44,9 @@
                     ]
                     Tfunction_body
                       expression (test.ml[3,104+21]..test.ml[3,104+28])
-                        attribute \"merlin.incorrect\"
+                        attribute \"ocaml.incorrect\"
                           []
-                        attribute \"merlin.saved-parts\"
+                        attribute \"ocaml.saved-parts\"
                           [
                             structure_item (_none_[0,0+-1]..[0,0+-1]) ghost
                               Pstr_eval
@@ -109,9 +109,9 @@
                           []
                       Tpat_any
                     expression (type.ml[1,0+53]..type.ml[1,0+55])
-                      attribute \"merlin.incorrect\"
+                      attribute \"ocaml.incorrect\"
                         []
-                      attribute \"merlin.saved-parts\"
+                      attribute \"ocaml.saved-parts\"
                         [
                           structure_item (_none_[0,0+-1]..[0,0+-1]) ghost
                             Pstr_eval

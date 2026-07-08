@@ -133,6 +133,18 @@ the type)
         },
         "end": {
           "line": 4,
+          "col": 12
+        },
+        "type": "'a",
+        "tail": "no"
+      },
+      {
+        "start": {
+          "line": 4,
+          "col": 8
+        },
+        "end": {
+          "line": 4,
           "col": 16
         },
         "type": "'a",
@@ -147,6 +159,18 @@ the type)
   {
     "class": "return",
     "value": [
+      {
+        "start": {
+          "line": 4,
+          "col": 8
+        },
+        "end": {
+          "line": 4,
+          "col": 12
+        },
+        "type": "'a",
+        "tail": "no"
+      },
       {
         "start": {
           "line": 4,
@@ -226,7 +250,8 @@ reference.  With no liba, we also can't see Libb.t is int.
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "The value x has type t = Liba.t but an expression was expected of type int"
+        "message": "The value x has type Liba.t but an expression was expected of type int
+  Type Liba.t is abstract because no corresponding cmi file was found in path."
       },
       {
         "start": {

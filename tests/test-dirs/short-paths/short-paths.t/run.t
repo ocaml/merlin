@@ -133,7 +133,7 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "The value x has type t = M.t but an expression was expected of type unit"
+        "message": "The value x has type M.t but an expression was expected of type unit"
       },
       {
         "start": {

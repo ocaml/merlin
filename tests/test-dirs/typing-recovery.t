@@ -133,9 +133,9 @@
                         []
                         None
                     expression (test.ml[5,58+9]..test.ml[5,58+10])
-                      attribute \"merlin.incorrect\"
+                      attribute \"ocaml.incorrect\"
                         []
-                      attribute \"merlin.saved-parts\"
+                      attribute \"ocaml.saved-parts\"
                         [
                           structure_item (_none_[0,0+-1]..[0,0+-1]) ghost
                             Pstr_eval
@@ -151,13 +151,13 @@
                     pattern (test.ml[6,69+4]..test.ml[6,69+5])
                       Tpat_value
                       pattern (test.ml[6,69+4]..test.ml[6,69+5])
-                        attribute \"merlin.incorrect\"
+                        attribute \"ocaml.incorrect\"
                           []
                         Tpat_any
                     expression (test.ml[6,69+9]..test.ml[6,69+12])
-                      attribute \"merlin.incorrect\"
+                      attribute \"ocaml.incorrect\"
                         []
-                      attribute \"merlin.saved-parts\"
+                      attribute \"ocaml.saved-parts\"
                         [
                           structure_item (_none_[0,0+-1]..[0,0+-1]) ghost
                             Pstr_eval
@@ -261,7 +261,7 @@
               Nolabel
               Param_pat
                 pattern (test2.ml[2,15+7]..test2.ml[2,15+8])
-                  attribute \"merlin.incorrect\"
+                  attribute \"ocaml.incorrect\"
                     []
                   extra (test2.ml[2,15+6]..test2.ml[2,15+13])
                     Tpat_extra_constraint
@@ -272,7 +272,7 @@
             ]
             Tfunction_body
               expression (test2.ml[2,15+22]..test2.ml[2,15+24])
-                attribute \"merlin.incorrect\"
+                attribute \"ocaml.incorrect\"
                   []
                 extra (test2.ml[2,15+22]..test2.ml[2,15+24])
                   Texp_constraint
@@ -332,7 +332,6 @@ First a simple case:
         core_type (test.mli[1,0+11]..test.mli[1,0+14])
           Ttyp_constr \"int/1!\"
           []
-        []
     signature_item (test.mli[3,16+0]..test.mli[3,16+21])
       Tsig_value
       value_description foo2/275 (test.mli[3,16+0]..test.mli[3,16+21])
@@ -347,7 +346,6 @@ First a simple case:
             core_type (test.mli[3,16+17]..test.mli[3,16+21])
               Ttyp_any
           ]
-        []
     signature_item (test.mli[5,39+0]..test.mli[5,39+21])
       Tsig_value
       value_description foo3/276 (test.mli[5,39+0]..test.mli[5,39+21])
@@ -363,7 +361,6 @@ First a simple case:
               Ttyp_constr \"char/2!\"
               []
           ]
-        []
   ]
   
   
@@ -420,7 +417,6 @@ And now, with an error deep in a submodule:
         core_type (test2.mli[1,0+11]..test2.mli[1,0+14])
           Ttyp_constr \"int/1!\"
           []
-        []
     signature_item (test2.mli[3,16+0]..test2.mli[10,149+3])
       Tsig_module (Present)
       M/280
@@ -433,7 +429,6 @@ And now, with an error deep in a submodule:
                 core_type (test2.mli[4,31+14]..test2.mli[4,31+17])
                   Ttyp_constr \"int/1!\"
                   []
-                []
             signature_item (test2.mli[5,49+2]..test2.mli[9,143+5])
               Tsig_module (Present)
               N/279
@@ -446,7 +441,6 @@ And now, with an error deep in a submodule:
                         core_type (test2.mli[6,66+17]..test2.mli[6,66+20])
                           Ttyp_constr \"int/1!\"
                           []
-                        []
                     signature_item (test2.mli[7,87+4]..test2.mli[7,87+27])
                       Tsig_value
                       value_description foo212/277 (test2.mli[7,87+4]..test2.mli[7,87+27])
@@ -461,7 +455,6 @@ And now, with an error deep in a submodule:
                             core_type (test2.mli[7,87+23]..test2.mli[7,87+27])
                               Ttyp_any
                           ]
-                        []
                     signature_item (test2.mli[8,115+4]..test2.mli[8,115+27])
                       Tsig_value
                       value_description foo213/278 (test2.mli[8,115+4]..test2.mli[8,115+27])
@@ -477,7 +470,6 @@ And now, with an error deep in a submodule:
                               Ttyp_constr \"char/2!\"
                               []
                           ]
-                        []
                   ]
           ]
     signature_item (test2.mli[12,154+0]..test2.mli[12,154+21])
@@ -495,7 +487,6 @@ And now, with an error deep in a submodule:
               Ttyp_constr \"char/2!\"
               []
           ]
-        []
   ]
   
   

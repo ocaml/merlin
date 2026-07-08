@@ -28,15 +28,7 @@ the type should be known):
   {
     "class": "return",
     "value": {
-      "entries": [
-        {
-          "name": "foobar",
-          "kind": "Label",
-          "desc": "T.t -> int",
-          "info": "",
-          "deprecated": false
-        }
-      ],
+      "entries": [],
       "context": null
     },
     "notifications": []
@@ -67,15 +59,7 @@ the type should be known):
   {
     "class": "return",
     "value": {
-      "entries": [
-        {
-          "name": "test_other",
-          "kind": "Label",
-          "desc": "T.t -> float",
-          "info": "",
-          "deprecated": false
-        }
-      ],
+      "entries": [],
       "context": null
     },
     "notifications": []
