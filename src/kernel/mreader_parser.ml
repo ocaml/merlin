@@ -91,7 +91,7 @@ let resume_parse =
       begin match I.resume checkpoint with
       | checkpoint' -> normal acc tokens checkpoint'
       | exception exn ->
-        Msupport.raise_error exn;
+        Typing_recovery.log_or_raise exn;
         let token =
           match acc with
           | [] -> assert false
@@ -108,7 +108,7 @@ let resume_parse =
       begin match I.resume checkpoint with
       | checkpoint' -> check_for_error acc token tokens env checkpoint'
       | exception exn ->
-        Msupport.raise_error exn;
+        Typing_recovery.log_or_raise exn;
         enter_error acc token tokens env
       end
     | checkpoint ->
@@ -161,7 +161,7 @@ let parse initial steps tokens initial_pos =
   (List.rev acc, result)
 
 let run_parser warnings lexer previous kind =
-  Msupport.catch_errors warnings errors_ref @@ fun () ->
+  Msupport.catch_errors_with_warning warnings errors_ref @@ fun () ->
   let tokens = Mreader_lexer.tokens lexer in
   let initial_pos = Mreader_lexer.initial_position lexer in
   match kind with

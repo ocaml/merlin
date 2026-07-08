@@ -263,7 +263,7 @@ let collect_every_pattern_for_expression parent =
                   Typedtree.
                     { f =
                         (fun p ->
-                          List.memq Msupport.incorrect_attribute
+                          List.memq Typing_recovery_state.incorrect_attribute
                             ~set:p.pat_attributes)
                     }
                 in
