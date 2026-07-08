@@ -807,7 +807,7 @@ and transl_type_aux env ~row_context ~aliased ~policy styp =
 and transl_fields env ~policy ~row_context o fields =
   (* Using a reference to a map rather than a hash table gives us
      a canonical order when iterating. *)
-  let module HMap = Misc.Stdlib.String.Map in
+  let module HMap = Std.String.Map in
   let hfields = ref HMap.empty in
   let add_typed_field loc l ty =
     try
@@ -817,7 +817,7 @@ and transl_fields env ~policy ~row_context o fields =
         with Unify _trace ->
           Error.log_and_raise loc env (Method_mismatch (l, ty, ty'))
     with Not_found ->
-      hfields := HMap.add l ty !hfields in
+      hfields := HMap.add ~key:l ~data:ty !hfields in
   let add_field {pof_desc; pof_loc; pof_attributes;} =
     let of_loc = pof_loc in
     let of_attributes = pof_attributes in
@@ -864,7 +864,7 @@ and transl_fields env ~policy ~row_context o fields =
     { of_desc; of_loc; of_attributes; }
   in
   let object_fields = List.map add_field fields in
-  let fields = HMap.fold (fun s ty l -> (s, ty) :: l) !hfields [] in
+  let fields = HMap.fold ~f:(fun ~key:s ~data:ty l -> (s, ty) :: l) !hfields ~init:[] in
   let ty_init =
      match o with
      | Closed -> newty Tnil
