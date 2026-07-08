@@ -37,5 +37,5 @@ let rewrite parsetree cfg =
         | None | Some `Already_displayed ->
           Format.fprintf fmt "%s" (Printexc.to_string exn)
         | Some (`Ok err) -> Location.print_main fmt err);
-    Msupport.raise_error exn;
+    Typing_recovery.log_or_raise exn;
     parsetree

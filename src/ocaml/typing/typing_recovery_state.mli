@@ -17,6 +17,7 @@
     saved types after turning them into attributes *)
 val recovery_attributes : Parsetree.attributes -> Parsetree.attributes
 
+val incorrect_attribute : Parsetree.attribute
 
 (** [with_saved_types ?save_part f] run [f] with a fresh empty saved-types
     buffer, then optionally (with [save_part]) save one derived value

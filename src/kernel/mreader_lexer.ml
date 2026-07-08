@@ -75,7 +75,7 @@ let initial_position config =
   }
 
 let make warnings keywords config source =
-  Msupport.catch_errors warnings (ref []) @@ fun () ->
+  Msupport.catch_errors_with_warning warnings (ref []) @@ fun () ->
   let items =
     get_tokens keywords (initial_position config) (Msource.text source) []
   in

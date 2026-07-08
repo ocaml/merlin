@@ -290,7 +290,7 @@ let type_in_env ?(verbosity = Verbosity.default) ?keywords ~context env ppf expr
     | _ -> failwith "unhandled expression"
   in
   Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
-  Msupport.uncatch_errors @@ fun () ->
+  Typing_recovery.uncatch_errors @@ fun () ->
   match parse_expr ?keywords @@ protect expr with
   | exception exn ->
     print_exn ppf exn;

@@ -293,7 +293,9 @@ let process ?state ?(pp_time = ref 0.0) ?(reader_time = ref 0.0)
            reader
          in
          let caught = ref [] in
-         Msupport.catch_errors Mconfig.(config.ocaml.warnings) caught
+         Msupport.catch_errors_with_warning
+           Mconfig.(config.ocaml.warnings)
+           caught
          @@ fun () ->
          (* Currently the cache is invalidated even for source changes that don't
              change the parsetree. To avoid that, we'd have to digest the

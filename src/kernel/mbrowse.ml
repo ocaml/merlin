@@ -38,7 +38,8 @@ let node_of_binary_part = Browse_raw.node_of_binary_part
 let fold_node f env t acc =
   let acc =
     match
-      Msupport.get_saved_types_from_attributes (Browse_raw.node_attributes t)
+      Typing_recovery_state.get_saved_types_from_attributes
+        (Browse_raw.node_attributes t)
     with
     | [] -> acc
     | parts ->
