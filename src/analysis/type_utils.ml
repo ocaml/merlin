@@ -124,14 +124,14 @@ module Printtyp = struct
 
   let verbose_modtype env ppf t = Printtyp.modtype ppf (expand_sig env t)
 
-  let select_by_verbosity ~default ?(smart = default) ~verbose =
+  let select_by_verbosity ~default ?(smart = default) ~verbose () =
     match !verbosity with
     | Smart -> smart
     | Lvl 0 -> default
     | Lvl _ -> verbose
 
   let type_scheme env ppf ty =
-    (select_by_verbosity ~default:type_scheme ~verbose:(verbose_type_scheme env))
+    (select_by_verbosity ~default:type_scheme ~verbose:(verbose_type_scheme env)) ()
       ppf ty
 
   let tree_of_typ_scheme te =
@@ -140,7 +140,7 @@ module Printtyp = struct
 
   let type_declaration env id ppf =
     (select_by_verbosity ~default:type_declaration
-       ~verbose:(verbose_type_declaration env))
+       ~verbose:(verbose_type_declaration env) ())
       id ppf
 
   let modtype env ppf mty =
@@ -148,7 +148,7 @@ module Printtyp = struct
       | Types.Mty_ident _ | Mty_alias _ -> verbose_modtype env ppf mty
       | _ -> modtype ppf mty
     in
-    (select_by_verbosity ~default:modtype ~verbose:(verbose_modtype env) ~smart)
+    (select_by_verbosity ~default:modtype ~verbose:(verbose_modtype env) ~smart ())
       ppf mty
 
   let wrap_printing_env env ~verbosity:v f =
