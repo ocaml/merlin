@@ -296,7 +296,7 @@ let check_type_decl env sg loc id row_id newdecl decl =
     | None -> env
     | Some fresh_row_id -> Env.add_type ~check:false fresh_row_id newdecl env
   in
-  let env = Env.add_signature sg env in
+  let env = Env.add_signature ~long_path:true sg env in
   let abs_env =
     let abs_ty = abstractify_type newdecl in
     Env.add_local_constraint path abs_ty env

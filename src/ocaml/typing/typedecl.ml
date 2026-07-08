@@ -115,9 +115,12 @@ let get_unboxed_from_attributes sdecl =
 
 (* Enter all declared types in the environment as abstract types *)
 
-let add_type ~check ?shape id decl env =
+let add_type ~long_path ~check ?shape id decl env =
   Builtin_attributes.warning_scope ~ppwarning:false decl.type_attributes
-    (fun () -> Env.add_type ~check ?shape id decl env)
+    (fun () ->
+       match long_path with
+       | true -> Env.add_type_long_path ~check ?shape id decl env
+       | false -> Env.add_type ~check ?shape id decl env)
 
 (* Add a dummy type declaration to the environment, with the given arity.
    The [type_kind] is [Type_abstract], but there is a generic [type_manifest]
@@ -165,7 +168,7 @@ let enter_type ?abstract_abbrevs rec_flag env sdecl (id, uid) =
       type_uid = uid;
     }
   in
-  add_type ~check:true id decl env
+  add_type ~long_path:true ~check:true id decl env
 
 (* Determine if a type's values are represented by floats at run-time. *)
 let is_float env ty =
@@ -1249,7 +1252,7 @@ let update_type temp_env env id loc =
 let add_types_to_env decls shapes env =
   List.fold_right2
     (fun (id, decl) shape env ->
-      add_type ~check:true ~shape id decl env)
+      add_type ~long_path:false ~check:true ~shape id decl env)
     decls shapes env
 
 (* Translate a set of type declarations, mutually recursive or not *)
@@ -1790,6 +1793,7 @@ let check_unboxable env loc ty =
   let all_unboxable_types = Btype.fold_type_expr check_type Path.Set.empty ty in
   Path.Set.fold
     (fun p () ->
+       let p = Out_type.shorten_type_path env p in
        Location.prerr_warning loc
          (Warnings.Unboxable_type_in_prim_decl (Path.name p))
     )
