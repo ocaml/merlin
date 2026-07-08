@@ -3045,6 +3045,7 @@ let check_unused
 
 (** Some delayed checks, to be executed after typing the whole
     compilation unit or toplevel phrase *)
+type delayed_check = ((unit -> unit) * Warnings.state)
 let delayed_checks = ref []
 let reset_delayed_checks () = delayed_checks := []
 let add_delayed_check f =
@@ -7343,7 +7344,7 @@ and type_cases
     ~type_body:begin
       fun { pc_guard; pc_rhs } pat ~when_env ~ext_env ~cont ~ty_expected
         ~ty_infer ~contains_gadt:_ ->
-        let cont = Option.map (fun (id,_) -> id) cont in
+        (* let cont = Option.map (fun (id,_) -> id) cont in *)
         let guard =
           match pc_guard with
           | None -> None
