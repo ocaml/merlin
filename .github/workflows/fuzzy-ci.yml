@@ -142,6 +142,10 @@ jobs:
           opam monorepo pull --lockfile=irmin.opam.locked --yes
         working-directory: irmin
 
+      - name: Debug ppxlib version
+        run: opam monorepo list
+        working-directory: irmin
+
       - name: Prune Irmin
         if: steps.irmin-cache.outputs.cache-hit != 'true'
         run: |
