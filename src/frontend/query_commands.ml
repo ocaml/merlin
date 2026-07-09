@@ -753,7 +753,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
           (Location.loc_of_report err).loc_ghost
           &&
           match exn with
-          | Msupport.Warning _ -> true
+          | Typing_recovery.Warning _ -> true
           | _ -> false
         then None
         else Some err
@@ -775,7 +775,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     let typer_errors = List.filter_map ~f:filter_typer_error typer_errors in
     (* Track first parsing error *)
     let filter_parser_error = function
-      | Msupport.Warning _ as exn -> filter_error exn
+      | Typing_recovery.Warning _ as exn -> filter_error exn
       | exn ->
         let result = filter_error exn in
         begin match result with

@@ -31,7 +31,3 @@
 (** Any [raise_error] invoked inside catch_errors will be added to the list. *)
 val catch_errors_with_warning :
   Warnings.state -> exn list ref -> (unit -> 'a) -> 'a
-
-(** Warnings can also be stored in the caught exception list, wrapped inside
-    this exception *)
-exception Warning of Location.t * string

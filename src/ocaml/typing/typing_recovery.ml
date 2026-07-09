@@ -99,3 +99,39 @@ module Error_set = Set.Make (struct
       else
         1
   end)
+
+
+(* Merlin specifics *)
+
+exception Warning of Location.t * string
+
+
+let prerr_warning loc w =
+  match !ref_errors with
+  | None -> () (*Location.print_warning loc Format.err_formatter w*)
+  | Some (l, _) -> (
+    let ppf, to_string = Std.Format.to_string () in
+    Location.print_warning loc ppf w;
+    match to_string () with
+    | "" -> ()
+    | s -> l := Warning (loc, s) :: !l)
+
+let prerr_alert loc w =
+  match !ref_errors with
+  | None -> () (*Location.print_warning loc Format.err_formatter w*)
+  | Some (l, _) -> (
+    let ppf, to_string = Std.Format.to_string () in
+    Location.print_alert loc ppf w;
+    match to_string () with
+    | "" -> ()
+    | s -> l := Warning (loc, s) :: !l)
+
+let () =
+  Location.register_error_of_exn (function
+    | Warning (loc, str) ->
+      Some (Location.error ~loc ~source:Location.Warning str)
+    | _ -> None)
+
+let () = Location.prerr_warning_ref := prerr_warning
+
+let () = Location.prerr_alert_ref := prerr_alert
