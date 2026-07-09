@@ -5602,6 +5602,15 @@ and type_expect_
       | _ ->
           Error.log_and_raise loc env Invalid_atomic_loc_payload
       end
+
+  | Pexp_extension ({ txt; _ } as s, payload) when txt = Ast_helper.hole_txt ->
+      let attr = Ast_helper.Attr.mk s payload in
+      re { exp_desc = Texp_typed_hole;
+           exp_loc = loc; exp_extra = [];
+           exp_type = instance ty_expected;
+           exp_attributes = attr :: sexp.pexp_attributes;
+           exp_env = env }
+
   | Pexp_extension ext ->
       raise (Error_forward (Builtin_attributes.error_of_extension ext))
 
@@ -7005,6 +7014,8 @@ and type_construct env ~sexp lid sarg ty_expected_explained =
     | None -> Rejected
     | Some _ ->
       begin match sargs with
+      | [{pexp_desc = Pexp_extension ({ txt; _ }, _)}]
+          when txt = Ast_helper.hole_txt -> Required
       | [{pexp_desc =
             Pexp_ident _ |
             Pexp_record (_, (Some {pexp_desc = Pexp_ident _}| None))}] ->
