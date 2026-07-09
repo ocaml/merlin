@@ -2558,16 +2558,33 @@ and type_module_aux ~alias ~strengthen ~funct_body anchor env smod =
       let arg, arg_shape =
         type_module ~alias ~strengthen:true ~funct_body anchor env sarg
       in
-      let mty = transl_modtype env smty in
-      let md, final_shape =
-        wrap_constraint_with_shape env true arg mty.mty_type arg_shape
-          (Tmodtype_explicit mty)
-      in
-      { md with
-        mod_loc = smod.pmod_loc;
-        mod_attributes = smod.pmod_attributes;
-      },
-      final_shape
+      begin try
+          let mty = transl_modtype env smty in
+          let md, final_shape =
+            wrap_constraint_with_shape env true arg mty.mty_type arg_shape
+              (Tmodtype_explicit mty)
+          in
+          { md with
+            mod_loc = smod.pmod_loc;
+            mod_attributes = smod.pmod_attributes;
+          },
+          final_shape
+        with exn ->
+          (* [merlin] For better Construct error messages we need to
+             keep holes in the recovered typedtree *)
+          match sarg.pmod_desc with
+          | Pmod_extension ({ txt; _ }, _) when txt = Ast_helper.hole_txt ->
+            Typing_recovery.log_or_raise exn;
+            {
+              mod_desc = Tmod_typed_hole;
+              mod_type = Mty_for_hole;
+              mod_loc = sarg.pmod_loc;
+              mod_env = env;
+              mod_attributes = sarg.pmod_attributes;
+            },
+            Shape.dummy_mod
+          | _ -> raise exn
+      end
   | Pmod_unpack sexp ->
       let exp =
         Ctype.with_local_level_generalize_structure_if_principal
@@ -2599,6 +2616,13 @@ and type_module_aux ~alias ~strengthen ~funct_body anchor env smod =
         mod_attributes = smod.pmod_attributes;
         mod_loc = smod.pmod_loc },
       Shape.leaf_for_unpack ()
+  | Pmod_extension ({ txt; _ }, _) when txt = Ast_helper.hole_txt ->
+      { mod_desc = Tmod_typed_hole;
+        mod_type = Mty_for_hole;
+        mod_env = env;
+        mod_attributes = smod.pmod_attributes;
+        mod_loc = smod.pmod_loc },
+      Shape.dummy_mod
   | Pmod_extension ext ->
       raise (Error_forward (Builtin_attributes.error_of_extension ext))
 
