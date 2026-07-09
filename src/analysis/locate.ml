@@ -1058,16 +1058,19 @@ let get_doc ~config:mconfig ~env ~local_defs ~comments ~pos =
     | `Found_loc loc ->
       (* based on https://v2.ocaml.org/manual/doccomments.html#ss:label-comments: *)
       let browse = Mbrowse.of_typedtree local_defs in
-      let _, deepest_before =
-        Mbrowse.(leaf_node @@ deepest_before loc.Location.loc_start [ browse ])
+      (* We inspect the browse tree at the loc of the delcaration to figure out what kind
+         of declaration it is. Note that the head of the browse tree might be a node
+         inside the declaration rather than the declaration itself. *)
+      let declaration =
+        Mbrowse.deepest_before loc.Location.loc_start [ browse ]
+        |> List.map ~f:snd
       in
       let after_only =
-        begin match deepest_before with
-        | Browse_raw.Constructor_declaration _ -> true
-        (* The remaining `true` cases are currently not reachable *)
-        | Label_declaration _ | Record_field _ | Row_field _ -> true
+        match declaration with
+        | Constructor_declaration _ :: _ -> true
+        | Core_type _ :: Constructor_declaration _ :: _ -> true
+        | Core_type _ :: Core_type _ :: Label_declaration _ :: _ -> true
         | _ -> false
-        end
       in
       doc_from_comment_list ~after_only ~buffer_comments:comments loc
     | `Builtin _ ->

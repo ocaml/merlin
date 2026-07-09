@@ -46,14 +46,11 @@ FIXME: this should just be "e"
 Get doc for f
 FIXME: this should just be "f"
   $ document_pos 13:19
-  e
   f
   g
 
 Get doc for g
-FIXME: this should just be "g"
   $ document_pos 13:24
-  f
   g
 
   $ cat > test.ml <<EOF
@@ -95,15 +92,11 @@ Get doc for e
   e
 
 Get doc for f
-FIXME: this should just be "f"
   $ document_pos 19:19
-  e
   f
 
 Get doc for g
-FIXME: this should just be "g"
   $ document_pos 19:24
-  f
   g
 
   $ cat > test.ml <<EOF
@@ -124,14 +117,11 @@ FIXME: this should just be "A"
 Get doc for B
 FIXME: this should just be "B"
   $ document_pos 6:14
-  A
   B
   C
 
 Get doc for C
-FIXME: this should just be "C"
   $ document_pos 6:19
-  B
   C
 
   $ cat > test.ml <<EOF
@@ -159,14 +149,11 @@ FIXME: this should just be "A"
 Get doc for B
 FIXME: this should just be "B"
   $ document_pos 12:17
-  A
   B
   C
 
 Get doc for C
-FIXME: this should just be "C"
   $ document_pos 12:25
-  B
   C
 
 Get doc for e
@@ -178,14 +165,11 @@ FIXME: this should just be "e"
 Get doc for f
 FIXME: this should just be "f"
   $ document_pos 13:19
-  e
   f
   g
 
 Get doc for g
-FIXME: this should just be "g"
   $ document_pos 13:24
-  f
   g
 
   $ cat > test.ml <<EOF
@@ -208,14 +192,11 @@ FIXME: this should just be "e"
 Get doc for f
 FIXME: this should just be "f"
   $ document_pos 8:25
-  e
   f
   g
 
 Get doc for g
-FIXME: this should just be "g"
   $ document_pos 8:30
-  f
   g
 
 We also need to be careful about doc comments on subsequent lines.
@@ -256,7 +237,6 @@ Get doc for e
 Get doc for f
 FIXME: this should be empty
   $ document_pos 13:19
-  e
   g
 
 Get doc for g
