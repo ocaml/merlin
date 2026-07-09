@@ -1004,9 +1004,9 @@ let doc_from_comment_list ~buffer_source ~after_only ~buffer_comments loc =
       List.iter comments ~f:(fun (c, l) ->
           Format.fprintf fmt "  (%S, %a);\n" c Location.print_loc l);
       Format.fprintf fmt "]\n");
-  match Ocamldoc.associate_comment ~source ~after_only comments loc with
-  | None, _ -> `No_documentation
-  | Some doc, _ -> `Found doc
+  match Ocamldoc.associate_comments ~source ~after_only comments loc with
+  | None -> `No_documentation
+  | Some doc -> `Found doc
 
 (* Get doc relies on different heuristics depending on the situation:
    - First it locates the declaration.
