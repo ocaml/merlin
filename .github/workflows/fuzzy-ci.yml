@@ -116,7 +116,7 @@ jobs:
       - name: Download Irmin tarball
         if: steps.irmin-cache.outputs.cache-hit != 'true'
         run: |
-          wget https://github.com/mirage/irmin/releases/download/$IRMIN_VERSION/irmin-$IRMIN_VERSION.tbz
+          wget "https://github.com/mirage/irmin/releases/download/$IRMIN_VERSION/irmin-$IRMIN_VERSION.tbz"
 
       - name: Create irmin dir
         if: steps.irmin-cache.outputs.cache-hit != 'true'
@@ -124,12 +124,12 @@ jobs:
 
       - name: Decompress Irmin tarball
         if: steps.irmin-cache.outputs.cache-hit != 'true'
-        run: tar xvf irmin-$IRMIN_VERSION.tbz -C irmin --strip-components=1
+        run: tar xvf "irmin-$IRMIN_VERSION.tbz" -C irmin --strip-components=1
 
       - name: Get Irmin's lock files
         if: steps.irmin-cache.outputs.cache-hit != 'true'
         run: |
-          cp .github/fuzzy-ci-helpers/irmin.$IRMIN_VERSION.opam.locked irmin/irmin.opam.locked
+          cp ".github/fuzzy-ci-helpers/irmin.$IRMIN_VERSION.opam.locked" irmin/irmin.opam.locked
 
       - name: Install opam monorepo
         if: steps.irmin-cache.outputs.cache-hit != 'true'
