@@ -3411,20 +3411,20 @@ let gen_annot target annots =
     ~use_summaries:false
     annots
 
-let collect_recovery_errors unit exn_list =
-  let error_list =
-    List.fold_right (fun exn set ->
-        match Location.error_of_exn exn with
-        | Some (`Ok error) -> Typing_recovery.Error_set.add error set
-        | Some `Already_displayed
-        | None -> set
-      ) exn_list (Typing_recovery.Error_set.empty)
-  in
-  (* In recovery mode, he location should point to the actual input file
-     rather than the pretty source name for humans (since the goal of
-     the recovery is to be instrumented by Merlin). *)
-  raise (Errors (Location.in_file
-                   (Unit_info.input_source_file unit), error_list))
+(* let collect_recovery_errors unit exn_list = *)
+(*   let error_list = *)
+(*     List.fold_right (fun exn set -> *)
+(*         match Location.error_of_exn exn with *)
+(*         | Some (`Ok error) -> Typing_recovery.Error_set.add error set *)
+(*         | Some `Already_displayed *)
+(*         | None -> set *)
+(*       ) exn_list (Typing_recovery.Error_set.empty) *)
+(*   in *)
+(*   (\* In recovery mode, he location should point to the actual input file *)
+(*      rather than the pretty source name for humans (since the goal of *)
+(*      the recovery is to be instrumented by Merlin). *\) *)
+(*   raise (Errors (Location.in_file *)
+(*                    (Unit_info.input_source_file unit), error_list)) *)
 
 
 let type_implementation target initial_env ast =
@@ -3441,15 +3441,16 @@ let type_implementation target initial_env ast =
       if !Clflags.print_types then (* #7656 *)
         ignore @@ Warnings.parse_options false "-32-34-37-38-60";
       let (str, sg, names, shape, finalenv) =
-        if !Clflags.typing_recovery then
-          let caught = ref [] in
-          let result =
-            Typing_recovery.catch_errors caught
-              (fun () -> type_structure initial_env ast)
-          in match !caught with
-          | [] -> result
-          | exn_list -> collect_recovery_errors target exn_list
-        else
+        (* NOTE: @xvw, the catch error is done at the Mtyper level *)
+        (* if !Clflags.typing_recovery then *)
+        (*   let caught = ref [] in *)
+        (*   let result = *)
+        (*     Typing_recovery.catch_errors caught *)
+        (*       (fun () -> type_structure initial_env ast) *)
+        (*   in match !caught with *)
+        (*   | [] -> result *)
+        (*   | exn_list -> collect_recovery_errors target exn_list *)
+        (* else *)
           type_structure initial_env ast
       in
       let shape =
@@ -3547,16 +3548,16 @@ let save_signature target tsg initial_env cmi =
   Cmt_format.save_cmt (Unit_info.cmti target)
     (Cmt_format.Interface tsg) initial_env (Some cmi) None
 
-let type_interface target env ast =
-  if !Clflags.typing_recovery then
-    let caught = ref [] in
-    let result =
-      Typing_recovery.catch_errors caught
-        (fun () -> transl_signature env ast)
-    in match !caught with
-    | [] -> result
-    | exn_list -> collect_recovery_errors target exn_list
-  else
+let type_interface _target env ast =
+  (* if !Clflags.typing_recovery then *)
+  (*   let caught = ref [] in *)
+  (*   let result = *)
+  (*     Typing_recovery.catch_errors caught *)
+  (*       (fun () -> transl_signature env ast) *)
+  (*   in match !caught with *)
+  (*   | [] -> result *)
+  (*   | exn_list -> collect_recovery_errors target exn_list *)
+  (* else *)
     transl_signature env ast
 
 (* "Packaging" of several compilation units into one unit
