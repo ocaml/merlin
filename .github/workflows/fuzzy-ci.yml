@@ -43,7 +43,7 @@ env:
 
   # Pinned Merl-an version commit hash
   MERL_AN_SHA: a61cb2b6c2f57baf00b88a74f67b332c459575ef
-  
+
   # The compiler version used on the respective branches. It also needs to form part of Irmin's build cache key.
   # Bump either of these whenever the compiler version is bumped on either of the two branches.
   merge_branch_COMPILER_VERSION: ocaml-base-compiler.5.5.0
@@ -130,6 +130,7 @@ jobs:
         if: steps.irmin-cache.outputs.cache-hit != 'true'
         run: |
           cp ".github/fuzzy-ci-helpers/irmin.$IRMIN_VERSION.opam.locked" irmin/irmin.opam.locked
+          cat irmin/irmin.opam.locked
 
       - name: Install opam monorepo
         if: steps.irmin-cache.outputs.cache-hit != 'true'
