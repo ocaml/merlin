@@ -11,6 +11,7 @@ unreleased
       project's source root. (#2097)
     - Reproduce and fix a load_path staleness issue particularly visible when
       using ocaml-lsp and dune in watch mode (#2109)
+    - Fix bug in `document` query (#2092)
   + ocaml index
     - Fix staleness detection in the presence of ppxes. (#2110)
 
