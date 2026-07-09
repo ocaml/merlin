@@ -31,5 +31,3 @@ let catch_errors_with_warning warnings errors callback =
   Warnings.restore warnings;
   Typing_recovery.catch_errors errors (fun () ->
       Misc.try_finally ~always:(fun () -> Warnings.restore warnings') callback)
-
-exception Warning of Location.t * string

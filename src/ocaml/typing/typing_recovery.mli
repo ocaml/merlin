@@ -64,3 +64,9 @@ val erroneous_type_check : Types.type_expr -> bool
     same location. *)
 
 module Error_set : Set.S with type elt = Location.error
+
+(* Merlin specifics *)
+
+(** Warnings can also be stored in the caught exception list, wrapped inside
+    this exception *)
+exception Warning of Location.t * string
