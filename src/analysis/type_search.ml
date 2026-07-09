@@ -73,8 +73,9 @@ let doc_to_option = function
   | `Builtin doc | `Found doc -> Some doc
   | _ -> None
 
-let get_doc ~config ~env ~local_defs ~comments ~pos name =
-  Locate.get_doc ~config ~env ~local_defs ~comments ~pos (`User_input name)
+let get_doc ~buffer_source ~config ~env ~local_defs ~comments ~pos name =
+  Locate.get_doc ~buffer_source ~config ~env ~local_defs ~comments ~pos
+    (`User_input name)
   |> doc_to_option
 
 let compare_result Query_protocol.{ cost = cost_a; name = a; doc = doc_a; _ }

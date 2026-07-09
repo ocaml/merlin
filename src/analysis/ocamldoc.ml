@@ -14,14 +14,27 @@
 
 (** Pops comments from a list of comments (string * loc) to find the ones that
    are associated to a given location. Also returns the remaining comments after
-   the location. *)
-let associate_comment ~after_only comments loc nextloc =
+   the location. [source] is the text of the document. *)
+let associate_comment ~source ~after_only comments loc =
   let lstart = loc.Location.loc_start.Lexing.pos_lnum
   and lend = loc.Location.loc_end.Lexing.pos_lnum in
-  let isnext c =
-    nextloc <> Location.none
-    && nextloc.Location.loc_start.Lexing.pos_cnum
-       < c.Location.loc_end.Lexing.pos_cnum
+  (* A comment on a line after the item it documents must be the first thing on
+     its line; otherwise it belongs to the code preceding it. If the source is not
+     available, assume it is. *)
+  let starts_its_line cloc =
+    match source with
+    | None -> true
+    | Some source ->
+      let start = cloc.Location.loc_start.pos_bol in
+      let stop = min cloc.Location.loc_start.pos_cnum (String.length source) in
+      let rec only_blanks_from i =
+        if i >= stop then true
+        else
+          match source.[i] with
+          | ' ' | '\t' -> only_blanks_from (i + 1)
+          | _ -> false
+      in
+      only_blanks_from start
   in
   let rec aux = function
     | [] -> (None, [])
@@ -39,8 +52,8 @@ let associate_comment ~after_only comments loc nextloc =
       if cend < lstart - 1 || (cstart < lend && after_only) then aux comments
       else if
         cstart > lend + 1
-        || isnext cloc
         || (cstart > lstart && cend < lend (* keep inner comments *))
+        || (cstart > lend && not (starts_its_line cloc))
       then (None, (comment, cloc) :: comments)
       else if
         String.length comment < 2

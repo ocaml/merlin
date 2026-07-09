@@ -1,4 +1,4 @@
-The "document" command sometimes concatenates documentation for consecutive entries of variants or records.
+The "document" command used to concatenate documentation for consecutive entries of variants or records (issue #1983).
 
   $ document_pos () {
   >   pos="$1"
@@ -22,32 +22,24 @@ The "document" command sometimes concatenates documentation for consecutive entr
   > EOF
 
 Get doc for A
-FIXME: this should just be "A"
   $ document_pos 12:9
   A
-  B
 
 Get doc for B
-FIXME: this should just be "B"
   $ document_pos 12:12
   B
-  C
 
 Get doc for C
   $ document_pos 12:15
   C
 
 Get doc for e
-FIXME: this should just be "e"
   $ document_pos 13:14
   e
-  f
 
 Get doc for f
-FIXME: this should just be "f"
   $ document_pos 13:19
   f
-  g
 
 Get doc for g
   $ document_pos 13:24
@@ -109,16 +101,12 @@ Get doc for g
   > EOF
 
 Get doc for A
-FIXME: this should just be "A"
   $ document_pos 6:9
   A
-  B
 
 Get doc for B
-FIXME: this should just be "B"
   $ document_pos 6:14
   B
-  C
 
 Get doc for C
   $ document_pos 6:19
@@ -141,32 +129,24 @@ Get doc for C
   > EOF
 
 Get doc for A
-FIXME: this should just be "A"
   $ document_pos 12:9
   A
-  B
 
 Get doc for B
-FIXME: this should just be "B"
   $ document_pos 12:17
   B
-  C
 
 Get doc for C
   $ document_pos 12:25
   C
 
 Get doc for e
-FIXME: this should just be "e"
   $ document_pos 13:14
   e
-  f
 
 Get doc for f
-FIXME: this should just be "f"
   $ document_pos 13:19
   f
-  g
 
 Get doc for g
   $ document_pos 13:24
@@ -184,16 +164,12 @@ Get doc for g
   > EOF
 
 Get doc for e
-FIXME: this should just be "e"
   $ document_pos 8:20
   e
-  f
 
 Get doc for f
-FIXME: this should just be "f"
   $ document_pos 8:25
   f
-  g
 
 Get doc for g
   $ document_pos 8:30
@@ -222,9 +198,8 @@ Get doc for A
   A
 
 Get doc for B
-FIXME: this should be empty
   $ document_pos 12:12
-  C
+  No documentation available
 
 Get doc for C
   $ document_pos 12:15
@@ -235,9 +210,8 @@ Get doc for e
   e
 
 Get doc for f
-FIXME: this should be empty
   $ document_pos 13:19
-  g
+  No documentation available
 
 Get doc for g
   $ document_pos 13:24
