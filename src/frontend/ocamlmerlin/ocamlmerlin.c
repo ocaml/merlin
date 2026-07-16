@@ -584,6 +584,26 @@ static void compute_merlinpath(char merlin_path[ATLEAST PATHSZ], const char *arg
     strcpy(merlin_path + strsz, "ocamlmerlin_server.exe");
     if (stat(merlin_path, st) != 0)
     {
+#ifdef _WIN32
+      /* On Windows, the server binary may not be in the same directory as
+         ocamlmerlin (e.g. when running from dune's test binaries directory).
+         Fall back to searching PATH via the Windows SearchPath API. */
+      {
+        char search_result[PATHSZ];
+        DWORD len = SearchPath(NULL, ocamlmerlin_server, NULL, PATHSZ, search_result, NULL);
+        if (len > 0 && len < PATHSZ && stat(search_result, st) == 0)
+        {
+          strcpy(merlin_path, search_result);
+          return;
+        }
+        len = SearchPath(NULL, "ocamlmerlin_server.exe", NULL, PATHSZ, search_result, NULL);
+        if (len > 0 && len < PATHSZ && stat(search_result, st) == 0)
+        {
+          strcpy(merlin_path, search_result);
+          return;
+        }
+      }
+#endif
       strcpy(merlin_path + strsz, ocamlmerlin_server);
       failwith_perror("stat(ocamlmerlin-server, also tried ocamlmerlin_server.exe)");
     }
