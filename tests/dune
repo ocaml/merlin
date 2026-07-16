@@ -1,6 +1,6 @@
 (env
  (_
-  (binaries merlin-wrapper ocamlmerlin ocamlmerlin-server)
+  (binaries merlin-wrapper)
   (env-vars
    (MERLIN merlin-wrapper)
    (OCAMLC ocamlc)
