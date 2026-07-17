@@ -1543,7 +1543,7 @@ end) = struct
             descr
         | exception Not_found ->
             let valid_names = List.map (fun (nd, _) -> get_name nd) descrs in
-            raise (Wrong_name_disambiguation (env, {
+            Typing_recovery.log_and_raise (Wrong_name_disambiguation (env, {
                     type_path;
                     name = { lid with txt = name };
                     kind;

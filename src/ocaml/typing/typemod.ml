@@ -2569,7 +2569,7 @@ and type_module_aux ~alias ~strengthen ~funct_body anchor env smod =
             mod_attributes = smod.pmod_attributes;
           },
           final_shape
-        with exn ->
+        with exn when !Clflags.typing_recovery ->
           (* [merlin] For better Construct error messages we need to
              keep holes in the recovered typedtree *)
           match sarg.pmod_desc with
@@ -2583,7 +2583,7 @@ and type_module_aux ~alias ~strengthen ~funct_body anchor env smod =
               mod_attributes = sarg.pmod_attributes;
             },
             Shape.dummy_mod
-          | _ -> raise exn
+          | _ -> Typing_recovery.log_and_raise exn
       end
   | Pmod_unpack sexp ->
       let exp =
