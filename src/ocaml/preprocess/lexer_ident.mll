@@ -31,23 +31,15 @@ let update_loc lexbuf file line absolute chars =
     pos_bol = pos.pos_cnum - chars;
   }
 
-(* This lexer is only used to reconstruct the identifier around a position, but
-   it still needs to know whether the position is inside a string literal:
-   otherwise the contents of string literals gets lexed as regular code, and
-   e.g. asking for the documentation of the [/] in ["/usr/local/home"] answers
-   with the documentation of the integer division.
+type string_literal_kind =
+  | Double_quoted
+  | Quoted of string
 
-   String literals are therefore skipped, except for [%{...}] interpolations
-   (as used by [ppx_string] and friends), whose contents are lexed as regular
-   code so that identifier reconstruction keeps working inside them. *)
-type string_kind =
-  | Double_quoted             (* "..." *)
-  | Quoted of string          (* {tag|...|tag}, argument is the tag *)
 
+(* Track whether lexer is currently inside an interpolation block in a string
+   literal *)
 type state =
-  { mutable in_interpolation : string_kind option
-        (* [Some kind] when the lexer is inside a [%{...}] interpolation of a
-           string literal of kind [kind]. *)
+  { mutable in_interpolation : string_literal_kind option
   }
 
 let make_state () = { in_interpolation = None }
@@ -214,11 +206,6 @@ rule token state = parse
     { EOL }
   | _ { EOL }
 
-(* Skip the contents of a string literal, stopping either at the closing
-   delimiter (returning [EOL], so that the whole literal behaves like a token
-   separator) or at the start of a [%{...}] interpolation (recording in [state]
-   that the tokens that follow are inside an interpolation, so that the
-   matching [}] in [token] resumes skipping the enclosing string). *)
 and skip_double_quoted_string state = parse
   | "%{"
       { state.in_interpolation <- Some Double_quoted;
@@ -235,8 +222,6 @@ and skip_double_quoted_string state = parse
   | eof { EOF }
   | _ { skip_double_quoted_string state lexbuf }
 
-(* Same as [skip_double_quoted_string], but for [{tag|...|tag}] literals, which
-   do not have escape sequences. *)
 and skip_quoted_string state tag = parse
   | "%{"
       { state.in_interpolation <- Some (Quoted tag);
