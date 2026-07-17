@@ -1854,9 +1854,9 @@ let transl_prim_desc env loc primdesc =
           ~attrs:primdesc.pprim_attributes
           ~loc:primdesc.pprim_loc
       in
-      if prim.prim_arity = 0 &&
-         (prim.prim_name = "" || prim.prim_name.[0] <> '%') then
-        Error.log_and_raise pprim_type.ptyp_loc Null_arity_external;
+      (* if prim.prim_arity = 0 && *)
+      (*    (prim.prim_name = "" || prim.prim_name.[0] <> '%') then *)
+      (*   Error.log_and_raise pprim_type.ptyp_loc Null_arity_external; *)
       if !Clflags.native_code
       && prim.prim_arity > 5
       && prim.prim_native_name = ""
