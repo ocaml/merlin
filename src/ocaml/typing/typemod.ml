@@ -1671,8 +1671,7 @@ and transl_signature env sg =
     | [] -> [], [], env
     | item :: srem -> begin
         match transl_sig_item env item with
-        | exception exn when
-            !Clflags.typing_recovery && Typecore.is_recoverable exn ->
+        | exception _exn when !Clflags.typing_recovery ->
             transl_sig env srem
         | (item, sg, newenv) ->
             let (trem, rem, finalenv) = transl_sig newenv srem in
@@ -2858,8 +2857,7 @@ and type_structure ?(toplevel = false)  ~funct_body anchor env sstr =
         match type_str_item ~names ~toplevel ~funct_body
                 anchor env shape_map item
         with
-        | exception exn when
-            !Clflags.typing_recovery && Typecore.is_recoverable exn ->
+        | exception _exn when !Clflags.typing_recovery ->
             type_struct env shape_map srem
         | (str, sg, shape_map, newenv) ->
             Cmt_format.set_saved_types
