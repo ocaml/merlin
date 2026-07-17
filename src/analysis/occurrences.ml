@@ -207,9 +207,7 @@ let get_external_locs ~(config : Mconfig.t) ~current_buffer_path uid :
                 if String.equal file buf then None
                 else begin
                   (* We ignore external results if their source was modified *)
-                  let is_fresh =
-                    Stat_check.check stats ~file:file_rel_to_root
-                  in
+                  let is_fresh = Stat_check.check stats ~file in
                   if not is_fresh then
                     log ~title:"locs_of" "File %s might be out-of-sync." file;
                   let staleness : Staleness.t =
