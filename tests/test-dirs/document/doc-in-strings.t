@@ -10,7 +10,8 @@ type and documentation of the integer division operator.
   > let _quoted = {|slash // inside quoted string|}
   > (** The name of the world. *)
   > let name = "world"
-  > let _interp = "hello %{name}"
+  > let _interp = "hello %{name} and hello //"
+  > let _interp = {|hello %{name} and hello //|}
   > EOF
 
 A real operator, outside of a string literal, is documented:
@@ -58,5 +59,14 @@ interpolation ppxes) are still reconstructed and looked up:
   {
     "class": "return",
     "value": "The name of the world.",
+    "notifications": []
+  }
+
+Interpolation state is correctly closed in double-quoted strings:
+
+  $ $MERLIN single document -position 8:40 -filename main.ml <main.ml
+  {
+    "class": "return",
+    "value": "Not a valid identifier",
     "notifications": []
   }
