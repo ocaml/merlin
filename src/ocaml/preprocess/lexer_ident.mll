@@ -30,6 +30,27 @@ let update_loc lexbuf file line absolute chars =
     pos_lnum = if absolute then line else pos.pos_lnum + line;
     pos_bol = pos.pos_cnum - chars;
   }
+
+(* This lexer is only used to reconstruct the identifier around a position, but
+   it still needs to know whether the position is inside a string literal:
+   otherwise the contents of string literals gets lexed as regular code, and
+   e.g. asking for the documentation of the [/] in ["/usr/local/home"] answers
+   with the documentation of the integer division.
+
+   String literals are therefore skipped, except for [%{...}] interpolations
+   (as used by [ppx_string] and friends), whose contents are lexed as regular
+   code so that identifier reconstruction keeps working inside them. *)
+type string_kind =
+  | Double_quoted             (* "..." *)
+  | Quoted of string          (* {tag|...|tag}, argument is the tag *)
+
+type state =
+  { mutable in_interpolation : string_kind option
+        (* [Some kind] when the lexer is inside a [%{...}] interpolation of a
+           string literal of kind [kind]. *)
+  }
+
+let make_state () = { in_interpolation = None }
 }
 
 let newline = ('\013'* '\010')
@@ -64,13 +85,13 @@ let dotsymbolchar =
 let kwdopchar =
   ['$' '&' '*' '+' '-' '/' '<' '=' '>' '@' '^' '|']
 
-rule token = parse
+rule token state = parse
   | "_" { EOL }
   | newline
       { update_loc lexbuf None 1 false 0;
-        token lexbuf }
+        token state lexbuf }
   | blank +
-      { token lexbuf }
+      { token state lexbuf }
   | "~" (lowercase identchar *) as label ':'
       { LABEL label }
   | "~" (lowercase_latin1 identchar_latin1 *) as label ':'
@@ -112,6 +133,18 @@ rule token = parse
   | '#' (symbolchar | '#') +
             { let s = Lexing.lexeme lexbuf in
               HASHOP s }
+  | "\""
+            { skip_double_quoted_string state lexbuf }
+  | "{" (lowercase* as tag) "|"
+            { skip_quoted_string state tag lexbuf }
+  | "}"
+            { match state.in_interpolation with
+              | Some kind ->
+                state.in_interpolation <- None;
+                (match kind with
+                 | Double_quoted -> skip_double_quoted_string state lexbuf
+                 | Quoted tag -> skip_quoted_string state tag lexbuf)
+              | None -> EOL }
   | eof { EOF }
   | "'" newline "'"
       { update_loc lexbuf None 1 false 1;
@@ -128,8 +161,6 @@ rule token = parse
   | ">."
   | ".~"
   | "~"
-  | "\""
-  | "{" lowercase* "|"
   | "'" [^ '\\' '\'' '\010' '\013'] "'"
   | "'\\" ['\\' '\'' '"' 'n' 't' 'b' 'r' ' '] "'"
   | "'\\" ['0'-'9'] ['0'-'9'] ['0'-'9'] "'"
@@ -166,7 +197,6 @@ rule token = parse
   | "|]"
   | ">"
   | ">]"
-  | "}"
   | ">}"
   | "[@"
   | "[%"
@@ -183,4 +213,40 @@ rule token = parse
   | "-."
     { EOL }
   | _ { EOL }
+
+(* Skip the contents of a string literal, stopping either at the closing
+   delimiter (returning [EOL], so that the whole literal behaves like a token
+   separator) or at the start of a [%{...}] interpolation (recording in [state]
+   that the tokens that follow are inside an interpolation, so that the
+   matching [}] in [token] resumes skipping the enclosing string). *)
+and skip_double_quoted_string state = parse
+  | "%{"
+      { state.in_interpolation <- Some Double_quoted;
+        EOL }
+  | '\\' newline
+      { update_loc lexbuf None 1 false 0;
+        skip_double_quoted_string state lexbuf }
+  | '\\' _
+      { skip_double_quoted_string state lexbuf }
+  | "\"" { EOL }
+  | newline
+      { update_loc lexbuf None 1 false 0;
+        skip_double_quoted_string state lexbuf }
+  | eof { EOF }
+  | _ { skip_double_quoted_string state lexbuf }
+
+(* Same as [skip_double_quoted_string], but for [{tag|...|tag}] literals, which
+   do not have escape sequences. *)
+and skip_quoted_string state tag = parse
+  | "%{"
+      { state.in_interpolation <- Some (Quoted tag);
+        EOL }
+  | "|" (lowercase* as tag') "}"
+      { if String.equal tag tag' then EOL
+        else skip_quoted_string state tag lexbuf }
+  | newline
+      { update_loc lexbuf None 1 false 0;
+        skip_quoted_string state tag lexbuf }
+  | eof { EOF }
+  | _ { skip_quoted_string state tag lexbuf }
 
