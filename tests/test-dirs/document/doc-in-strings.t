@@ -22,32 +22,32 @@ A real operator, outside of a string literal, is documented:
     "notifications": []
   }
 
-BUG: The same operator inside a double-quoted string literal shuld not
-be treated as an identifier, but is
+The same operator inside a double-quoted string literal is not an identifier
+(merlin used to reply with the operator's documentation here):
 
   $ $MERLIN single document -position 4:23 -filename main.ml <main.ml
   {
     "class": "return",
-    "value": "Documentation of my operator.",
+    "value": "Not a valid identifier",
     "notifications": []
   }
 
-BUG: Neither are words inside string literals (here, the [local] of
+Neither are words inside string literals (here, the [local] of
 ["/usr/local//home"]):
 
   $ $MERLIN single document -position 4:18 -filename main.ml <main.ml
   {
     "class": "return",
-    "value": "Not in environment 'local'",
+    "value": "Not a valid identifier",
     "notifications": []
   }
 
-BUG: The contents of quoted strings are also not skipped:
+The contents of quoted strings are also skipped:
 
   $ $MERLIN single document -position 5:22 -filename main.ml <main.ml
   {
     "class": "return",
-    "value": "Documentation of my operator.",
+    "value": "Not a valid identifier",
     "notifications": []
   }
 
