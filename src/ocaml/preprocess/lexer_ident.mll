@@ -31,18 +31,22 @@ let update_loc lexbuf file line absolute chars =
     pos_bol = pos.pos_cnum - chars;
   }
 
-type string_literal_kind =
+(* This lexer is only used to reconstruct the identifier around a position, but
+   it still needs to know whether the position is inside a string literal:
+   otherwise the contents of string literals gets lexed as regular code, and
+   e.g. asking for the documentation of the [/] in ["/usr/local/home"] answers
+   with the documentation of the integer division.
+
+   String literals are therefore skipped, except for [%{...}] interpolations
+   (as used by [ppx_string] and friends), whose contents are lexed as regular
+   code so that identifier reconstruction keeps working inside them. *)
+type string_kind =
   | Double_quoted
   | Quoted of string
 
-
-(* Track whether lexer is currently inside an interpolation block in a string
-   literal *)
-type state =
-  { mutable in_interpolation : string_literal_kind option
-  }
-
-let make_state () = { in_interpolation = None }
+(* [Some kind] when the lexer is inside a [%{...}] interpolation of a string
+   literal of kind [kind]. *)
+type state = string_kind option ref
 }
 
 let newline = ('\013'* '\010')
@@ -77,13 +81,13 @@ let dotsymbolchar =
 let kwdopchar =
   ['$' '&' '*' '+' '-' '/' '<' '=' '>' '@' '^' '|']
 
-rule token state = parse
+rule token_impl state = parse
   | "_" { EOL }
   | newline
       { update_loc lexbuf None 1 false 0;
-        token state lexbuf }
+        token_impl state lexbuf }
   | blank +
-      { token state lexbuf }
+      { token_impl state lexbuf }
   | "~" (lowercase identchar *) as label ':'
       { LABEL label }
   | "~" (lowercase_latin1 identchar_latin1 *) as label ':'
@@ -130,9 +134,9 @@ rule token state = parse
   | "{" (lowercase* as tag) "|"
             { skip_quoted_string state tag lexbuf }
   | "}"
-            { match state.in_interpolation with
+            { match !state with
               | Some kind ->
-                state.in_interpolation <- None;
+                state := None;
                 (match kind with
                  | Double_quoted -> skip_double_quoted_string state lexbuf
                  | Quoted tag -> skip_quoted_string state tag lexbuf)
@@ -208,7 +212,7 @@ rule token state = parse
 
 and skip_double_quoted_string state = parse
   | "%{"
-      { state.in_interpolation <- Some Double_quoted;
+      { state := Some Double_quoted;
         EOL }
   | '\\' newline
       { update_loc lexbuf None 1 false 0;
@@ -224,7 +228,7 @@ and skip_double_quoted_string state = parse
 
 and skip_quoted_string state tag = parse
   | "%{"
-      { state.in_interpolation <- Some (Quoted tag);
+      { state := Some (Quoted tag);
         EOL }
   | "|" (lowercase* as tag') "}"
       { if String.equal tag tag' then EOL
@@ -234,4 +238,26 @@ and skip_quoted_string state tag = parse
         skip_quoted_string state tag lexbuf }
   | eof { EOF }
   | _ { skip_quoted_string state tag lexbuf }
+
+      
+{
+let token =
+  let state : state = ref None in
+  let current_lexbuf : Lexing.lexbuf option ref = ref None in
+  fun lexbuf ->
+    (match !current_lexbuf with
+     | Some lb when lb == lexbuf -> ()
+     | Some _ | None ->
+       current_lexbuf := Some lexbuf;
+       state := None);
+    let tok = token_impl state lexbuf in
+    (* Allow the lexbuf (and the source text it holds) to be collected once we
+       are done with it. *)
+    (match tok with
+     | EOF ->
+       current_lexbuf := None;
+       state := None
+     | _ -> ());
+    tok
+}
 

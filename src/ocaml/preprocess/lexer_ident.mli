@@ -26,10 +26,4 @@
 
 )* }}} *)
 
-(* The lexer keeps track of whether it is inside the [%{...}] interpolation of
-   a string literal. Use a fresh [state] for each source to lex. *)
-type state
-
-val make_state : unit -> state
-
-val token : state -> Lexing.lexbuf -> Parser_raw.token
+val token: Lexing.lexbuf -> Parser_raw.token

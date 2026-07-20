@@ -290,9 +290,8 @@ let reconstruct_identifier_from_tokens tokens pos =
     List.map ~f:fmt (List.filter ~f:before_pos acc)
 
 let reconstruct_identifier config source pos =
-  let state = Lexer_ident.make_state () in
   let rec lex acc lexbuf =
-    let token = Lexer_ident.token state lexbuf in
+    let token = Lexer_ident.token lexbuf in
     let item = (token, lexbuf.Lexing.lex_start_p, lexbuf.Lexing.lex_curr_p) in
     match token with
     | EOF -> item :: acc
