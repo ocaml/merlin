@@ -334,9 +334,10 @@ let rec get_every_pattern loc = function
 let rec destructible patt =
   let open Typedtree in
   match patt.pat_desc with
-  | Tpat_any | Tpat_var _ -> true
+  | Tpat_any | Tpat_var _ -> `Var
+  | Tpat_record (record, Open) -> `Open_record record
   | Tpat_alias (p, _, _, _, _) -> destructible p
-  | _ -> false
+  | _ -> `Not_destructible
 
 let is_package ty =
   match ty.Types.desc with
@@ -717,11 +718,12 @@ let refine_complete_match (type a) parents (patt : a Typedtree.general_pattern)
     config source (patterns : Typedtree.pattern list) =
   match Typedtree.classify_pattern patt with
   | Computation -> raise (Not_allowed "computation pattern")
-  | Value ->
-    if not (destructible patt) then raise Nothing_to_do
-    else
+  | Value -> (
+    match destructible patt with
+    | `Not_destructible -> raise Nothing_to_do
+    | `Var ->
       let ty = patt.Typedtree.pat_type in
-      begin match gen_patterns patt.Typedtree.pat_env ty with
+      begin match gen_patterns patt.pat_env ty with
       | [] -> assert false
       | [ more_precise_pattern ] ->
         (* If only one pattern is generated, then we're only refining the
@@ -732,6 +734,45 @@ let refine_complete_match (type a) parents (patt : a Typedtree.general_pattern)
              branches. *)
         refine_and_generate_branches patt config source patterns sub_patterns
       end
+    | `Open_record existing_fields ->
+      let ty = patt.pat_type in
+      let new_pattern =
+        match Types.get_desc ty with
+        | Tconstr (path, _params, _) ->
+          begin match Env.find_type_descrs path patt.pat_env with
+          | Type_record (all_fields, _) ->
+            let lst =
+              List.filter_map all_fields ~f:(fun lbl_descr ->
+                  match
+                    List.find_opt
+                      ~f:(fun (_, existing_field, _) ->
+                        existing_field.Data_types.lbl_name
+                        = lbl_descr.Data_types.lbl_name)
+                      existing_fields
+                  with
+                  | Some _ -> None
+                  | None ->
+                    let lidloc = mk_id lbl_descr.Data_types.lbl_name in
+                    Some
+                      ( lidloc,
+                        lbl_descr,
+                        Tast_helper.Pat.var
+                          Types.Uid.internal_not_actually_unique patt.pat_env ty
+                          (mk_var lbl_descr.lbl_name) ))
+            in
+            let lst = existing_fields @ lst in
+            Tast_helper.Pat.record patt.pat_env ty lst Asttypes.Closed
+          | _ ->
+            (* The type of a record pattern has to be a record unless it does not
+                 compile which can be the case I guess! But in this case we are
+                 unable to compute the closed pattern. *)
+            raise Nothing_to_do
+          end
+        | _ ->
+          (* See comment above *)
+          raise Nothing_to_do
+      in
+      refine_current_pattern parents patt config source new_pattern)
 
 let destruct_pattern (type a) (patt : a Typedtree.general_pattern) config source
     loc parents =

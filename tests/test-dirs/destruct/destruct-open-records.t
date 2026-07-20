@@ -83,8 +83,7 @@ pattern at point:
     "notifications": []
   }
 
-- On the [; _] wildcard. TODO: it could refine the open record into a closed
-one, but it does not.
+- On the [; _] wildcard, it destructs the open record pattern into a closed one.
 
   $ $MERLIN single case-analysis -start 3:11 -end 3:11 -filename test.ml <<EOF
   > type t = { a : int; b : bool option; c : int }
@@ -92,8 +91,20 @@ one, but it does not.
   >  {b = _ ; _ } -> 1
   > EOF
   {
-    "class": "error",
-    "value": "Nothing to do",
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 3,
+          "col": 1
+        },
+        "end": {
+          "line": 3,
+          "col": 13
+        }
+      },
+      "{ b = _; a; c }"
+    ],
     "notifications": []
   }
 
@@ -104,7 +115,19 @@ And last but not least, the original example for #436:
   > let f {a;_} = a + b + c + d
   > EOF
   {
-    "class": "error",
-    "value": "Nothing to do",
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 2,
+          "col": 6
+        },
+        "end": {
+          "line": 2,
+          "col": 11
+        }
+      },
+      "{ a; b; c; d }"
+    ],
     "notifications": []
   }
