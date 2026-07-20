@@ -108,3 +108,55 @@ Interpolation state is correctly re-opened in {||} strings:
     "notifications": []
   }
 
+
+Escaped quotes do not terminate a string, and an escaped backslash right
+before the closing quote does not prevent it from terminating the string:
+
+  $ cat >escapes.ml <<'EOF'
+  > (** Documentation of my operator. *)
+  > let ( // ) a b = a + b
+  > let one = 1
+  > (** The name of the world. *)
+  > let name = "world"
+  > let _escaped = "say \"hi//there\" more %{name}"
+  > let _backslash = "ends with an escaped backslash \\"
+  > let _use = one // 2
+  > EOF
+
+The [//] of [\"hi//there\"] sits between two escaped quotes and is still
+string content:
+
+  $ $MERLIN single document -position 6:24 -filename escapes.ml <escapes.ml
+  {
+    "class": "return",
+    "value": "Not a valid identifier",
+    "notifications": []
+  }
+
+So is the word [more] after the escaped quotes:
+
+  $ $MERLIN single document -position 6:34 -filename escapes.ml <escapes.ml
+  {
+    "class": "return",
+    "value": "Not a valid identifier",
+    "notifications": []
+  }
+
+The [%{name}] interpolation after the escaped quotes still works:
+
+  $ $MERLIN single document -position 6:41 -filename escapes.ml <escapes.ml
+  {
+    "class": "return",
+    "value": "The name of the world.",
+    "notifications": []
+  }
+
+The [//] on the last line is real code: this only works if the string ending
+in an escaped backslash was terminated by its closing quote:
+
+  $ $MERLIN single document -position 8:15 -filename escapes.ml <escapes.ml
+  {
+    "class": "return",
+    "value": "Documentation of my operator.",
+    "notifications": []
+  }
