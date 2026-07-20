@@ -131,3 +131,29 @@ And last but not least, the original example for #436:
     ],
     "notifications": []
   }
+
+And finally with a module qualification
+
+  $ $MERLIN single case-analysis -start 4:12 -end 4:12 -filename test.ml <<EOF
+  > module T = struct
+  >   type r = {a:int; b:int; c:int; d:int;}
+  > end
+  > let f {T.a;_} = a + b + c + d
+  > EOF
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 4,
+          "col": 6
+        },
+        "end": {
+          "line": 4,
+          "col": 13
+        }
+      },
+      "{ T.a = a; b; c; d }"
+    ],
+    "notifications": []
+  }
