@@ -81,17 +81,6 @@ I:
     },
     {
       "start": {
-        "line": 10,
-        "col": 6
-      },
-      "end": {
-        "line": 10,
-        "col": 7
-      },
-      "stale": false
-    },
-    {
-      "start": {
         "line": 8,
         "col": 27
       },
@@ -109,6 +98,17 @@ I:
       "end": {
         "line": 9,
         "col": 25
+      },
+      "stale": false
+    },
+    {
+      "start": {
+        "line": 10,
+        "col": 6
+      },
+      "end": {
+        "line": 10,
+        "col": 7
       },
       "stale": false
     }
