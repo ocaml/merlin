@@ -10,8 +10,8 @@ type and documentation of the integer division operator.
   > let _quoted = {|slash // inside quoted string|}
   > (** The name of the world. *)
   > let name = "world"
-  > let _interp = "hello %{name} and hello //"
-  > let _interp = {|hello %{name} and hello //|}
+  > let _interp = "hello %{name} and hello // and %{ // }"
+  > let _interp = {|hello %{name} and hello // and %{ // } |}
   > EOF
 
 A real operator, outside of a string literal, is documented:
@@ -70,3 +70,41 @@ Interpolation state is correctly closed in double-quoted strings:
     "value": "Not a valid identifier",
     "notifications": []
   }
+
+Interpolation state is correctly re-opened in double-quoted strings:
+
+  $ $MERLIN single document -position 8:50 -filename main.ml <main.ml
+  {
+    "class": "return",
+    "value": "Documentation of my operator.",
+    "notifications": []
+  }
+
+Identifiers inside [%{...}] interpolations in {||} strings (as used by
+string interpolation ppxes) are still reconstructed and looked up:
+
+  $ $MERLIN single document -position 9:24 -filename main.ml <main.ml
+  {
+    "class": "return",
+    "value": "The name of the world.",
+    "notifications": []
+  }
+
+Interpolation state is correctly closed in {||} strings:
+
+  $ $MERLIN single document -position 9:41 -filename main.ml <main.ml
+  {
+    "class": "return",
+    "value": "Not a valid identifier",
+    "notifications": []
+  }
+
+Interpolation state is correctly re-opened in {||} strings:
+
+  $ $MERLIN single document -position 9:51 -filename main.ml <main.ml
+  {
+    "class": "return",
+    "value": "Documentation of my operator.",
+    "notifications": []
+  }
+
