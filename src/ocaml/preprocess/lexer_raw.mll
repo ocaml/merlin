@@ -188,6 +188,13 @@ let list_keywords =
   fun keywords ->
     Hashtbl.fold add_kw keywords init
 
+let as_keyword keywords token =
+  Hashtbl.to_seq keywords
+  |> Seq.find_map (function
+       | (text, token') when token = token' -> Some text
+       | _ -> None
+     )
+
 let store_string_char buf c = Buffer.add_char buf c
 let store_string_utf_8_uchar buf u = Buffer.add_utf_8_uchar buf u
 let store_string buf s = Buffer.add_string buf s

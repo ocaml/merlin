@@ -40,7 +40,8 @@ val for_completion :
 val initial_position : t -> Lexing.position
 
 val tokens : t -> triple list
-val keywords : t -> string list
+val list_keywords : t -> string list
+val keywords : t -> keywords
 val errors : t -> exn list
 val comments : t -> (string * Location.t) list
 
