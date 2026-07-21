@@ -33,3 +33,9 @@ let catch_errors_with_warning warnings errors callback =
       Misc.try_finally ~always:(fun () -> Warnings.restore warnings') callback)
 
 let () = Msupport_parsing.msupport_raise_error := Typing_recovery.log_or_raise
+
+let () =
+  Typing_recovery.register_recoverable (function
+      | Misc.Fatal_error _ -> true
+      | _ -> false
+    )
