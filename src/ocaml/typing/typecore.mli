@@ -303,10 +303,6 @@ val annotate_recursive_bindings :
 val check_recursive_class_bindings :
   Env.t -> Ident.t list -> Typedtree.class_expr list -> unit
 
-(** Checks whether an exception is potentially recoverable (exposed to the
-    user). *)
-val is_recoverable : exn -> bool
-
 (* Merlin specific *)
 val partial_pred :
   lev:int ->
