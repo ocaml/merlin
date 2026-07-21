@@ -1,3 +1,10 @@
+unreleased
+==========
+
+  + merlin library
+    - occurrences: fix files modified since the index was built never being
+      reported as out-of-sync.
+
 merlin 5.8
 ==========
 Tue Jun 23 12:15:42 CEST 2026
