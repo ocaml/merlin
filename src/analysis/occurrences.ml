@@ -344,6 +344,11 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
           (Occurrence_set.union acc_locs locs, String.Set.union acc_files files))
         external_occurrences
     in
+    if not (String.Set.is_empty out_of_sync_files) then
+      log ~title:"locs_of"
+        "Occurrences may be incomplete: some source files are out-of-sync \
+         with the index: %s"
+        (String.concat ~sep:", " (String.Set.to_list out_of_sync_files));
     let occurrences =
       Occurrence_set.union buffer_occurrences external_occurrences
     in
