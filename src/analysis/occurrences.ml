@@ -114,7 +114,7 @@ let comp_unit_of_uid = function
 module Stat_check : sig
   type t
   val create : cache_size:int -> Index_format.index -> t
-  val check : t -> file:string -> bool
+  val check : t -> key:string -> file:string -> bool
   val get_outdated_files : t -> String.Set.t
 end = struct
   type t = { index : Index_format.index; cache : (string, bool) Hashtbl.t }
@@ -126,15 +126,20 @@ end = struct
       (fun file check acc -> if check then acc else String.Set.add file acc)
       t.cache String.Set.empty
 
-  let stat t file =
+  let stat t file real_path =
     let open Index_format in
     match Stats.find_opt file t.index.stats with
     | None ->
       log ~title:"stat_check" "No stats found for file %S." file;
+      log ~title:"stat_check" "Root dir: %S."
+        (Option.value ~default:"None" t.index.root_directory);
+      log ~title:"stat_check" "Known files: %S"
+        (String.concat ~sep:"; "
+           (Stats.bindings t.index.stats |> List.map ~f:fst));
       true
     | Some { size; _ } -> (
       try
-        let stats = Unix.stat file in
+        let stats = Unix.stat real_path in
         let equal =
           (* This is fast but approximative. A better option would be to check
                [mtime] and then [source_digest] if the times differ. *)
@@ -148,14 +153,14 @@ end = struct
         log ~title:"stat_check" "Could not stat file %S" file;
         false)
 
-  let check t ~file =
+  let check t ~key ~file =
     let cache_and_return b =
-      Hashtbl.add t.cache file b;
+      Hashtbl.add t.cache key b;
       b
     in
-    match Hashtbl.find_opt t.cache file with
+    match Hashtbl.find_opt t.cache key with
     | Some result -> result
-    | None -> cache_and_return (stat t file)
+    | None -> cache_and_return (stat t key file)
 end
 
 let get_buffer_locs result uid =
@@ -196,19 +201,28 @@ let get_external_locs ~(config : Mconfig.t) ~current_buffer_path uid :
                 let file_rel_to_root =
                   loc.Location.loc_start.Lexing.pos_fname
                 in
-                let file_uncanon, buf_uncanon =
+                (* Paths stored in the index are relative to the directory in
+                   which the index was built, which we expect to be the root of
+                   the source tree, or a build directory mirroring the source
+                   tree. To locate the actual file on the disk (in order to
+                   [stat] it) we need to resolve them: when the source root is
+                   known we simply prepend it, otherwise we rely on merlin's
+                   source lookup. *)
+                let file_uncanon =
                   match config.merlin.source_root with
-                  | Some root ->
-                    (Filename.concat root file_rel_to_root, current_buffer_path)
-                  | None -> (file_rel_to_root, config.query.filename)
+                  | Some root -> Filename.concat root file_rel_to_root
+                  | None -> (
+                    match Locate.find_source ~config loc file_rel_to_root with
+                    | `Found (file, _) -> file
+                    | `File_not_found _ -> file_rel_to_root)
                 in
                 let file = Misc.canonicalize_filename file_uncanon in
-                let buf = Misc.canonicalize_filename buf_uncanon in
+                let buf = Misc.canonicalize_filename current_buffer_path in
                 if String.equal file buf then None
                 else begin
                   (* We ignore external results if their source was modified *)
                   let is_fresh =
-                    Stat_check.check stats ~file:file_rel_to_root
+                    Stat_check.check stats ~key:file_rel_to_root ~file
                   in
                   if not is_fresh then
                     log ~title:"locs_of" "File %s might be out-of-sync." file;

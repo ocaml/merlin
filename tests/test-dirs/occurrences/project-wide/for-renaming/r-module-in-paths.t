@@ -28,18 +28,6 @@
   > -index-file project.ocaml-index \
   > -filename main.ml <main.ml | jq '.value[]'
   {
-    "file": "$TESTCASE_ROOT/lib.ml",
-    "start": {
-      "line": 1,
-      "col": 7
-    },
-    "end": {
-      "line": 1,
-      "col": 16
-    },
-    "stale": false
-  }
-  {
     "file": "$TESTCASE_ROOT/main.ml",
     "start": {
       "line": 1,
@@ -48,6 +36,18 @@
     "end": {
       "line": 1,
       "col": 22
+    },
+    "stale": false
+  }
+  {
+    "file": "$TESTCASE_ROOT/lib.ml",
+    "start": {
+      "line": 1,
+      "col": 7
+    },
+    "end": {
+      "line": 1,
+      "col": 16
     },
     "stale": false
   }

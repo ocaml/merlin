@@ -5,6 +5,8 @@ unreleased
     - Fix `locate` and `document` on `open` paths in `.mli` files: resolve the
       open path in the environment before the open, so a self-shadowing
       submodule no longer hides the opened module (fixes #1748)
+    - Fix occurrences staleness detection when the server is not running at the
+      project's source root. (#2097)
 
 merlin 5.8
 ==========

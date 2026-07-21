@@ -1,12 +1,14 @@
 open Std
-module Lid_set = Index_format.Lid_set
 let { Logger.log } = Logger.for_section "index-occurrences"
 
-let set_fname ~file (loc : Location.t) =
+let set_fname ~file (lid : Longident.t Location.loc) =
   let pos_fname = file in
-  { loc with
-    loc_start = { loc.loc_start with pos_fname };
-    loc_end = { loc.loc_end with pos_fname }
+  { lid with
+    loc =
+      { lid.loc with
+        loc_start = { lid.loc.loc_start with pos_fname };
+        loc_end = { lid.loc.loc_end with pos_fname }
+      }
   }
 
 let decl_of_path_or_lid env namespace path lid =
@@ -31,7 +33,7 @@ let iterator ~current_buffer_path ~index ~reduce_for_uid =
     log ~title:"index_buffer" "Path: %a" Logger.fmt
       (Fun.flip (Format_doc.compat Path.print) path);
     let not_ghost { Location.loc = { loc_ghost; _ }; _ } = not loc_ghost in
-    let lid = { lid with loc = set_fname ~file:current_buffer_path lid.loc } in
+    let lid = set_fname ~file:current_buffer_path lid in
     let index_decl () =
       begin match decl_of_path_or_lid env namespace path lid.txt with
       | (exception _) | None ->
@@ -44,6 +46,7 @@ let iterator ~current_buffer_path ~index ~reduce_for_uid =
     in
     let reduce_and_store ~namespace lid path =
       if not_ghost lid then
+        let lid = set_fname ~file:current_buffer_path lid in
         match Env.shape_of_path ~namespace env path with
         | exception Not_found -> ()
         | path_shape ->

@@ -68,3 +68,13 @@
     ],
     "notifications": []
   }
+
+Occurrences should not be flag as staled if we are not at the project root
+  $ mkdir test
+  $ cd test
+  $ $MERLIN single occurrences -scope project -identifier-at 1:28 \
+  > -index-file ../project.ocaml-index \
+  > -filename ../main.ml <../main.ml | jq '.value[].stale'
+  false
+  false
+  false
