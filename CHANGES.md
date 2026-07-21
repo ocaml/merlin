@@ -3,7 +3,12 @@ unreleased
 
   + merlin library
     - occurrences: fix files modified since the index was built never being
-      reported as out-of-sync.
+      reported as out-of-sync. (#2104)
+    - Fix `locate` and `document` on `open` paths in `.mli` files: resolve the
+      open path in the environment before the open, so a self-shadowing
+      submodule no longer hides the opened module (fixes #1748)
+    - Fix occurrences staleness detection when the server is not running at the
+      project's source root. (#2097)
 
 merlin 5.8
 ==========
@@ -14,6 +19,8 @@ Tue Jun 23 12:15:42 CEST 2026
     - Fix signature-help with type aliases (#2067, fixes #1927)
     - Fix locate on punned let bindings, to use the common identifier as the
       expression (instead of the pattern) (#2066)
+    - Add destruction of open record patterns into closed one. (#2103, fixes
+      #436)
   + index format
     - Use a LRU to reduce memory usage when indexing. Change the way small
       values are stored. Make sub-indexes paths relative to the working

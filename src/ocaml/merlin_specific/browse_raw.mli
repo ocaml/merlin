@@ -87,7 +87,7 @@ type node =
   | Binding_op of binding_op
   | Include_description of include_description
   | Include_declaration of include_declaration
-  | Open_description of open_description
+  | Open_description of open_description * Env.t
   | Open_declaration of open_declaration
   | Method_call of expression * meth * Location.t
   | Record_field of
