@@ -38,6 +38,7 @@ let () =
   Typing_recovery.register_recoverable (function
         ( Misc.Fatal_error _
         | Persistent_env.Error _
+        | Typemod.Error_forward _
         | Magic_numbers.Cmi.Error _) as exn ->
         (* Some specific error handling that can't be supported at the
            compiler level.
