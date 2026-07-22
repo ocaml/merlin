@@ -154,10 +154,12 @@ let initial_env ~loc ~initially_opened_module
     try
       snd (type_open_ Override env loc {txt;loc})
     with
-    | Typetexp.Error.In_context _
-    | Magic_numbers.Cmi.Error _
-    | Env.Error.In_context _
-    | Persistent_env.Error _ when !Clflags.typing_recovery -> env
+    | (Typetexp.Error.In_context _
+      | Magic_numbers.Cmi.Error _
+      | Env.Error.In_context _
+      | Persistent_env.Error _) as exn when !Clflags.typing_recovery ->
+      Typing_recovery.log_or_raise exn;
+      env
   in
   let add_units env units =
     String.Set.fold
