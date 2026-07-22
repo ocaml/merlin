@@ -1,6 +1,8 @@
 (env
  (_
-  (binaries merlin-wrapper)
+  (binaries
+    merlin-wrapper
+   (test-dirs/extract_ranges/extract_ranges.exe as extract_ranges))
   (env-vars
    (MERLIN merlin-wrapper)
    (OCAMLC ocamlc)
@@ -13,6 +15,7 @@
   %{bin:merlin-wrapper}
   %{bin:ocamlmerlin-server}
   %{bin:ocamlmerlin}
+  %{bin:extract_ranges}
   %{bin:dot-merlin-reader}))
 
 (cram
