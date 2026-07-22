@@ -2445,7 +2445,7 @@ let rec type_module ?(alias=false) ~strengthen ~funct_body anchor env smod =
   if !Clflags.typing_recovery then
     Typing_recovery_state.with_saved_types (fun () ->
         try delayed ()
-        with Error.In_context _  ->
+        with exn when Typing_recovery.is_recoverable exn  ->
           { mod_desc = Tmod_structure {
                 str_items = [];
                 str_type = [];
