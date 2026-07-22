@@ -2,6 +2,8 @@ unreleased
 ==========
 
   + merlin library
+    - occurrences: fix files modified since the index was built never being
+      reported as out-of-sync. (#2104)
     - Fix `locate` and `document` on `open` paths in `.mli` files: resolve the
       open path in the environment before the open, so a self-shadowing
       submodule no longer hides the opened module (fixes #1748)
