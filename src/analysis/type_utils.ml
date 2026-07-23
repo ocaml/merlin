@@ -131,8 +131,8 @@ module Printtyp = struct
     | Lvl _ -> verbose
 
   let type_scheme env ppf ty =
-    (select_by_verbosity ~default:type_scheme ~verbose:(verbose_type_scheme env)) ()
-      ppf ty
+    (select_by_verbosity ~default:type_scheme ~verbose:(verbose_type_scheme env))
+      () ppf ty
 
   let tree_of_typ_scheme te =
     Out_type.prepare_for_printing [ te ];
@@ -140,7 +140,8 @@ module Printtyp = struct
 
   let type_declaration env id ppf =
     (select_by_verbosity ~default:type_declaration
-       ~verbose:(verbose_type_declaration env) ())
+       ~verbose:(verbose_type_declaration env)
+       ())
       id ppf
 
   let modtype env ppf mty =
@@ -148,7 +149,8 @@ module Printtyp = struct
       | Types.Mty_ident _ | Mty_alias _ -> verbose_modtype env ppf mty
       | _ -> modtype ppf mty
     in
-    (select_by_verbosity ~default:modtype ~verbose:(verbose_modtype env) ~smart ())
+    (select_by_verbosity ~default:modtype ~verbose:(verbose_modtype env) ~smart
+       ())
       ppf mty
 
   let wrap_printing_env env ~verbosity:v f =
@@ -279,7 +281,9 @@ exception Fallback
 let type_in_env ?(verbosity = Verbosity.default) ?keywords ~context env ppf expr
     =
   let print_expr expression =
+    let recovery_errors = ref [] in
     let str, _sg, _sn, _shape, _ =
+      Typing_recovery.catch_errors recovery_errors @@ fun () ->
       Env.with_cmis @@ fun () ->
       Typemod.type_toplevel_phrase env [ Ast_helper.Str.eval expression ]
     in
@@ -287,7 +291,15 @@ let type_in_env ?(verbosity = Verbosity.default) ?keywords ~context env ppf expr
     match str.str_items with
     | [ { str_desc = Tstr_eval (exp, _); _ } ] ->
       print_type_with_decl ~verbosity env ppf exp.exp_type
-    | _ -> failwith "unhandled expression"
+    | _ -> (
+      let first_error =
+        List.find_opt (List.rev !recovery_errors) ~f:(function
+          | Typing_recovery.Warning _ -> false
+          | _ -> true)
+      in
+      match first_error with
+      | Some exn -> raise exn
+      | None -> failwith "unhandled expression")
   in
   Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
   Typing_recovery.uncatch_errors @@ fun () ->
