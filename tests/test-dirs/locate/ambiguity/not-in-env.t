@@ -14,6 +14,12 @@ Until then ...
   > EOF
   {
     "class": "return",
-    "value": "Not in environment 'b'",
+    "value": {
+      "file": "test.ml",
+      "pos": {
+        "line": 1,
+        "col": 4
+      }
+    },
     "notifications": []
   }
