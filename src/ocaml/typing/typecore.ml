@@ -8808,5 +8808,5 @@ let type_argument env e t1 t2 = type_argument env e t1 t2
 
 (* drop ~splitting_mode for external API *)
 let partial_pred ~lev ?explode env expected_ty p =
-  (* TODO: Maybe to be change. *)
-  partial_pred ~lev ?explode ~splitting_mode:Backtrack_or env expected_ty p
+  let splitting_mode = Refine_or {inside_nonsplit_or = false} in
+  partial_pred ~lev ?explode ~splitting_mode env expected_ty p
