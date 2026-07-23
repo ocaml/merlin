@@ -1,3 +1,7 @@
+Divergence from the compiler reference: Merlin's warning omits the mnemonic tag
+("Warning 5:" vs "Warning 5 [ignored-partial-application]:"). Likely a
+vendored-compiler-version artifact. (see claude-report.md)
+
   $ cat >apply_wrong_label.ml <<'EOF'
   > let g ~x = x + 1
   > 

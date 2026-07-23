@@ -1,3 +1,7 @@
+Divergence from the compiler reference: Merlin prints the type variable as 'b
+("The function f has type 'b -> int") where the compiler prints 'a. The rest
+matches. (see claude-report.md)
+
   $ cat >too_many_arguments.ml <<'EOF'
   > let f _ = 43
   > let y = f 10 11

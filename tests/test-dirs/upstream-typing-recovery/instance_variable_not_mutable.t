@@ -1,3 +1,7 @@
+FIXME Divergence from the compiler reference: Merlin reports the generic "This value
+has type ..." instead of naming the value ("The value y has type ..."). (see
+claude-report.md)
+
   $ cat >instance_variable_not_mutable.ml <<'EOF'
   > class t = object
   >   val mutable x = 10

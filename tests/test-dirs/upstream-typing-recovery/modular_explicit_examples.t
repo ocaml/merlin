@@ -1,3 +1,7 @@
+FIXME RECOVERY Divergence from the compiler reference: Merlin aborts with a fatal error ("The
+module F is not a functor, it cannot be applied.") and recovers nothing (0
+diagnostics), whereas the compiler recovers 19 errors. (see claude-report.md)
+
   $ cat >modular_explicit_examples.ml <<'EOF'
   > module type Typ = sig type t end
   > 
