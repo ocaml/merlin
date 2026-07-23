@@ -1,3 +1,7 @@
+FIXME Divergence from the compiler reference: Merlin does not emit Warning 14 (illegal
+backslash escape in string). The format and constant errors match. (see
+claude-report.md)
+
   $ cat >invalid_format.ml <<'EOF'
   > let _ = Format.asprintf "%d%\r" 10
   > let x = 10

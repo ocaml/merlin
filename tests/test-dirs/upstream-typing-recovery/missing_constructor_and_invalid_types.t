@@ -1,3 +1,7 @@
+FIXME Divergence from the compiler reference: Merlin reports the generic "This constant
+has type ..." instead of naming the literal ("The constant 3 / 'a' has type
+..."). (see claude-report.md)
+
   $ cat >missing_constructor_and_invalid_types.ml <<'EOF'
   > type t = A | B
   > 
