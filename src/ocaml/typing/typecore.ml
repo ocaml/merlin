@@ -5225,6 +5225,7 @@ and type_expect_
         exp_extra = (exp_extra, loc, sexp.pexp_attributes) :: arg.exp_extra;
       }
   | Pexp_send (e, {txt=met}) ->
+      let obj = type_exp env e in
       let suspended () =
         let (obj,meth,typ) =
           with_local_level_generalize_structure_if_principal
@@ -5258,7 +5259,7 @@ and type_expect_
       if !Clflags.typing_recovery then
         try suspended ()
         with Error.In_context
-            (_, _, Undefined_method (obj, _, _)) ->
+            (_, _, Undefined_method (_obj, _, _)) ->
             rue {
               exp_desc = Texp_send(obj, Tmeth_name met);
               exp_loc = loc; exp_extra = [];
