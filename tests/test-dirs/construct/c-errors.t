@@ -33,22 +33,8 @@
   > module M : S = _
   > EOF
   {
-    "class": "return",
-    "value": [
-      {
-        "start": {
-          "line": 2,
-          "col": 15
-        },
-        "end": {
-          "line": 2,
-          "col": 16
-        }
-      },
-      [
-        "struct  end"
-      ]
-    ],
+    "class": "error",
+    "value": "Could not find a module type to construct from. Check that you used a correct constraint.",
     "notifications": []
   }
 
