@@ -88,12 +88,24 @@ module Util = struct
 
   let typeable env exp type_expected =
     let snap = Btype.snapshot () in
+    (* Typing recovery makes [type_expect] swallow type errors and return a
+       placeholder node instead of raising. We rely on the exception to detect
+       ill-typed expressions (e.g. invalid GADT combinations, see Test 6.1b in
+       c-simple.t), so we disable recovery for the duration of the check. *)
+    let recovery = !Clflags.typing_recovery in
+    Clflags.typing_recovery := false;
     let typeable =
-      match
-        Typecore.type_expect env exp (Typecore.mk_expected type_expected)
-      with
-      | (_ : Typedtree.expression) -> true
-      | exception _ -> false
+      (* TODO this is a bit unsatisfying but we can't use [uncatch_errors] here.
+         This is because any raised recoverable error is catched in
+         [type_expect]. *)
+      Fun.protect
+        ~finally:(fun () -> Clflags.typing_recovery := recovery)
+        (fun () ->
+          match
+            Typecore.type_expect env exp (Typecore.mk_expected type_expected)
+          with
+          | (_ : Typedtree.expression) -> true
+          | exception _ -> false)
     in
     if not typeable then
       log ~title:"constructor" "%a does not have the expected type %a"
