@@ -2447,7 +2447,7 @@ let rec type_module ?(alias=false) ~strengthen ~funct_body anchor env smod =
   if !Clflags.typing_recovery then
     Typing_recovery_state.with_saved_types (fun () ->
         try delayed ()
-        with Error.In_context _  ->
+        with exn when Typing_recovery.is_recoverable exn ->
           { mod_desc = Tmod_structure {
                 str_items = [];
                 str_type = [];
@@ -2777,13 +2777,31 @@ and type_one_application ~ctx:(apply_loc,sfunct,md_f,args)
   | Mty_alias path ->
       Error.log_and_raise app_view.f_loc env (Cannot_scrape_alias path)
   | Mty_ident _ | Mty_signature _ | Mty_for_hole ->
-      let args = List.map simplify_app_summary args in
-      let mty_f = md_f.mod_type in
-      let app_name = match sfunct.pmod_desc with
-        | Pmod_ident l -> Includemod.Named_leftmost_functor l.txt
-        | _ -> Includemod.Anonymous_functor
+      let is_recovered_functor =
+        match Env.scrape_alias env funct.mod_type with
+        | Mty_for_hole -> true
+        | _ ->
+          List.exists
+            (fun a -> a.Parsetree.attr_name.txt = "ocaml.incorrect")
+            funct.mod_attributes
       in
-      raise(Includemod.Apply_error {loc=apply_loc;env;app_name;mty_f;args})
+      if not is_recovered_functor then begin
+        let args = List.map simplify_app_summary args in
+        let mty_f = md_f.mod_type in
+        let app_name = match sfunct.pmod_desc with
+          | Pmod_ident l -> Includemod.Named_leftmost_functor l.txt
+          | _ -> Includemod.Anonymous_functor
+        in
+        Typing_recovery.log_or_raise
+          (Includemod.Apply_error {loc=apply_loc;env;app_name;mty_f;args})
+      end;
+
+      { mod_desc = Tmod_typed_hole;
+        mod_type = Mty_for_hole;
+        mod_env = env;
+        mod_attributes = app_view.attributes;
+        mod_loc = apply_loc },
+      funct_shape
 
 and type_open_decl ?used_slot ?toplevel ~funct_body names env sod =
   Builtin_attributes.warning_scope sod.popen_attributes

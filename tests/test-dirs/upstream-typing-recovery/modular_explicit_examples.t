@@ -370,6 +370,37 @@ diagnostics), whereas the compiler recovers 19 errors. (see claude-report.md)
       {
         "start": {
           "line": 74,
+          "col": 32
+        },
+        "end": {
+          "line": 74,
+          "col": 34
+        },
+        "type": "typer",
+        "sub": [
+          {
+            "start": {
+              "line": 74,
+              "col": 32
+            },
+            "end": {
+              "line": 74,
+              "col": 34
+            },
+            "message": "This function is module-dependent. The dependency is preserved
+  when the function is passed a static module argument (module M : S)
+  or (module M). Its argument here is not static, so the type-checker
+  tried instead to change the function type to be non-dependent."
+          }
+        ],
+        "valid": true,
+        "message": "This expression has type (module T : Typ) -> T.t -> T.t
+  but an expression was expected of type (module Typ) -> 'a
+  The module T would escape its scope"
+      },
+      {
+        "start": {
+          "line": 74,
           "col": 43
         },
         "end": {
@@ -453,6 +484,37 @@ diagnostics), whereas the compiler recovers 19 errors. (see claude-report.md)
   The value map is required but not provided
   File \"modular_explicit_examples.ml\", line 78, characters 2-38:
     Expected declaration"
+      },
+      {
+        "start": {
+          "line": 99,
+          "col": 11
+        },
+        "end": {
+          "line": 99,
+          "col": 14
+        },
+        "type": "typer",
+        "sub": [
+          {
+            "start": {
+              "line": 99,
+              "col": 11
+            },
+            "end": {
+              "line": 99,
+              "col": 14
+            },
+            "message": "This function is module-dependent. The dependency is preserved
+  when the function is passed a static module argument (module M : S)
+  or (module M). Its argument here is not static, so the type-checker
+  tried instead to change the function type to be non-dependent."
+          }
+        ],
+        "valid": true,
+        "message": "This expression has type (module M : Map) -> ('a -> 'b) -> 'a M.t -> 'b M.t
+  but an expression was expected of type (module Map) -> 'c
+  The module M would escape its scope"
       },
       {
         "start": {

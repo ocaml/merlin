@@ -50,6 +50,31 @@
           },
           {
             "start": {
+              "line": 3,
+              "col": 2
+            },
+            "end": {
+              "line": 3,
+              "col": 17
+            },
+            "name": "B",
+            "kind": "Module",
+            "type": null,
+            "children": [],
+            "deprecated": false,
+            "selection": {
+              "start": {
+                "line": 3,
+                "col": 9
+              },
+              "end": {
+                "line": 3,
+                "col": 10
+              }
+            }
+          },
+          {
+            "start": {
               "line": 2,
               "col": 2
             },
