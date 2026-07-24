@@ -288,18 +288,16 @@ let type_in_env ?(verbosity = Verbosity.default) ?keywords ~context env ppf expr
       Typemod.type_toplevel_phrase env [ Ast_helper.Str.eval expression ]
     in
     let open Typedtree in
-    match str.str_items with
-    | [ { str_desc = Tstr_eval (exp, _); _ } ] ->
+    let first_error =
+      List.find_opt (List.rev !recovery_errors) ~f:(function
+        | Typing_recovery.Warning _ -> false
+        | _ -> true)
+    in
+    match (str.str_items, first_error) with
+    | [ { str_desc = Tstr_eval (exp, _); _ } ], None ->
       print_type_with_decl ~verbosity env ppf exp.exp_type
-    | _ -> (
-      let first_error =
-        List.find_opt (List.rev !recovery_errors) ~f:(function
-          | Typing_recovery.Warning _ -> false
-          | _ -> true)
-      in
-      match first_error with
-      | Some exn -> raise exn
-      | None -> failwith "unhandled expression")
+    | _, Some exn -> raise exn
+    | _, None -> failwith "unhandled expression"
   in
   Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
   Typing_recovery.uncatch_errors @@ fun () ->

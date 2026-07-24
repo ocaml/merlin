@@ -133,18 +133,6 @@ the type)
         },
         "end": {
           "line": 4,
-          "col": 12
-        },
-        "type": "'a",
-        "tail": "no"
-      },
-      {
-        "start": {
-          "line": 4,
-          "col": 8
-        },
-        "end": {
-          "line": 4,
           "col": 16
         },
         "type": "'a",
@@ -159,18 +147,6 @@ the type)
   {
     "class": "return",
     "value": [
-      {
-        "start": {
-          "line": 4,
-          "col": 8
-        },
-        "end": {
-          "line": 4,
-          "col": 12
-        },
-        "type": "'a",
-        "tail": "no"
-      },
       {
         "start": {
           "line": 4,
