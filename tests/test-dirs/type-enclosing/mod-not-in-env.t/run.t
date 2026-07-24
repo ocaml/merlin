@@ -58,17 +58,5 @@
       },
       "type": "'a",
       "tail": "no"
-    },
-    {
-      "start": {
-        "line": 7,
-        "col": 8
-      },
-      "end": {
-        "line": 7,
-        "col": 11
-      },
-      "type": "'a",
-      "tail": "no"
     }
   ]
