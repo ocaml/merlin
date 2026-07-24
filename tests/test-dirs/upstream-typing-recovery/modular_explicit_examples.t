@@ -140,7 +140,398 @@ diagnostics), whereas the compiler recovers 19 errors. (see claude-report.md)
 
   $ $MERLIN single errors -filename modular_explicit_examples.ml < modular_explicit_examples.ml
   {
-    "class": "error",
-    "value": "The module F is not a functor, it cannot be applied.",
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 41,
+          "col": 2
+        },
+        "end": {
+          "line": 41,
+          "col": 5
+        },
+        "type": "typer",
+        "sub": [
+          {
+            "start": {
+              "line": 41,
+              "col": 2
+            },
+            "end": {
+              "line": 41,
+              "col": 5
+            },
+            "message": "This function is module-dependent. The dependency is preserved
+  when the function is passed a static module argument (module M : S)
+  or (module M). Its argument here is not static, so the type-checker
+  tried instead to change the function type to be non-dependent."
+          }
+        ],
+        "valid": true,
+        "message": "This expression has type (module M : Typ) -> M.t -> 'a * M.t
+  but an expression was expected of type (module Typ) -> 'b
+  The module M would escape its scope"
+      },
+      {
+        "start": {
+          "line": 47,
+          "col": 2
+        },
+        "end": {
+          "line": 47,
+          "col": 5
+        },
+        "type": "typer",
+        "sub": [
+          {
+            "start": {
+              "line": 47,
+              "col": 2
+            },
+            "end": {
+              "line": 47,
+              "col": 5
+            },
+            "message": "This function is module-dependent. The dependency is preserved
+  when the function is passed a static module argument (module M : S)
+  or (module M). Its argument here is not static, so the type-checker
+  tried instead to change the function type to be non-dependent."
+          }
+        ],
+        "valid": true,
+        "message": "This expression has type (module M : Typ) -> M.t -> 'a * M.t
+  but an expression was expected of type (module Typ) -> 'b
+  The module M would escape its scope"
+      },
+      {
+        "start": {
+          "line": 47,
+          "col": 6
+        },
+        "end": {
+          "line": 47,
+          "col": 7
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "The value m has type (module Typ with type t = int)
+  but an expression was expected of type (module Typ)
+  The constraint on t in the first module type is not compatible
+  with the declaration of type t in the second module type."
+      },
+      {
+        "start": {
+          "line": 51,
+          "col": 2
+        },
+        "end": {
+          "line": 51,
+          "col": 6
+        },
+        "type": "typer",
+        "sub": [
+          {
+            "start": {
+              "line": 51,
+              "col": 2
+            },
+            "end": {
+              "line": 51,
+              "col": 6
+            },
+            "message": "This function is module-dependent. The dependency is preserved
+  when the function is passed a static module argument (module M : S)
+  or (module M). Its argument here is not static, so the type-checker
+  tried instead to change the function type to be non-dependent."
+          }
+        ],
+        "valid": true,
+        "message": "This expression has type (module M : Typ) -> M.t
+  but an expression was expected of type (module Typ) -> 'a
+  The module M would escape its scope"
+      },
+      {
+        "start": {
+          "line": 51,
+          "col": 7
+        },
+        "end": {
+          "line": 51,
+          "col": 19
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "This expression should not be a function, the expected type is (module Typ)"
+      },
+      {
+        "start": {
+          "line": 53,
+          "col": 17
+        },
+        "end": {
+          "line": 53,
+          "col": 19
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "The constant 10 has type int but an expression was expected of type string"
+      },
+      {
+        "start": {
+          "line": 59,
+          "col": 26
+        },
+        "end": {
+          "line": 59,
+          "col": 37
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "This function has type (module M : Typ) -> y:M.t -> M.t
+  The module argument M cannot be omitted in this application."
+      },
+      {
+        "start": {
+          "line": 64,
+          "col": 2
+        },
+        "end": {
+          "line": 64,
+          "col": 6
+        },
+        "type": "typer",
+        "sub": [
+          {
+            "start": {
+              "line": 64,
+              "col": 2
+            },
+            "end": {
+              "line": 64,
+              "col": 6
+            },
+            "message": "This function is module-dependent. The dependency is preserved
+  when the function is passed a static module argument (module M : S)
+  or (module M). Its argument here is not static, so the type-checker
+  tried instead to change the function type to be non-dependent."
+          }
+        ],
+        "valid": true,
+        "message": "This expression has type (module M : Typ) -> M.t
+  but an expression was expected of type (module Typ) -> 'a
+  The module M would escape its scope"
+      },
+      {
+        "start": {
+          "line": 66,
+          "col": 29
+        },
+        "end": {
+          "line": 66,
+          "col": 38
+        },
+        "type": "typer",
+        "sub": [
+          {
+            "start": {
+              "line": 66,
+              "col": 29
+            },
+            "end": {
+              "line": 66,
+              "col": 38
+            },
+            "message": "Hint: Did you mean labelled?"
+          }
+        ],
+        "valid": true,
+        "message": "Unbound value labelled'"
+      },
+      {
+        "start": {
+          "line": 70,
+          "col": 10
+        },
+        "end": {
+          "line": 70,
+          "col": 22
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "The function applied to this argument has type b:(module M : Typ) -> M.t
+  This argument cannot be applied with label ~c"
+      },
+      {
+        "start": {
+          "line": 74,
+          "col": 43
+        },
+        "end": {
+          "line": 74,
+          "col": 44
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "Unbound module F"
+      },
+      {
+        "start": {
+          "line": 92,
+          "col": 4
+        },
+        "end": {
+          "line": 92,
+          "col": 7
+        },
+        "type": "typer",
+        "sub": [
+          {
+            "start": {
+              "line": 92,
+              "col": 4
+            },
+            "end": {
+              "line": 92,
+              "col": 7
+            },
+            "message": "This function is module-dependent. The dependency is preserved
+  when the function is passed a static module argument (module M : S)
+  or (module M). Its argument here is not static, so the type-checker
+  tried instead to change the function type to be non-dependent."
+          }
+        ],
+        "valid": true,
+        "message": "This expression has type (module M : Map) -> ('a -> 'b) -> 'a M.t -> 'b M.t
+  but an expression was expected of type (module Map) -> 'c
+  The module M would escape its scope"
+      },
+      {
+        "start": {
+          "line": 93,
+          "col": 14
+        },
+        "end": {
+          "line": 96,
+          "col": 12
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "This functor has type
+  (M1 : Map) (M2 : Map) ->
+    sig
+      type 'a t = 'a M1.t M2.t
+      val map : ('a -> 'b) -> 'a M1.t M2.t -> 'b M1.t M2.t
+    end
+  The parameter cannot be eliminated in the result type.
+  Please bind the argument to a module identifier."
+      },
+      {
+        "start": {
+          "line": 93,
+          "col": 14
+        },
+        "end": {
+          "line": 96,
+          "col": 19
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "Signature mismatch:
+  Modules do not match: sig end is not included in Map
+  The type t is required but not provided
+  File \"modular_explicit_examples.ml\", line 77, characters 2-10:
+    Expected declaration
+  The value map is required but not provided
+  File \"modular_explicit_examples.ml\", line 78, characters 2-38:
+    Expected declaration"
+      },
+      {
+        "start": {
+          "line": 99,
+          "col": 23
+        },
+        "end": {
+          "line": 99,
+          "col": 24
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "Unbound module F"
+      },
+      {
+        "start": {
+          "line": 114,
+          "col": 2
+        },
+        "end": {
+          "line": 114,
+          "col": 39
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "Type (module A : Add2) -> A.t -> A.t is not a subtype of
+    (module A : Add) -> A.t -> A.t
+  Modules do not match: Add is not included in Add2
+  The type a is required but not provided
+  File \"modular_explicit_examples.ml\", line 7, characters 2-8:
+    Expected declaration"
+      },
+      {
+        "start": {
+          "line": 124,
+          "col": 26
+        },
+        "end": {
+          "line": 124,
+          "col": 28
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "The constant 10 has type int but an expression was expected of type string"
+      },
+      {
+        "start": {
+          "line": 132,
+          "col": 3
+        },
+        "end": {
+          "line": 132,
+          "col": 4
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "The value g has type (module Name_A : Typ) -> Name_A.t -> int
+  but an expression was expected of type float"
+      },
+      {
+        "start": {
+          "line": 133,
+          "col": 3
+        },
+        "end": {
+          "line": 133,
+          "col": 4
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "The value f has type (module X : Typ) -> X.t -> X.t
+  but an expression was expected of type (module X : Typ) -> X.t -> int
+  Type X.t is not compatible with type int"
+      }
+    ],
     "notifications": []
   }
