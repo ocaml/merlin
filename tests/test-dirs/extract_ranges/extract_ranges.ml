@@ -24,19 +24,28 @@ let extract range s =
   |> Array.mapi (fun i s ->
       if i < range.start.line then None
       else if i = range.start.line && range.start.line = range.end_.line then
-        let spaces = String.init range.start.col (fun _ -> ' ') in
+        let spaces =
+          List.init range.start.col (fun i ->
+              if i + 3 < range.start.col then " " else "·")
+          |> String.concat ""
+        in
         let extracted =
           String.sub s range.start.col (range.end_.col - range.start.col)
         in
-        Some (spaces ^ extracted)
+        Some (spaces ^ extracted ^ "···")
       else if i = range.start.line then
-        let spaces = String.init range.start.col (fun _ -> ' ') in
+        let spaces =
+          List.init range.start.col (fun i ->
+              if i + 3 < range.start.col then " " else "·")
+          |> String.concat ""
+        in
         let extracted =
           String.sub s range.start.col (String.length s - range.start.col)
         in
         Some (spaces ^ extracted)
       else if i < range.end_.line then Some s
-      else if i = range.end_.line then Some (String.sub s 0 range.end_.col)
+      else if i = range.end_.line then
+        Some (String.sub s 0 range.end_.col ^ "···")
       else None)
   |> Array.to_list |> List.filter_map Fun.id |> String.concat "\n"
 
