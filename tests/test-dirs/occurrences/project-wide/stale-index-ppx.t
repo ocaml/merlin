@@ -72,6 +72,6 @@ Foo was defined on line 2 when the index was built, but is now defined on line 1
         "line": 2,
         "col": 7
       },
-      "stale": false
+      "stale": true
     }
   ]

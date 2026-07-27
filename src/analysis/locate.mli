@@ -45,6 +45,13 @@ type result =
     approximated : bool
   }
 
+(** Given the path that looks like a ppx-expanded sourcefile, returns the path of the true
+    sourcefile. If the path does not appear to be for a ppx-expanded file or the
+    sourcefile doesn't exist, returns [None].
+
+    ex: [sourcefile_for_ppx_sourcefile "foo.pp.ml"] -> [Some "foo.ml"] *)
+val sourcefile_for_ppx_sourcefile : string -> string option
+
 val uid_of_result :
   traverse_aliases:bool -> Shape_reduce.result -> Shape.Uid.t option * bool
 
