@@ -106,24 +106,40 @@ FIXME: with 5.2 new function representation we lost some granularity
   $ cat >main.ml <<EOF
   > let () =
   >   let x1 = ()
-  >   and x2 = () in
+  >   and x2 = 43 in
   >   ()
   > EOF
 
-  $ $MERLIN single enclosing -position 3:12 -end-position 3:12  -filename main.ml <main.ml | jq .value | extract_ranges main.ml
+  $ $MERLIN single enclosing -position 2:12 -end-position 2:12  -filename main.ml <main.ml | jq .value | extract_ranges main.ml
   ---------- Range 0 ----------
           ···()···
   ---------- Range 1 ----------
   ··let x1 = ()
-    and x2 = () in···
+    and x2 = 43 in···
   ---------- Range 2 ----------
   ··let x1 = ()
-    and x2 = () in
+    and x2 = 43 in
     ()···
   ---------- Range 3 ----------
   let () =
     let x1 = ()
-    and x2 = () in
+    and x2 = 43 in
+    ()···
+
+  $ $MERLIN single enclosing -position 3:12 -end-position 3:12  -filename main.ml <main.ml | jq .value | extract_ranges main.ml
+  ---------- Range 0 ----------
+          ···43···
+  ---------- Range 1 ----------
+  ··let x1 = ()
+    and x2 = 43 in···
+  ---------- Range 2 ----------
+  ··let x1 = ()
+    and x2 = 43 in
+    ()···
+  ---------- Range 3 ----------
+  let () =
+    let x1 = ()
+    and x2 = 43 in
     ()···
 
 
@@ -254,3 +270,23 @@ FIXME: with 5.2 new function representation we lost some granularity
     ()
   
   let () = ()···
+
+
+  $ cat >main.ml <<EOF
+  > let () =
+  >   let () = () in
+  >   ()
+  > EOF
+
+  $ $MERLIN single enclosing -position 2:12 -end-position 2:12  -filename main.ml <main.ml | jq .value | extract_ranges main.ml
+  ---------- Range 0 ----------
+          ···()···
+  ---------- Range 1 ----------
+  ··let () = () in···
+  ---------- Range 2 ----------
+  ··let () = () in
+    ()···
+  ---------- Range 3 ----------
+  let () =
+    let () = () in
+    ()···

@@ -1,5 +1,8 @@
 open Std
 
+let ( << ) (x : Location.t) (y : Location.t) =
+  x.loc_end.pos_cnum <= y.loc_start.pos_cnum
+
 let rec expand_node (nodes : Browse_raw.node list) =
   match nodes with
   | [] -> []
@@ -11,6 +14,20 @@ let rec expand_node (nodes : Browse_raw.node list) =
   | Expression { exp_desc = Texp_sequence (exp1, exp2); _ } :: q ->
     let exp1_loc = Browse_raw.node_merlin_loc Location.none (Expression exp1) in
     exp1_loc :: expand_node (Expression exp2 :: q)
+  | Expression
+      { exp_desc =
+          Texp_match
+            (exp, [ { c_lhs; c_rhs; c_guard = None; c_cont = _ } ], [], _);
+        exp_loc;
+        _
+      }
+    :: q
+    when c_lhs.pat_loc << exp.exp_loc ->
+    let body_exp =
+      Browse_raw.node_merlin_loc Location.none (Expression c_rhs)
+    in
+    let let_in = { exp_loc with loc_end = body_exp.loc_start } in
+    let_in :: expand_node (Expression c_rhs :: q)
   | (Value_binding _ as _vb_node)
     :: (Expression { exp_desc = Texp_let (_, first_vb :: _, exp); _ } :: _ as q)
     ->
