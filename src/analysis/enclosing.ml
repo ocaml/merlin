@@ -14,6 +14,29 @@ let rec expand_node (nodes : Browse_raw.node list) =
   | Expression { exp_desc = Texp_sequence (exp1, exp2); _ } :: q ->
     let exp1_loc = Browse_raw.node_merlin_loc Location.none (Expression exp1) in
     exp1_loc :: expand_node (Expression exp2 :: q)
+  | (Expression
+       { exp_desc =
+           Texp_apply
+             ( _map_or_bind,
+               [ (Nolabel, Arg value_binded);
+                 ( Labelled "f",
+                   Arg
+                     { exp_desc =
+                         Texp_function
+                           ( [ { fp_kind = Tparam_pat pat; _ } ],
+                             Tfunction_body body );
+                       _
+                     } )
+               ] );
+         _
+       } as node)
+    :: q
+    when pat.pat_loc << value_binded.exp_loc
+         && value_binded.exp_loc << body.exp_loc ->
+    let body_exp = Browse_raw.node_merlin_loc Location.none (Expression body) in
+    let vb_loc = Mbrowse.node_loc node in
+    let loc = { vb_loc with loc_end = body_exp.loc_start } in
+    loc :: expand_node (Expression body :: q)
   | Expression
       { exp_desc =
           Texp_match
