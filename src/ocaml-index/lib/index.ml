@@ -123,15 +123,21 @@ let index_of_cmt ~into ~root ~rewrite_root ~build_path ~do_not_use_cmt_loadpath
     match cmt_sourcefile with
     | None -> into.stats
     | Some src -> (
+      let src, preprocessed =
+        match Locate.sourcefile_for_ppx_sourcefile src with
+        | Some raw_src -> (raw_src, true)
+        | None -> (src, false)
+      in
       let rooted_src = with_root ?root src in
       try
         let stats = Unix.stat rooted_src in
+        let source_digest =
+          if preprocessed then Some (Digest.file rooted_src)
+          else cmt_source_digest
+        in
         let src = if rewrite_root then rooted_src else src in
         Stats.add src
-          { mtime = stats.st_mtime;
-            size = stats.st_size;
-            source_digest = cmt_source_digest
-          }
+          { mtime = stats.st_mtime; size = stats.st_size; source_digest }
           into.stats
       with Unix.Unix_error _ -> into.stats)
   in

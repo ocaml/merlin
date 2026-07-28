@@ -309,6 +309,20 @@ let reroot_build_dir ~root path =
     let sep = Printf.sprintf "%c" sep in
     Filename.concat root (String.concat ~sep l)
 
+let sourcefile_for_ppx_sourcefile file =
+  match file |> String.split_on_char ~sep:'.' |> List.rev with
+  | ext :: "pp" :: rev_path -> (
+    (* If the source file was a post-processed file (.pp.mli?), use the
+          regular .mli? file for locate. *)
+    let file = ext :: rev_path |> List.rev |> String.concat ~sep:"." in
+    match
+      Misc.exact_file_exists ~dirname:(Filename.dirname file)
+        ~basename:(Filename.basename file)
+    with
+    | true -> Some file
+    | false -> None)
+  | _ -> None
+
 let move_to (config : Mconfig.t) filename cmt_infos =
   let digest =
     (* [None] only for packs, and we wouldn't have a trie if the cmt was for a
@@ -325,23 +339,9 @@ let move_to (config : Mconfig.t) filename cmt_infos =
       | None -> sourcefile_in_builddir
       | Some root -> reroot_build_dir ~root sourcefile_in_builddir
     in
-    match
-      sourcefile_in_builddir |> String.split_on_char ~sep:'.' |> List.rev
-    with
-    | ext :: "pp" :: rev_path -> (
-      (* If the source file was a post-processed file (.pp.mli?), use the
-         regular .mli? file for locate. *)
-      let sourcefile_in_builddir =
-        ext :: rev_path |> List.rev |> String.concat ~sep:"."
-      in
-      match
-        Misc.exact_file_exists
-          ~dirname:(Filename.dirname sourcefile_in_builddir)
-          ~basename:(Filename.basename sourcefile_in_builddir)
-      with
-      | true -> Digest.file sourcefile_in_builddir
-      | false -> Option.get cmt_infos.cmt_source_digest)
-    | _ -> Option.get cmt_infos.cmt_source_digest
+    match sourcefile_for_ppx_sourcefile sourcefile_in_builddir with
+    | Some raw_src -> Digest.file raw_src
+    | None -> Option.get cmt_infos.cmt_source_digest
   in
   File_switching.move_to ~digest filename
 

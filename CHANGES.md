@@ -9,6 +9,8 @@ unreleased
       submodule no longer hides the opened module (fixes #1748)
     - Fix occurrences staleness detection when the server is not running at the
       project's source root. (#2097)
+  + ocaml index
+    - Fix staleness detection in the presence of ppxes. (#2110)
 
 merlin 5.8
 ==========
