@@ -41,10 +41,19 @@ let name_of_patt = function
 
 let mk ?(children = []) ~location ~deprecated outline_kind outline_type
     (name : string Location.loc) =
+  (* Compiler-generated bindings such as the eta-expansion of a function
+     with an optional argument carry a dummy name location. The LSP
+     protocol requires the selection range to be included in the item
+     range, so fall back to the item location whenever the name's
+     location lies outside of it (#2106). *)
+  let selection =
+    if Location_aux.included ~into:location name.loc then name.loc
+    else location
+  in
   { Query_protocol.outline_kind;
     outline_type;
     location;
-    selection = name.loc;
+    selection;
     children;
     outline_name = name.txt;
     deprecated

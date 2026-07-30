@@ -42,12 +42,12 @@ binding carries a dummy name location which must not leak into the
             "deprecated": false,
             "selection": {
               "start": {
-                "line": 0,
-                "col": -1
+                "line": 2,
+                "col": 24
               },
               "end": {
-                "line": 0,
-                "col": -1
+                "line": 2,
+                "col": 25
               }
             }
           }
