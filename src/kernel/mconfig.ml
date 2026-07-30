@@ -473,6 +473,7 @@ let ocaml_ignored_flags =
     "-remove-unused-arguments";
     "-S";
     "-shared";
+    "-typing-recovery";
     "-unbox-closures";
     "-unboxed-types";
     "-v";
