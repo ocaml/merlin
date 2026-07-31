@@ -1,3 +1,9 @@
+unreleased
+==========
+
+  + merlin library
+    - Experimental support for OCaml 5.6
+
 merlin 5.8.1
 ============
 Fri Jul 31 11:31:42 CEST 2026
