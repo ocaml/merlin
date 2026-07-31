@@ -433,7 +433,8 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
       else
         let local_defs = Mtyper.get_typedtree typer in
         Some
-          (Locate.get_doc ~config ~env ~local_defs
+          (Locate.get_doc ~buffer_source:(Msource.text source) ~config ~env
+             ~local_defs
              ~comments:(Mpipeline.reader_comments pipeline)
              ~pos)
     in
@@ -513,7 +514,11 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
           else
             let comments = Mpipeline.reader_comments pipeline in
             let local_defs = Mtyper.get_typedtree typer in
-            Type_search.get_doc ~config ~env ~local_defs ~comments ~pos name
+            let buffer_source =
+              Msource.text (Mpipeline.input_source pipeline)
+            in
+            Type_search.get_doc ~buffer_source ~config ~env ~local_defs
+              ~comments ~pos name
         in
         { v with typ; doc })
   | Refactor_open (mode, pos) ->
@@ -538,7 +543,9 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     in
     if path = "" then `Invalid_context
     else
-      Locate.get_doc ~config ~env ~local_defs ~comments ~pos (`User_input path)
+      let buffer_source = Msource.text (Mpipeline.input_source pipeline) in
+      Locate.get_doc ~buffer_source ~config ~env ~local_defs ~comments ~pos
+        (`User_input path)
   | Syntax_document pos -> (
     let typer = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
