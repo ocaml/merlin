@@ -26,11 +26,10 @@ The first typechecker state notices that lib changed and refreshes the shared
 directory-content cache.
   $ $MERLIN server errors -filename test.ml < test.ml | jq .value[].message -r
 
-FIXME The second typechecker state must also notice lib/bar.cmi. In particular, the
+The second typechecker state must also notice lib/bar.cmi. In particular, the
 shared directory-content cache must not make its stale local load-path snapshot
 look current.
   $ $MERLIN server errors -filename other.ml < other.ml | jq .value[].message -r
-  Unbound module Bar
 
 For reference, single mode (which spawns a fresh process and so cannot reuse
 any cache) returns the correct answer:
