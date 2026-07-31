@@ -1,5 +1,6 @@
-unreleased
-==========
+merlin 5.8.1
+============
+Fri Jul 31 11:31:42 CEST 2026
 
   + merlin library
     - occurrences: fix files modified since the index was built never being
