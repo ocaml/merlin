@@ -80,7 +80,7 @@ and core_type type_expr =
     Typ.object_ fields closed
   | Tfield _ -> failwith "Found object field outside of object."
   | Tnil -> Typ.object_ [] Closed
-  | Tlink type_expr | Tsubst (type_expr, _) | Texpand (type_expr, _, _) ->
+  | Tlink type_expr | Tsubst (type_expr, _) | Texpand (type_expr, _) ->
     core_type type_expr
   | Tvariant row ->
     let row_fields = row_fields row in

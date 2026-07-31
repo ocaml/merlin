@@ -307,8 +307,10 @@ end = struct
         let id_map = (id, new_id) :: id_map in
         let package = deep_copy_package id_map copy_with_map package in
         Tfunctor (l, new_id, package, copy_with_map id_map type_expr)
-    | Texpand (t, p, tl) ->
-        Texpand (copy t, copy_path id_map p, List.map copy tl)
+    | Texpand (t, abbr) ->
+        Texpand (copy t, {abbr_path = copy_path id_map abbr.abbr_path;
+                          abbr_args = List.map copy abbr.abbr_args;
+                          abbr_level = abbr.abbr_level})
     | Tlink _ | Tsubst _ -> assert false
 
 
@@ -684,11 +686,10 @@ let type_continuation_pat env expected_ty sp =
   | Ppat_var name ->
       let id = Ident.create_local name.txt in
       let desc =
-        { val_type = expected_ty; val_kind = Val_reg;
-          Types.val_loc = loc; val_attributes = [];
-          val_uid = Uid.mk ~current_unit:(Env.get_current_unit ()); }
+        { cont_id = id; cont_loc = loc; cont_type = expected_ty;
+          cont_uid = Uid.mk ~current_unit:(Env.get_current_unit ()); }
       in
-        Some (id, desc)
+        Some desc
   | Ppat_extension ext ->
       raise (Error_forward (Builtin_attributes.error_of_extension ext))
   | _ -> Error.log_and_raise loc env Invalid_continuation_pattern
@@ -894,13 +895,13 @@ type type_pat_state =
 
 let continuation_variable = function
   | None -> []
-  | Some (id, (desc:Types.value_description)) ->
-    [{pv_id = id;
-     pv_type = desc.val_type;
-     pv_loc = desc.val_loc;
+  | Some {cont_id; cont_loc; cont_type; cont_uid} ->
+    [{pv_id = cont_id;
+     pv_type = cont_type;
+     pv_loc = cont_loc;
      pv_kind = Continuation_var;
-     pv_attributes = desc.val_attributes;
-     pv_uid= desc.val_uid}]
+     pv_attributes = [];
+     pv_uid= cont_uid}]
 
 let create_type_pat_state ?cont allow_modules =
   let tps_module_variables =
@@ -5257,10 +5258,11 @@ and type_expect_
           exp_attributes = sexp.pexp_attributes;
           exp_env = env }
       in
-      if !Clflags.typing_recovery then
+      begin
         try suspended ()
         with Error.In_context
-            (_, _, Undefined_method (_obj, _, _)) ->
+            (_, _, Undefined_method (_obj, _, _)) when
+            !Clflags.typing_recovery ->
             rue {
               exp_desc = Texp_send(obj, Tmeth_name met);
               exp_loc = loc; exp_extra = [];
@@ -5268,7 +5270,7 @@ and type_expect_
               exp_attributes =
                 Typing_recovery_state.recovery_attributes sexp.pexp_attributes;
               exp_env = env }
-      else suspended ()
+      end
   | Pexp_new cl ->
       let (cl_path, cl_decl) = Env.lookup_class ~loc:cl.loc cl.txt env in
       begin match cl_decl.cty_new with
@@ -5977,15 +5979,14 @@ and type_function
           in
           (params, body, newtypes, contains_gadt), exp_type)
       in
-      if !Clflags.typing_recovery then
+      begin
         try
           with_explanation ty_fun.explanation (fun () ->
               unify_exp_types loc env exp_type (instance ty_expected))
-        with exn when Typing_recovery.is_recoverable exn ->
+        with exn when !Clflags.typing_recovery
+                   && Typing_recovery.is_recoverable exn ->
           Typing_recovery.erroneous_type_register ty_expected
-      else
-        with_explanation ty_fun.explanation (fun () ->
-            unify_exp_types loc env exp_type (instance ty_expected));
+      end;
       let newtype = nt_id, newtype, nt_uid in
       exp_type, params, body, newtype :: newtypes, contains_gadt
   | { pparam_desc = Pparam_val (arg_label, None, pat); pparam_loc } :: rest
@@ -7365,7 +7366,6 @@ and type_cases
     ~type_body:begin
       fun { pc_guard; pc_rhs } pat ~when_env ~ext_env ~cont ~ty_expected
         ~ty_infer ~contains_gadt:_ ->
-        (* let cont = Option.map (fun (id,_) -> id) cont in *)
         let guard =
           match pc_guard with
           | None -> None

@@ -578,13 +578,18 @@ let of_node = function
   | Pattern { pat_desc; pat_extra = _ } -> of_pattern_desc pat_desc
   | Expression { exp_desc; exp_extra = _; exp_loc } ->
     of_expression_desc exp_loc exp_desc
-  | Case { c_lhs; c_cont = Some (id, vd); c_guard; c_rhs } ->
-    let name = Ident.name id in
+  | Case
+      { c_lhs;
+        c_cont = Some { cont_id; cont_loc; cont_uid; cont_type };
+        c_guard;
+        c_rhs
+      } ->
+    let name = Ident.name cont_id in
     let cont_pat =
-      { pat_desc = Tpat_var (id, { txt = name; loc = vd.val_loc }, vd.val_uid);
-        pat_loc = vd.val_loc;
+      { pat_desc = Tpat_var (cont_id, { txt = name; loc = cont_loc }, cont_uid);
+        pat_loc = cont_loc;
         pat_extra = [];
-        pat_type = vd.val_type;
+        pat_type = cont_type;
         pat_env = c_rhs.exp_env;
         pat_attributes = []
       }

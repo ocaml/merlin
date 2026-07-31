@@ -1177,7 +1177,7 @@ module Aliases = struct
       | Tfield(_, _, _, ty2) ->
           mark_loops_rec visited ty2
       | Tnil -> ()
-      | Texpand (_, _, _) -> () (* MAYBE: @xvw to be checked *)
+      | Texpand (_, _) -> () (* MAYBE: @xvw to be checked *)
       | Tsubst _ -> ()  (* we do not print arguments *)
       | Tlink _ -> fatal_error "Printtyp.mark_loops_rec (2)"
       | Tpoly (ty, tyl) ->
@@ -2227,7 +2227,7 @@ let trees_of_type_expansion mode Errortrace.{ty = t; expanded = t'} =
   let manifest =
     match get_abbrev t with
     | None -> None
-    | Some (tconstr, params) ->
+    | Some {abbr_path=tconstr; abbr_args=params} ->
         let should_use_manifest =
           match printer_get_desc t with
           | Tconstr (p, tl, _) ->

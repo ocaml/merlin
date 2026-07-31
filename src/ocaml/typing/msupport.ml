@@ -36,18 +36,16 @@ let () = Msupport_parsing.msupport_raise_error := Typing_recovery.log_or_raise
 
 let () =
   Typing_recovery.register_recoverable (function
-        ( Misc.Fatal_error _
-        | Persistent_env.Error _
-        | Typemod.Error_forward _
-        | Typecore.Error_forward _
-        | Magic_numbers.Cmi.Error _) as exn ->
-        (* Some specific error handling that can't be supported at the
+    | ( Misc.Fatal_error _
+      | Persistent_env.Error _
+      | Typemod.Error_forward _
+      | Typecore.Error_forward _
+      | Magic_numbers.Cmi.Error _ ) as exn ->
+      (* Some specific error handling that can't be supported at the
            compiler level.
 
            This was previously handled by [Typemod.initial_env]
         *)
-        Typing_recovery.log_or_raise exn;
-        true
-
-      | _ -> false
-    )
+      Typing_recovery.log_or_raise exn;
+      true
+    | _ -> false)
