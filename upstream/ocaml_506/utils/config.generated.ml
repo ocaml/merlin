@@ -23,17 +23,17 @@ let target_bindir = {|/usr/local/bin|}
 
 let ccomp_type = {|cc|}
 let c_compiler = {|gcc|}
-let c_compiler_vendor = {|gcc-15-2|}
+let c_compiler_vendor = {|clang-17-0|}
 let c_output_obj = {|-o |}
 let c_has_debug_prefix_map = true
-let as_has_debug_prefix_map = true
-let as_is_cc = false
-let bytecode_cflags = {|-O2 -fno-strict-aliasing -fwrapv -fPIC  -pthread |}
+let as_has_debug_prefix_map = false
+let as_is_cc = true
+let bytecode_cflags = {|-O2 -fno-strict-aliasing -fwrapv   -pthread |}
 let bytecode_cppflags = {| -D_FILE_OFFSET_BITS=64 |}
-let native_cflags = {|-O2 -fno-strict-aliasing -fwrapv -fPIC  -pthread |}
+let native_cflags = {|-O2 -fno-strict-aliasing -fwrapv   -pthread |}
 let native_cppflags = {| -D_FILE_OFFSET_BITS=64 |}
 
-let bytecomp_c_libraries = {|-lzstd  -lm  -lpthread|}
+let bytecomp_c_libraries = {|-L/opt/homebrew/opt/zstd/lib -lzstd    -lpthread|}
 (* bytecomp_c_compiler and native_c_compiler have been supported for a
    long time and are retained for backwards compatibility.
    For programs that don't need compatibility with older OCaml releases
@@ -44,19 +44,19 @@ let bytecomp_c_compiler =
   c_compiler ^ " " ^ bytecode_cflags ^ " " ^ bytecode_cppflags
 let native_c_compiler =
   c_compiler ^ " " ^ native_cflags ^ " " ^ native_cppflags
-let native_c_libraries = {| -lm  -lpthread|}
-let compression_c_libraries = {|-lzstd|}
+let native_c_libraries = {|   -lpthread|}
+let compression_c_libraries = {|-L/opt/homebrew/opt/zstd/lib -lzstd|}
 let native_ldflags = {||}
-let with_nonexecstack_note = true
+let with_nonexecstack_note = false
 let native_pack_linker = {|ld -r -o |}
-let default_rpath = {|-Wl,-rpath,|}
-let mksharedlibrpath = {|-Wl,-rpath,|}
+let default_rpath = {||}
+let mksharedlibrpath = {||}
 let ar = {|ar|}
 let supports_shared_libraries = true
 let native_dynlink = true
-let mkdll = {|gcc -shared |}
-let mkexe = {|gcc  -Wl,-E |}
-let mkmaindll = {|gcc -shared |}
+let mkdll = {|gcc -shared -undefined dynamic_lookup -Wl,-w |}
+let mkexe = {|gcc  |}
+let mkmaindll = {|gcc -shared -undefined dynamic_lookup -Wl,-w |}
 
 let flambda = false
 let with_flambda_invariants = false
@@ -68,23 +68,23 @@ let flat_float_array = true
 let align_double = false
 let align_int64 = false
 
-let function_sections = true
+let function_sections = false
 let afl_instrument = false
 
-let bytecode_runtime_id = {|d100|}
-let native_runtime_id = {|d100|}
+let bytecode_runtime_id = {|b100|}
+let native_runtime_id = {|b100|}
 
 let native_compiler = true
 
-let architecture = {|amd64|}
+let architecture = {|arm64|}
 let model = {|default|}
-let system = {|linux|}
+let system = {|macosx|}
 let target_os_type = {|Unix|}
 
-let asm = {|as|}
+let asm = {|gcc -c -Wno-trigraphs|}
 let asm_cfi_supported = true
-let asm_size_type_directives = true
-let asm_dwarf_version = None
+let asm_size_type_directives = false
+let asm_dwarf_version = Some 5
 let with_frame_pointers = false
 let reserved_header_bits = 0
 
@@ -94,14 +94,14 @@ let ext_asm = "." ^ {|s|}
 let ext_lib = "." ^ {|a|}
 let ext_dll = "." ^ {|so|}
 
-let host = {|x86_64-pc-linux-gnu|}
-let target = {|x86_64-pc-linux-gnu|}
+let host = {|aarch64-apple-darwin24.5.0|}
+let target = {|aarch64-apple-darwin24.5.0|}
 
 let systhread_supported = true
 
 let flexdll_dirs = []
 
-let ar_supports_response_files = true
+let ar_supports_response_files = false
 
 let tsan = false
 
