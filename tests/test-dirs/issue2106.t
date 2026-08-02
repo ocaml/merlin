@@ -1,8 +1,7 @@
-The outline selection range must always be included in the item range
-(the LSP protocol requires it). When `f` takes an optional argument and
-is passed to `List.map`, the compiler eta-expands it; the generated
-binding carries a dummy name location which must not leak into the
-`selection` field. See issue #2106.
+When `f` takes an optional argument and is passed to `List.map`, the
+compiler eta-expands it; the generated binding carries no source
+location and must not appear in the outline. Descendants coming from
+the user's expression must survive the elision. See issue #2106.
 
   $ cat >test.ml <<EOF
   > let f ?x _ = x
@@ -25,33 +24,7 @@ binding carries a dummy name location which must not leak into the
         "name": "g",
         "kind": "Value",
         "type": "'a list -> 'b option list",
-        "children": [
-          {
-            "start": {
-              "line": 2,
-              "col": 24
-            },
-            "end": {
-              "line": 2,
-              "col": 25
-            },
-            "name": "arg",
-            "kind": "Value",
-            "type": "?x:'a -> 'b -> 'a option",
-            "children": [],
-            "deprecated": false,
-            "selection": {
-              "start": {
-                "line": 2,
-                "col": 24
-              },
-              "end": {
-                "line": 2,
-                "col": 25
-              }
-            }
-          }
-        ],
+        "children": [],
         "deprecated": false,
         "selection": {
           "start": {
@@ -92,3 +65,26 @@ binding carries a dummy name location which must not leak into the
     ],
     "notifications": []
   }
+
+The elided binding's children belong to the user's expression and
+must be hoisted, not dropped: `seed` below stays visible under `g`.
+
+  $ cat >test2.ml <<EOF
+  > let f ?x y = (x, y)
+  > let g l = List.map (ignore (let seed = 1 in seed); f) l
+  > EOF
+
+  $ $MERLIN single outline -filename test2.ml <test2.ml |
+  > jq '[.value[] | {name, children: [.children[].name]}]'
+  [
+    {
+      "name": "g",
+      "children": [
+        "seed"
+      ]
+    },
+    {
+      "name": "f",
+      "children": []
+    }
+  ]

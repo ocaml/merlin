@@ -9,10 +9,11 @@ unreleased
       submodule no longer hides the opened module (fixes #1748)
     - Fix occurrences staleness detection when the server is not running at the
       project's source root. (#2097)
-    - outline: fall back to the item location for the `selection` range when
-      the name's location lies outside of it, e.g. the dummy location on the
-      compiler-generated eta-expansion of a function with an optional argument
-      (#2111, fixes #2106)
+    - outline: hide bindings that carry no source location, such as the
+      compiler-generated eta-expansion of a function with an optional
+      argument, keeping their descendants; also fall back to the item
+      location for the `selection` range when a name's location lies
+      outside of it (#2111, fixes #2106)
   + ocaml index
     - Fix staleness detection in the presence of ppxes. (#2110)
 

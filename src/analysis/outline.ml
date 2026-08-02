@@ -41,11 +41,11 @@ let name_of_patt = function
 
 let mk ?(children = []) ~location ~deprecated outline_kind outline_type
     (name : string Location.loc) =
-  (* Compiler-generated bindings such as the eta-expansion of a function
-     with an optional argument carry a dummy name location. The LSP
-     protocol requires the selection range to be included in the item
-     range, so fall back to the item location whenever the name's
-     location lies outside of it (#2106). *)
+  (* The LSP protocol requires the selection range to be included in the
+     item range. Bindings carrying no location at all are elided from
+     the outline (see [get_val_elements]); the fallback below remains as
+     a safety net for any other out-of-range provenance, such as a dummy
+     name location on a node whose own location is real (#2106). *)
   let selection =
     if Location_aux.included ~into:location name.loc then name.loc
     else location
@@ -164,6 +164,14 @@ let rec summarize node =
 and get_val_elements node =
   match node.t_node with
   | Expression _ ->
+    List.concat_map (Lazy.force node.t_children) ~f:get_val_elements
+  (* The typechecker synthesizes bindings with no counterpart in the
+     source, such as the eta-expansion of a function with an optional
+     argument; they carry [Location.none]. Elide them but keep their
+     descendants, which belong to the user's expression (#2106).
+     Bindings with a ghost but real location, as ppxes usually produce,
+     are unaffected. *)
+  | Value_binding { vb_loc; _ } when Location.is_none vb_loc ->
     List.concat_map (Lazy.force node.t_children) ~f:get_val_elements
   | Class_expr _ | Class_structure _ -> get_class_elements node
   | _ -> Option.to_list (summarize node)
