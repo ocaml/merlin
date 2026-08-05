@@ -263,6 +263,15 @@ let lookup_related_uids_in_indexes ~(config : Mconfig.t) uid =
   |> Option.value_map ~default:[] ~f:(fun x ->
       x |> Union_find.get store |> Uid_set.elements)
 
+(* [find_linked_uids] returns the list of uids related to [uid] whose declaration is
+   named [name], together with the set of files declaring related uids under a
+   *different* name. Related uids link the declarations and the definitions of a same
+   identifier, so a name mismatch means that the build artifacts of these files are
+   out-of-sync with the sources. This may happen right after the identifier was renamed,
+   before the project was rebuilt: silently ignoring the mismatch results in an incomplete
+   list of occurrences, which is especially harmful when the client uses the result to perform
+   a rename. Reporting the files lets clients detect the incomplete result through the
+   [`Out_of_sync] status.*)
 let find_linked_uids ~config ~scope ~name uid =
   let title = "find_linked_uids" in
   match uid with
@@ -274,14 +283,15 @@ let find_linked_uids ~config ~scope ~name uid =
       Locate.lookup_uid_decl ~config uid
       |> Option.bind ~f:(Typedtree_utils.location_of_declaration ~uid)
       |> Option.value_map
-           ~f:(fun { Location.txt; _ } ->
-             let result = String.equal name txt in
-             if not result then
+           ~f:(fun { Location.txt; loc } ->
+             if String.equal name txt then `Name_matches
+             else begin
                log ~title "Found clashing idents %S <> %S. Ignoring UID %a."
                  name txt Logger.fmt
                  (Fun.flip Shape.Uid.print uid);
-             result)
-           ~default:false
+               `Name_clash loc.Location.loc_start.Lexing.pos_fname
+             end)
+           ~default:`Decl_not_found
     in
     let related_uids =
       match scope with
@@ -291,8 +301,17 @@ let find_linked_uids ~config ~scope ~name uid =
     in
     log ~title "Found related uids: [%a]" Logger.fmt (fun fmt ->
         List.iter ~f:(fprintf fmt "%a;" Shape.Uid.print) related_uids);
-    List.filter ~f:check_name related_uids
-  | _ -> []
+    let matching_uids, clashing_files =
+      List.fold_left related_uids ~init:([], String.Set.empty)
+        ~f:(fun (matching_uids, clashing_files) uid ->
+          match check_name uid with
+          | `Name_matches -> (uid :: matching_uids, clashing_files)
+          | `Name_clash file ->
+            (matching_uids, String.Set.add file clashing_files)
+          | `Decl_not_found -> (matching_uids, clashing_files))
+    in
+    (List.rev matching_uids, clashing_files)
+  | _ -> ([], String.Set.empty)
 
 let locs_of ~config ~env ~typer_result ~pos ~scope path =
   log ~title:"occurrences" "Looking for occurences of %s (pos: %s)" path
@@ -344,20 +363,23 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
     let buffer_occurrences =
       Occurrence_set.of_filtered_lid_set buffer_locs ~f:(fun _ -> Some Fresh)
     in
-    let external_occurrences =
-      if scope = `Buffer then []
+    let external_occurrences, clashing_files =
+      if scope = `Buffer then ([], String.Set.empty)
       else
         let name =
           String.split_on_char ~sep:'.' path |> List.last |> Option.get
         in
-        let additional_uids = find_linked_uids ~config ~scope ~name def_uid in
-        List.concat_map
-          (def_uid :: additional_uids)
-          ~f:(get_external_locs ~config ~current_buffer_path)
+        let additional_uids, clashing_files =
+          find_linked_uids ~config ~scope ~name def_uid
+        in
+        ( List.concat_map
+            (def_uid :: additional_uids)
+            ~f:(get_external_locs ~config ~current_buffer_path),
+          clashing_files )
     in
     let external_occurrences, out_of_sync_files =
       List.fold_left
-        ~init:(Occurrence_set.empty, String.Set.empty)
+        ~init:(Occurrence_set.empty, clashing_files)
         ~f:(fun (acc_locs, acc_files) (locs, files) ->
           (Occurrence_set.union acc_locs locs, String.Set.union acc_files files))
         external_occurrences

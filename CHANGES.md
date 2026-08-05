@@ -1,3 +1,13 @@
+unreleased
+==========
+
+  + merlin library
+    - occurrences: when looking for the occurrences of an identifier that was
+      renamed since the project was last built, report the files whose build
+      artifacts are out-of-sync with the sources in the status of the query,
+      instead of silently returning incomplete results. Clients performing a
+      rename can now detect that the occurrences of these files are missing.
+
 merlin 5.8.1
 ============
 Fri Jul 31 11:31:42 CEST 2026
