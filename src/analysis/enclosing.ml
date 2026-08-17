@@ -132,10 +132,41 @@ let rec expand_node ~current_loc (nodes : Browse_raw.node list) =
         let_in :: expand_node ~current_loc:new_loc (Expression c_rhs :: q)
       else
         expand_node ~current_loc (Expression c_rhs :: q)
+  | Expression { exp_desc = Texp_letop { body; _ }; exp_loc; _ } :: q ->
+    let body_loc = Browse_raw.node_merlin_loc Location.none (Expression body.c_rhs) in
+    let loc = { exp_loc with loc_end = body_loc.loc_start } in
+    if contains current_loc body_loc then
+      if is_valid_loc loc then
+        if contains current_loc loc then
+          expand_node ~current_loc q
+        else
+          let new_loc = merge current_loc loc in
+          loc :: expand_node ~current_loc:new_loc q
+      else
+        expand_node ~current_loc q
+    else
+      if is_valid_loc loc then
+        let new_loc = merge current_loc loc in
+        loc :: expand_node ~current_loc:new_loc (Expression body.c_rhs :: q)
+      else
+        expand_node ~current_loc (Expression body.c_rhs :: q)
   | (Value_binding _ as _vb_node)
     :: (Expression { exp_desc = Texp_let (_, first_vb :: _, exp); _ } :: _ as q)
     ->
     let loc = get_binding_loc first_vb exp in
+    if is_valid_loc loc then
+      if contains current_loc loc then
+        expand_node ~current_loc q
+      else
+        let new_loc = merge current_loc loc in
+        loc :: expand_node ~current_loc:new_loc q
+    else
+      expand_node ~current_loc q
+  | (Binding_op _ | Pattern _)
+    :: (Expression { exp_desc = Texp_letop { body; _ }; exp_loc; _ } :: _ as q)
+    ->
+    let body_loc = Browse_raw.node_merlin_loc Location.none (Expression body.c_rhs) in
+    let loc = { exp_loc with loc_end = body_loc.loc_start } in
     if is_valid_loc loc then
       if contains current_loc loc then
         expand_node ~current_loc q
