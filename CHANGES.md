@@ -1,3 +1,9 @@
+unreleased
+==========
+
+  + merlin library
+    - destruct: allow to destruct let-bindings's patterns (#2117)
+
 merlin 5.8.1
 ============
 Fri Jul 31 11:31:42 CEST 2026
