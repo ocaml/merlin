@@ -114,3 +114,53 @@ rhs is a record
     "notifications": []
   }
 
+Now, for completeness we test toplevel bindings
+
+  $ cat > letbindings_toplevel.ml <<EOF
+  > type t = { x : int option ; y : float}
+  > let record = {x = None; y = 2.}
+  > type u = A | B of t
+  > let variant = A
+  > 
+  > let _ = record
+  > 
+  > let _ = variant
+  > EOF
+
+  $ $MERLIN single case-analysis -start 6:4 -end 6:4 -filename letbindings_toplevel.ml < letbindings_toplevel.ml
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 6,
+          "col": 4
+        },
+        "end": {
+          "line": 6,
+          "col": 5
+        }
+      },
+      "{ x; y }"
+    ],
+    "notifications": []
+  }
+
+  $ $MERLIN single case-analysis -start 8:4 -end 8:4 -filename letbindings_toplevel.ml < letbindings_toplevel.ml
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 8,
+          "col": 4
+        },
+        "end": {
+          "line": 8,
+          "col": 5
+        }
+      },
+      "A | B _"
+    ],
+    "notifications": []
+  }
