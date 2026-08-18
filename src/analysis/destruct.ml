@@ -213,6 +213,7 @@ let rec get_match = function
     | Case _ | Pattern _ ->
       (* We are still in the same branch, going up. *)
       get_match parents
+    | Value_binding { vb_expr; _ } -> (vb_expr, vb_expr.exp_type)
     | Expression m -> (
       match m.Typedtree.exp_desc with
       | Typedtree.Texp_match (e, _, _, _) -> (m, e.exp_type)
@@ -247,6 +248,9 @@ let rec get_match = function
       (* We were not in a match *)
       let s = Mbrowse.print_node () parent in
       raise (Not_allowed s))
+
+let collect_every_pattern_for_let_binding vb =
+  (vb.Typedtree.vb_pat.pat_loc, [ vb.vb_pat ])
 
 let collect_every_pattern_for_expression parent =
   let patterns =
@@ -326,6 +330,7 @@ let rec get_every_pattern loc = function
     | Expression _ ->
       (* We are on the right node *)
       collect_every_pattern_for_expression parent
+    | Value_binding vb -> collect_every_pattern_for_let_binding vb
     | _ ->
       (* We were not in a match *)
       let s = Mbrowse.print_node () parent in
