@@ -19,4 +19,30 @@
     },
     "notifications": []
   }
-  
+
+  $ $MERLIN single locate -prefix string_of_type -position 6:10 -context unknown -look-for mli -filename main.mli <main.mli
+  {
+    "class": "return",
+    "value": "Already at definition point",
+    "notifications": []
+  }
+
+
+  $ cat >main.mli <<EOF
+  > type first = A
+  > type second = first
+  > EOF
+
+  $ $MERLIN single locate -prefix first -position 2:6 -context unknown -look-for mli -filename main.mli <main.mli
+  {
+    "class": "return",
+    "value": {
+      "file": "$TESTCASE_ROOT/main.mli",
+      "pos": {
+        "line": 1,
+        "col": 5
+      }
+    },
+    "notifications": []
+  }
+
