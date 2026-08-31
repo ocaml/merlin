@@ -57,7 +57,7 @@ let rec expand_node ~current_loc (nodes : Browse_raw.node list) =
   | Expression { exp_desc = Texp_sequence (exp1, exp2); _ } :: q ->
     let exp1_loc = Browse_raw.node_merlin_loc Location.none (Expression exp1) in
     let exp2_loc = Browse_raw.node_merlin_loc Location.none (Expression exp2) in
-    if contains current_loc exp2_loc then expand_node ~current_loc q
+    if contains current_loc exp2_loc then exp1_loc :: expand_node ~current_loc q
     else if is_valid_loc exp1_loc then
       let new_loc = merge current_loc exp1_loc in
       exp1_loc :: expand_node ~current_loc:new_loc (Expression exp2 :: q)

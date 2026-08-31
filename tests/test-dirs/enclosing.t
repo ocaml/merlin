@@ -215,9 +215,14 @@ FIXME: with 5.2 new function representation we lost some granularity
   ··();
     ();
     ();
-    ();
     ()···
   ---------- Range 4 ----------
+  ··();
+    ();
+    ();
+    ();
+    ()···
+  ---------- Range 5 ----------
   let () =
     ();
     ();
