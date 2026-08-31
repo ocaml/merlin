@@ -215,14 +215,9 @@ FIXME: with 5.2 new function representation we lost some granularity
   ··();
     ();
     ();
+    ();
     ()···
   ---------- Range 4 ----------
-  ··();
-    ();
-    ();
-    ();
-    ()···
-  ---------- Range 5 ----------
   let () =
     ();
     ();
@@ -242,12 +237,15 @@ FIXME: with 5.2 new function representation we lost some granularity
           ···()···
   ---------- Range 1 ----------
   ··let> x = () in
-    ()···
+    ···
   ---------- Range 2 ----------
+  ··let> x = () in
+    ()···
+  ---------- Range 3 ----------
   let () =
     let> x = () in
     ()···
-  ---------- Range 3 ----------
+  ---------- Range 4 ----------
   let (let>) x f = f x
   let () =
     let> x = () in
