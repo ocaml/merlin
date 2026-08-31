@@ -45,30 +45,23 @@ let rec expand_node ~current_loc (nodes : Browse_raw.node list) =
     let body_loc = Browse_raw.node_merlin_loc Location.none (Expression exp) in
     if contains current_loc body_loc then
       if is_valid_loc loc then
-        if contains current_loc loc then
-          expand_node ~current_loc q
+        if contains current_loc loc then expand_node ~current_loc q
         else
           let new_loc = merge current_loc loc in
           loc :: expand_node ~current_loc:new_loc q
-      else
-        expand_node ~current_loc q
-    else
-      if is_valid_loc loc then
-        let new_loc = merge current_loc loc in
-        loc :: expand_node ~current_loc:new_loc (Expression exp :: q)
-      else
-        expand_node ~current_loc (Expression exp :: q)
+      else expand_node ~current_loc q
+    else if is_valid_loc loc then
+      let new_loc = merge current_loc loc in
+      loc :: expand_node ~current_loc:new_loc (Expression exp :: q)
+    else expand_node ~current_loc (Expression exp :: q)
   | Expression { exp_desc = Texp_sequence (exp1, exp2); _ } :: q ->
     let exp1_loc = Browse_raw.node_merlin_loc Location.none (Expression exp1) in
     let exp2_loc = Browse_raw.node_merlin_loc Location.none (Expression exp2) in
-    if contains current_loc exp2_loc then
-      expand_node ~current_loc q
-    else
-      if is_valid_loc exp1_loc then
-        let new_loc = merge current_loc exp1_loc in
-        exp1_loc :: expand_node ~current_loc:new_loc (Expression exp2 :: q)
-      else
-        expand_node ~current_loc (Expression exp2 :: q)
+    if contains current_loc exp2_loc then expand_node ~current_loc q
+    else if is_valid_loc exp1_loc then
+      let new_loc = merge current_loc exp1_loc in
+      exp1_loc :: expand_node ~current_loc:new_loc (Expression exp2 :: q)
+    else expand_node ~current_loc (Expression exp2 :: q)
   | (Expression
        { exp_desc =
            Texp_apply
@@ -93,19 +86,15 @@ let rec expand_node ~current_loc (nodes : Browse_raw.node list) =
     let loc = { vb_loc with loc_end = body_loc.loc_start } in
     if contains current_loc body_loc then
       if is_valid_loc loc then
-        if contains current_loc loc then
-          expand_node ~current_loc q
+        if contains current_loc loc then expand_node ~current_loc q
         else
           let new_loc = merge current_loc loc in
           loc :: expand_node ~current_loc:new_loc q
-      else
-        expand_node ~current_loc q
-    else
-      if is_valid_loc loc then
-        let new_loc = merge current_loc loc in
-        loc :: expand_node ~current_loc:new_loc (Expression body :: q)
-      else
-        expand_node ~current_loc (Expression body :: q)
+      else expand_node ~current_loc q
+    else if is_valid_loc loc then
+      let new_loc = merge current_loc loc in
+      loc :: expand_node ~current_loc:new_loc (Expression body :: q)
+    else expand_node ~current_loc (Expression body :: q)
   | Expression
       { exp_desc =
           Texp_match
@@ -115,76 +104,68 @@ let rec expand_node ~current_loc (nodes : Browse_raw.node list) =
       }
     :: q
     when before c_lhs.pat_loc exp.exp_loc ->
-    let body_loc = Browse_raw.node_merlin_loc Location.none (Expression c_rhs) in
+    let body_loc =
+      Browse_raw.node_merlin_loc Location.none (Expression c_rhs)
+    in
     let let_in = { exp_loc with loc_end = body_loc.loc_start } in
     if contains current_loc body_loc then
       if is_valid_loc let_in then
-        if contains current_loc let_in then
-          expand_node ~current_loc q
+        if contains current_loc let_in then expand_node ~current_loc q
         else
           let new_loc = merge current_loc let_in in
           let_in :: expand_node ~current_loc:new_loc q
-      else
-        expand_node ~current_loc q
-    else
-      if is_valid_loc let_in then
-        let new_loc = merge current_loc let_in in
-        let_in :: expand_node ~current_loc:new_loc (Expression c_rhs :: q)
-      else
-        expand_node ~current_loc (Expression c_rhs :: q)
+      else expand_node ~current_loc q
+    else if is_valid_loc let_in then
+      let new_loc = merge current_loc let_in in
+      let_in :: expand_node ~current_loc:new_loc (Expression c_rhs :: q)
+    else expand_node ~current_loc (Expression c_rhs :: q)
   | Expression { exp_desc = Texp_letop { body; _ }; exp_loc; _ } :: q ->
-    let body_loc = Browse_raw.node_merlin_loc Location.none (Expression body.c_rhs) in
+    let body_loc =
+      Browse_raw.node_merlin_loc Location.none (Expression body.c_rhs)
+    in
     let loc = { exp_loc with loc_end = body_loc.loc_start } in
     if contains current_loc body_loc then
       if is_valid_loc loc then
-        if contains current_loc loc then
-          expand_node ~current_loc q
+        if contains current_loc loc then expand_node ~current_loc q
         else
           let new_loc = merge current_loc loc in
           loc :: expand_node ~current_loc:new_loc q
-      else
-        expand_node ~current_loc q
-    else
-      if is_valid_loc loc then
-        let new_loc = merge current_loc loc in
-        loc :: expand_node ~current_loc:new_loc (Expression body.c_rhs :: q)
-      else
-        expand_node ~current_loc (Expression body.c_rhs :: q)
+      else expand_node ~current_loc q
+    else if is_valid_loc loc then
+      let new_loc = merge current_loc loc in
+      loc :: expand_node ~current_loc:new_loc (Expression body.c_rhs :: q)
+    else expand_node ~current_loc (Expression body.c_rhs :: q)
   | (Value_binding _ as _vb_node)
     :: (Expression { exp_desc = Texp_let (_, first_vb :: _, exp); _ } :: _ as q)
     ->
     let loc = get_binding_loc first_vb exp in
     if is_valid_loc loc then
-      if contains current_loc loc then
-        expand_node ~current_loc q
+      if contains current_loc loc then expand_node ~current_loc q
       else
         let new_loc = merge current_loc loc in
         loc :: expand_node ~current_loc:new_loc q
-    else
-      expand_node ~current_loc q
+    else expand_node ~current_loc q
   | (Binding_op _ | Pattern _)
     :: (Expression { exp_desc = Texp_letop { body; _ }; exp_loc; _ } :: _ as q)
     ->
-    let body_loc = Browse_raw.node_merlin_loc Location.none (Expression body.c_rhs) in
+    let body_loc =
+      Browse_raw.node_merlin_loc Location.none (Expression body.c_rhs)
+    in
     let loc = { exp_loc with loc_end = body_loc.loc_start } in
     if is_valid_loc loc then
-      if contains current_loc loc then
-        expand_node ~current_loc q
+      if contains current_loc loc then expand_node ~current_loc q
       else
         let new_loc = merge current_loc loc in
         loc :: expand_node ~current_loc:new_loc q
-    else
-      expand_node ~current_loc q
+    else expand_node ~current_loc q
   | node :: q ->
     let loc = Mbrowse.node_loc node in
     if is_valid_loc loc then
-      if contains current_loc loc then
-        expand_node ~current_loc q
+      if contains current_loc loc then expand_node ~current_loc q
       else
         let new_loc = merge current_loc loc in
         loc :: expand_node ~current_loc:new_loc q
-    else
-      expand_node ~current_loc q
+    else expand_node ~current_loc q
 
 let make_expand l =
   match l with
@@ -202,7 +183,7 @@ let locs (mbrowse : Mbrowse.t) =
   |> expand_node ~current_loc:Location.none
   |> make_expand
   |> List.fold_left ~init:[] ~f:(fun acc loc ->
-         match acc with
-         | hd :: _ as acc when Location_aux.compare hd loc = 0 -> acc
-         | _ -> loc :: acc)
+      match acc with
+      | hd :: _ as acc when Location_aux.compare hd loc = 0 -> acc
+      | _ -> loc :: acc)
   |> List.rev
