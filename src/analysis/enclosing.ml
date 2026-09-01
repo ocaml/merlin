@@ -12,8 +12,10 @@ let is_valid_loc (loc : Location.t) =
   && loc.loc_start.pos_cnum <= loc.loc_end.pos_cnum
 
 let contains (loc1 : Location.t) (loc2 : Location.t) =
-  loc1.loc_start.pos_cnum <= loc2.loc_start.pos_cnum
-  && loc2.loc_end.pos_cnum <= loc1.loc_end.pos_cnum
+  if Location.is_none loc1 then false
+  else
+    loc1.loc_start.pos_cnum <= loc2.loc_start.pos_cnum
+    && loc2.loc_end.pos_cnum <= loc1.loc_end.pos_cnum
 
 let min_pos (pos1 : Lexing.position) (pos2 : Lexing.position) =
   if pos1.pos_cnum < 0 then pos2
