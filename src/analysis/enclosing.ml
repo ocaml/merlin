@@ -12,17 +12,16 @@ let contains (loc1 : Location.t) (loc2 : Location.t) =
 let ( <= ) x y = contains y x
 
 let merge (loc1 : Location.t) (loc2 : Location.t) =
-  let min_pos (pos1 : Lexing.position) (pos2 : Lexing.position) =
-    if pos1.pos_cnum < 0 then pos2
-    else if pos2.pos_cnum < 0 then pos1
-    else if pos1.pos_cnum < pos2.pos_cnum then pos1
-    else pos2
+  let resolve_non_pos (pos1 : Lexing.position) (pos2 : Lexing.position) f =
+    if pos1.pos_cnum < 0 then pos2 else if pos2.pos_cnum < 0 then pos1 else f ()
   in
-  let max_pos (pos1 : Lexing.position) (pos2 : Lexing.position) =
-    if pos1.pos_cnum < 0 then pos2
-    else if pos2.pos_cnum < 0 then pos1
-    else if pos1.pos_cnum < pos2.pos_cnum then pos2
-    else pos1
+  let min_pos pos1 pos2 =
+    resolve_non_pos pos1 pos2 @@ fun () ->
+    if pos1.pos_cnum < pos2.pos_cnum then pos1 else pos2
+  in
+  let max_pos pos1 pos2 =
+    resolve_non_pos pos1 pos2 @@ fun () ->
+    if pos1.pos_cnum < pos2.pos_cnum then pos2 else pos1
   in
   let loc_start = min_pos loc1.loc_start loc2.loc_start in
   let loc_end = max_pos loc1.loc_end loc2.loc_end in
