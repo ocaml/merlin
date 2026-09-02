@@ -194,40 +194,44 @@ FIXME: with 5.2 new function representation we lost some granularity
 
   $ cat >main.ml <<EOF
   > let () =
-  >   ();
-  >   ();
-  >   ();
-  >   ();
-  >   ()
+  >   (); (* 1 *)
+  >   (); (* 2 *)
+  >   (); (* 3 *)
+  >   (); (* 4 *)
+  >   ()  (* 5 *)
   > EOF
 
   $ $MERLIN single enclosing -position 4:3 -end-position 4:3  -filename main.ml <main.ml | jq .value | extract_ranges main.ml
   ---------- Range 0 ----------
   ··()···
   ---------- Range 1 ----------
-  ··();
-    ()···
+  ··(); (* 3 *)
+    ···
   ---------- Range 2 ----------
-  ··();
-    ();
-    ()···
+  ··(); (* 3 *)
+    (); (* 4 *)
+    ···
   ---------- Range 3 ----------
-  ··();
-    ();
-    ();
+  ··(); (* 3 *)
+    (); (* 4 *)
     ()···
   ---------- Range 4 ----------
-  ··();
-    ();
-    ();
-    ();
+  ··(); (* 2 *)
+    (); (* 3 *)
+    (); (* 4 *)
     ()···
   ---------- Range 5 ----------
+  ··(); (* 1 *)
+    (); (* 2 *)
+    (); (* 3 *)
+    (); (* 4 *)
+    ()···
+  ---------- Range 6 ----------
   let () =
-    ();
-    ();
-    ();
-    ();
+    (); (* 1 *)
+    (); (* 2 *)
+    (); (* 3 *)
+    (); (* 4 *)
     ()···
 
   $ cat >main.ml <<EOF
@@ -293,3 +297,88 @@ FIXME: with 5.2 new function representation we lost some granularity
   let () =
     let () = () in
     ()···
+
+  $ cat >main.ml <<EOF
+  > let (let+) x f = f x
+  > let (and+) x y = (x, y)
+  > let _ =
+  >   let+ a = 5 in
+  >   let+ b = 5 in
+  >   let+ c = 5 in
+  >   let+ x = 5
+  >   and+ y = 6 in
+  >   let+ d = 5 in
+  >   let+ e = 5 in
+  >   x + y
+  > EOF
+
+  $ $MERLIN single enclosing -position 6:8 -end-position 6:8  -filename main.ml <main.ml | jq .value | extract_ranges main.ml
+  ---------- Range 0 ----------
+      ···c···
+  ---------- Range 1 ----------
+  ··let+ c = 5 in
+    ···
+  ---------- Range 2 ----------
+  ··let+ c = 5 in
+    let+ x = 5
+    and+ y = 6 in
+    ···
+  ---------- Range 3 ----------
+  ··let+ c = 5 in
+    let+ x = 5
+    and+ y = 6 in
+    let+ d = 5 in
+    ···
+  ---------- Range 4 ----------
+  ··let+ c = 5 in
+    let+ x = 5
+    and+ y = 6 in
+    let+ d = 5 in
+    let+ e = 5 in
+    ···
+  ---------- Range 5 ----------
+  ··let+ c = 5 in
+    let+ x = 5
+    and+ y = 6 in
+    let+ d = 5 in
+    let+ e = 5 in
+    x + y···
+  ---------- Range 6 ----------
+  ··let+ b = 5 in
+    let+ c = 5 in
+    let+ x = 5
+    and+ y = 6 in
+    let+ d = 5 in
+    let+ e = 5 in
+    x + y···
+  ---------- Range 7 ----------
+  ··let+ a = 5 in
+    let+ b = 5 in
+    let+ c = 5 in
+    let+ x = 5
+    and+ y = 6 in
+    let+ d = 5 in
+    let+ e = 5 in
+    x + y···
+  ---------- Range 8 ----------
+  let _ =
+    let+ a = 5 in
+    let+ b = 5 in
+    let+ c = 5 in
+    let+ x = 5
+    and+ y = 6 in
+    let+ d = 5 in
+    let+ e = 5 in
+    x + y···
+  ---------- Range 9 ----------
+  let (let+) x f = f x
+  let (and+) x y = (x, y)
+  let _ =
+    let+ a = 5 in
+    let+ b = 5 in
+    let+ c = 5 in
+    let+ x = 5
+    and+ y = 6 in
+    let+ d = 5 in
+    let+ e = 5 in
+    x + y···
