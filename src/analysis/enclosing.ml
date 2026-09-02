@@ -25,8 +25,7 @@ let merge (loc1 : Location.t) (loc2 : Location.t) =
   in
   let loc_start = min_pos loc1.loc_start loc2.loc_start in
   let loc_end = max_pos loc1.loc_end loc2.loc_end in
-  (* TODO: do something with loc_ghost *)
-  { Location.loc_start; loc_end; loc_ghost = false }
+  { Location.loc_start; loc_end; loc_ghost = loc1.loc_ghost || loc2.loc_ghost }
 
 let ( ++ ) = merge
 
