@@ -119,22 +119,12 @@ let rec expand_node ~current_loc (nodes : Browse_raw.node list) =
     may_go_down ~current_loc ~right_node node nodes
   | node :: q ->
     let loc = Mbrowse.node_loc node in
-    let new_loc = current_loc ++ loc in
-    loc :: expand_node ~current_loc:new_loc q
-
-let make_expand l =
-  match l with
-  | [] -> []
-  | loc1 :: _ ->
-    let _acc, l =
-      List.fold_left_map ~f:(fun x y -> x ++ y |> fun x -> (x, x)) ~init:loc1 l
-    in
-    l
+    let current_loc = current_loc ++ loc in
+    current_loc :: expand_node ~current_loc q
 
 let locs (mbrowse : Mbrowse.t) =
   mbrowse |> List.map ~f:snd
   |> expand_node ~current_loc:Location.none
-  |> make_expand
   |> List.fold_left ~init:[] ~f:(fun acc loc ->
       match acc with
       | hd :: _ as acc when Location_aux.compare hd loc = 0 -> acc
