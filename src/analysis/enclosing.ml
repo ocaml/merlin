@@ -3,32 +3,33 @@ open Std
 let ( << ) (x : Location.t) (y : Location.t) =
   x.loc_end.pos_cnum <= y.loc_start.pos_cnum
 
-let before (x : Location.t) (y : Location.t) =
-  x.loc_start.pos_cnum < y.loc_start.pos_cnum
-
 let contains (loc1 : Location.t) (loc2 : Location.t) =
   if Location.is_none loc1 then false
   else
     loc1.loc_start.pos_cnum <= loc2.loc_start.pos_cnum
     && loc2.loc_end.pos_cnum <= loc1.loc_end.pos_cnum
 
-let min_pos (pos1 : Lexing.position) (pos2 : Lexing.position) =
-  if pos1.pos_cnum < 0 then pos2
-  else if pos2.pos_cnum < 0 then pos1
-  else if pos1.pos_cnum < pos2.pos_cnum then pos1
-  else pos2
-
-let max_pos (pos1 : Lexing.position) (pos2 : Lexing.position) =
-  if pos1.pos_cnum < 0 then pos2
-  else if pos2.pos_cnum < 0 then pos1
-  else if pos1.pos_cnum < pos2.pos_cnum then pos2
-  else pos1
+let ( <= ) x y = contains y x
 
 let merge (loc1 : Location.t) (loc2 : Location.t) =
+  let min_pos (pos1 : Lexing.position) (pos2 : Lexing.position) =
+    if pos1.pos_cnum < 0 then pos2
+    else if pos2.pos_cnum < 0 then pos1
+    else if pos1.pos_cnum < pos2.pos_cnum then pos1
+    else pos2
+  in
+  let max_pos (pos1 : Lexing.position) (pos2 : Lexing.position) =
+    if pos1.pos_cnum < 0 then pos2
+    else if pos2.pos_cnum < 0 then pos1
+    else if pos1.pos_cnum < pos2.pos_cnum then pos2
+    else pos1
+  in
   let loc_start = min_pos loc1.loc_start loc2.loc_start in
   let loc_end = max_pos loc1.loc_end loc2.loc_end in
   (* TODO: do something with loc_ghost *)
   { Location.loc_start; loc_end; loc_ghost = false }
+
+let ( ++ ) = merge
 
 (* In some cases, we don't want to go "up" to a full node, but include new
    location little by little. For instance:
@@ -48,25 +49,25 @@ let merge (loc1 : Location.t) (loc2 : Location.t) =
    [let ... in ...], of [;], etc) that are actually represented with binary
    operators, with "right" priority for parentheses.
 
-   In all those cases, we split the location in the left part and the right
-   part, include the left part first, and "go down-right" instead of up if the
-   current loc does not include the right part.
+   In all those cases, we split the location in the left part and the right part
+   (using [merlin_loc] to split at the right point), include the left part
+   first, and "go down-right" instead of up if the current loc does not include
+   the right part.
 *)
 
 let rec expand_node ~current_loc (nodes : Browse_raw.node list) =
-  let merlin_loc node = Mbrowse.node_merlin_loc node in
   let may_go_down ~current_loc ~right_node node nodes =
-    let right_loc = merlin_loc right_node in
+    let right_loc = Mbrowse.node_merlin_loc right_node in
     let full_loc = Mbrowse.node_loc node in
     let left_loc = { full_loc with loc_end = right_loc.loc_start } in
-    let current_loc = merge current_loc left_loc in
-    if contains current_loc right_loc then
+    let current_loc = current_loc ++ left_loc in
+    if right_loc <= current_loc then
       current_loc :: expand_node ~current_loc nodes
     else current_loc :: expand_node ~current_loc (right_node :: node :: nodes)
   in
   match nodes with
   | [] -> []
-  | node :: nodes when contains current_loc (Mbrowse.node_loc node) ->
+  | node :: nodes when Mbrowse.node_loc node <= current_loc ->
     expand_node ~current_loc nodes
   (* skipping "[let x = 5] in exp2" location.
      TODO: would we want to add "let [x = 5] in exp2"? *)
@@ -119,19 +120,15 @@ let rec expand_node ~current_loc (nodes : Browse_raw.node list) =
     may_go_down ~current_loc ~right_node node nodes
   | node :: q ->
     let loc = Mbrowse.node_loc node in
-    if contains current_loc loc then expand_node ~current_loc q
-    else
-      let new_loc = merge current_loc loc in
-      loc :: expand_node ~current_loc:new_loc q
+    let new_loc = current_loc ++ loc in
+    loc :: expand_node ~current_loc:new_loc q
 
 let make_expand l =
   match l with
   | [] -> []
   | loc1 :: _ ->
     let _acc, l =
-      List.fold_left_map
-        ~f:(fun x y -> merge x y |> fun x -> (x, x))
-        ~init:loc1 l
+      List.fold_left_map ~f:(fun x y -> x ++ y |> fun x -> (x, x)) ~init:loc1 l
     in
     l
 
