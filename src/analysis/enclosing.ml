@@ -61,7 +61,11 @@ let rec expand_node ~current_loc (nodes : Browse_raw.node list) =
     let current_loc = current_loc ++ left_loc in
     if right_loc <= current_loc then
       current_loc :: expand_node ~current_loc nodes
-    else current_loc :: expand_node ~current_loc (right_node :: node :: nodes)
+    else
+      (* Going "down-right". We keep the parent just in case the match relies on
+         a parent for some reason (in a shameful past parents have been used to
+         find locations) *)
+      current_loc :: expand_node ~current_loc (right_node :: node :: nodes)
   in
   match nodes with
   | [] -> []
