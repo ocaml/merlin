@@ -55,7 +55,7 @@ let ( ++ ) = merge
 *)
 
 let rec go_down_right acc ~current_loc (expr : Typedtree.expression) =
-  if Mbrowse.node_loc (Expression expr) << current_loc then (current_loc, acc)
+  if Mbrowse.node_loc (Expression expr) <= current_loc then (current_loc, acc)
   else
     let go right_expr =
       let left_loc =
