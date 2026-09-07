@@ -380,3 +380,68 @@ FIXME: with 5.2 new function representation we lost some granularity
     let+ d = 5 in
     let+ e = 5 in
     x + y···
+
+Constraints!
+
+  $ cat >main.ml <<EOF
+  > let f () =
+  >   let x = 1 in
+  >   (x : int)
+  > EOF
+
+  $ $MERLIN single enclosing -position 2:6 -end-position 2:6 -filename main.ml <main.ml | jq .value | extract_ranges main.ml
+  ---------- Range 0 ----------
+     ···x···
+  ---------- Range 1 ----------
+  ··let x = 1 in
+    ···
+  ---------- Range 2 ----------
+  ··let x = 1 in
+    (x : int)···
+  ---------- Range 3 ----------
+     ···() =
+    let x = 1 in
+    (x : int)···
+  ---------- Range 4 ----------
+  let f () =
+    let x = 1 in
+    (x : int)···
+
+  $ $MERLIN single enclosing -position 3:4 -end-position 3:4 -filename main.ml <main.ml | jq .value | extract_ranges main.ml
+  ---------- Range 0 ----------
+  ···x···
+  ---------- Range 1 ----------
+  ··(x : int)···
+  ---------- Range 2 ----------
+  ··let x = 1 in
+    (x : int)···
+  ---------- Range 3 ----------
+     ···() =
+    let x = 1 in
+    (x : int)···
+  ---------- Range 4 ----------
+  let f () =
+    let x = 1 in
+    (x : int)···
+
+
+  $ cat >main.ml <<EOF
+  > let f () =
+  >   (((x : int) : int) : int)
+  > EOF
+
+  $ $MERLIN single enclosing -position 2:6 -end-position 2:6 -filename main.ml <main.ml | jq .value | extract_ranges main.ml
+  ---------- Range 0 ----------
+    ···x···
+  ---------- Range 1 ----------
+   ···(x : int)···
+  ---------- Range 2 ----------
+  ···((x : int) : int)···
+  ---------- Range 3 ----------
+  ··(((x : int) : int) : int)···
+  ---------- Range 4 ----------
+     ···() =
+    (((x : int) : int) : int)···
+  ---------- Range 5 ----------
+  let f () =
+    (((x : int) : int) : int)···
