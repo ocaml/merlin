@@ -244,23 +244,25 @@ let has_attr ~name node =
 
 let node_merlin_loc loc0 node =
   let attributes = node_attributes node in
-  let loc =
+  let relaxed_loc loc attributes =
     let open Parsetree in
     let pred { attr_name = loc; _ } = Location_aux.is_relaxed_location loc in
     match List.find attributes ~f:pred with
     | { attr_name; _ } -> attr_name.Location.loc
-    | exception Not_found -> node_real_loc loc0 node
+    | exception Not_found -> loc
+  in
+  let loc = relaxed_loc (node_real_loc loc0 node) attributes in
+  let extra_loc loc extra =
+    List.fold_left
+      ~f:(fun loc0 (_, loc, attributes) ->
+        let loc = relaxed_loc loc attributes in
+        Location_aux.union loc0 loc)
+      ~init:loc extra
   in
   let loc =
     match node with
-    | Expression { exp_extra; _ } ->
-      List.fold_left
-        ~f:(fun loc0 (_, loc, _) -> Location_aux.union loc0 loc)
-        ~init:loc exp_extra
-    | Pattern { pat_extra; _ } ->
-      List.fold_left
-        ~f:(fun loc0 (_, loc, _) -> Location_aux.union loc0 loc)
-        ~init:loc pat_extra
+    | Expression { exp_extra; _ } -> extra_loc loc exp_extra
+    | Pattern { pat_extra; _ } -> extra_loc loc pat_extra
     | _ -> loc
   in
   loc

@@ -11,7 +11,7 @@ let a = [( x : int)]
 
 And similarly for coercion, pattern constraints and coercion
 
-However, when in the two situation at the same time, the first one is ignored. Let's test that with a file containing both situations:
+When in the two situation at the same time, merlin successfully compute the extended location. Let's test that with a file containing both situations:
 
   $ cat > extras2.ml <<EOF
   > let a =
@@ -34,8 +34,7 @@ and putting our cursor inbetween "in" and "x" and looking at the corresponding n
     x
   $ $MERLIN single type-enclosing -position $LOC -filename extras2.ml <extras2.ml | jq '[.value[0]]' | extract_ranges extras2.ml
   ---------- Range 0 ----------
-  ··let x = 1 in
-    (x : int)···
+  ···x···
 
   $ export LOC=6:0
   $ show_location extras2.ml $LOC
