@@ -55,53 +55,57 @@ let ( ++ ) = merge
 *)
 
 let rec go_down_right acc ~current_loc (expr : Typedtree.expression) =
-  let go right_expr =
-    let left_loc =
-      let full_loc = Mbrowse.node_loc (Expression expr) in
-      let right_merlin_loc = Mbrowse.node_merlin_loc (Expression right_expr) in
-      { full_loc with loc_end = right_merlin_loc.loc_start }
+  if Mbrowse.node_loc (Expression expr) << current_loc then (current_loc, acc)
+  else
+    let go right_expr =
+      let left_loc =
+        let full_loc = Mbrowse.node_loc (Expression expr) in
+        let right_merlin_loc =
+          Mbrowse.node_merlin_loc (Expression right_expr)
+        in
+        { full_loc with loc_end = right_merlin_loc.loc_start }
+      in
+      let current_loc = current_loc ++ left_loc in
+      let acc = current_loc :: acc in
+      go_down_right acc ~current_loc right_expr
     in
-    let current_loc = current_loc ++ left_loc in
-    let acc = current_loc :: acc in
-    go_down_right acc ~current_loc right_expr
-  in
-  match expr with
-  (* [let x = exp1 in][ exp2] *)
-  | { exp_desc = Texp_let (_, _, right_expr); _ } -> go right_expr
-  (* [exp1 ;][ exp2] *)
-  | { exp_desc = Texp_sequence (_, right_expr); _ } -> go right_expr
-  (* [let%map x = exp1 in][ exp2] *)
-  | { exp_desc =
-        Texp_apply
-          ( _map_or_bind,
-            [ (Nolabel, Arg value_binded);
-              ( Labelled "f",
-                Arg
-                  { exp_desc =
-                      Texp_function
-                        ( [ { fp_kind = Tparam_pat pat; _ } ],
-                          Tfunction_body right_expr );
-                    _
-                  } )
-            ] );
-      _
-    }
-    when pat.pat_loc << value_binded.exp_loc
-         && value_binded.exp_loc << right_expr.exp_loc -> go right_expr
-  (* [let () = exp1 in][ exp2] *)
-  | { exp_desc =
-        Texp_match
-          ( exp,
-            [ { c_lhs; c_rhs = right_expr; c_guard = None; c_cont = _ } ],
-            [],
-            _ );
-      _
-    }
-    when c_lhs.pat_loc << exp.exp_loc -> go right_expr
-  (* [let* x = exp1 in][ exp2] *)
-  | { exp_desc = Texp_letop { body = { c_rhs = right_expr; _ }; _ }; _ } ->
-    go right_expr
-  | _ -> (current_loc, acc)
+    match expr with
+    (* [let x = exp1 in][ exp2] *)
+    | { exp_desc = Texp_let (_, _, right_expr); _ } -> go right_expr
+    (* [exp1 ;][ exp2] *)
+    | { exp_desc = Texp_sequence (_, right_expr); _ } -> go right_expr
+    (* [let%map x = exp1 in][ exp2] *)
+    | { exp_desc =
+          Texp_apply
+            ( _map_or_bind,
+              [ (Nolabel, Arg value_binded);
+                ( Labelled "f",
+                  Arg
+                    { exp_desc =
+                        Texp_function
+                          ( [ { fp_kind = Tparam_pat pat; _ } ],
+                            Tfunction_body right_expr );
+                      _
+                    } )
+              ] );
+        _
+      }
+      when pat.pat_loc << value_binded.exp_loc
+           && value_binded.exp_loc << right_expr.exp_loc -> go right_expr
+    (* [let () = exp1 in][ exp2] *)
+    | { exp_desc =
+          Texp_match
+            ( exp,
+              [ { c_lhs; c_rhs = right_expr; c_guard = None; c_cont = _ } ],
+              [],
+              _ );
+        _
+      }
+      when c_lhs.pat_loc << exp.exp_loc -> go right_expr
+    (* [let* x = exp1 in][ exp2] *)
+    | { exp_desc = Texp_letop { body = { c_rhs = right_expr; _ }; _ }; _ } ->
+      go right_expr
+    | _ -> (current_loc, acc)
 
 let expr_locs acc ~current_loc (exp : Typedtree.expression) =
   match exp with
