@@ -12,8 +12,8 @@ let pos_of_json (j : Yojson.Safe.t) =
 
 let range_of_json (j : Yojson.Safe.t) =
   match j with
-  | `Assoc [ ("start", pos_start); ("end", pos_end) ]
-  | `Assoc [ ("end", pos_end); ("start", pos_start) ] ->
+  | `Assoc (("start", pos_start) :: ("end", pos_end) :: _)
+  | `Assoc (("end", pos_end) :: ("start", pos_start) :: _) ->
     let start = pos_of_json pos_start in
     let end_ = pos_of_json pos_end in
     { start; end_ }
