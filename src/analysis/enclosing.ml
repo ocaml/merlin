@@ -140,9 +140,9 @@ let rec expand_node acc ~current_loc (nodes : Browse_raw.node list) =
     let acc = current_loc :: acc in
     expand_node acc ~current_loc q
 
-let locs (mbrowse : Mbrowse.t) =
+let locs current_loc (mbrowse : Mbrowse.t) =
   mbrowse |> List.map ~f:snd
-  |> expand_node [] ~current_loc:Location.none
+  |> expand_node [] ~current_loc
   |> List.fold_left ~init:[] ~f:(fun acc loc ->
       match acc with
       | hd :: _ as acc when Location_aux.compare hd loc = 0 -> acc

@@ -292,14 +292,22 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     let typer = Mpipeline.typer_result pipeline in
     let structures = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
-    let mbrowse =
+    let mbrowse, pos_stop =
       match stop with
       | Some stop ->
         let stop = Mpipeline.get_lexing_pos pipeline stop in
-        Mbrowse.range_enclosing ~start:pos ~stop [ structures ]
-      | None -> Mbrowse.enclosing pos [ structures ]
+        (Mbrowse.range_enclosing ~start:pos ~stop [ structures ], Some stop)
+      | None -> (Mbrowse.enclosing pos [ structures ], None)
     in
-    Enclosing.locs mbrowse
+    let range =
+      let loc_end =
+        match pos_stop with
+        | Some stop -> stop
+        | None -> pos
+      in
+      { Location.loc_start = pos; loc_end; loc_ghost = false }
+    in
+    Enclosing.locs range mbrowse
   | Locate_type pos ->
     let typer = Mpipeline.typer_result pipeline in
     let local_defs = Mtyper.get_typedtree typer in

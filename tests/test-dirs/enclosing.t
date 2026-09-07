@@ -84,9 +84,8 @@ FIXME: with 5.2 new function representation we lost some granularity
   ---------- Range 4 ----------
   let f x = x + (succ 1 + 3) + 10···
 
-FIXME: in range mode the expansion restarts from nothing instead of from the
-requested selection, so the first ranges returned are smaller than what the
-caller already had selected.
+In range mode the expansion starts from the requested selection, so every
+range returned contains it:
 
   $ cat >main.ml <<EOF
   > let f () =
@@ -97,20 +96,11 @@ caller already had selected.
 
   $ $MERLIN single enclosing -position 2:2 -end-position 4:13 -filename main.ml <main.ml | jq .value | extract_ranges main.ml
   ---------- Range 0 ----------
-  ··print_int 1;···
-  ---------- Range 1 ----------
-  ··print_int 1;
-    print_int 2;···
-  ---------- Range 2 ----------
-  ··print_int 1;
-    print_int 2;
-    print_int 3···
-  ---------- Range 3 ----------
      ···() =
     print_int 1;
     print_int 2;
     print_int 3···
-  ---------- Range 4 ----------
+  ---------- Range 1 ----------
   let f () =
     print_int 1;
     print_int 2;
