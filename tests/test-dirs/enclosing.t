@@ -671,9 +671,9 @@ And so do core types:
   ---------- Range 4 ----------
   let f (x : ((int))) = x···
 
-FIXME: splitting a node that is itself parenthesised uses its relocated
-location, so the left part starts at the opening delimiter. With the cursor
-inside the group:
+Splitting a node that is itself parenthesised uses its undelimited location,
+so the left part of the split starts at the construct rather than at the
+opening delimiter. With the cursor inside the group:
 
   $ cat >main.ml <<EOF
   > let g () = ()
@@ -689,20 +689,23 @@ inside the group:
   ---------- Range 1 ----------
    ···g ()···
   ---------- Range 2 ----------
-  ··( g ();···
+   ···g ();···
   ---------- Range 3 ----------
+   ···g ();
+      g ()···
+  ---------- Range 4 ----------
   ··( g ();
       g ())···
-  ---------- Range 4 ----------
+  ---------- Range 5 ----------
   ··g ();
     ( g ();
       g ())···
-  ---------- Range 5 ----------
+  ---------- Range 6 ----------
   let () =
     g ();
     ( g ();
       g ())···
-  ---------- Range 6 ----------
+  ---------- Range 7 ----------
   let g () = ()
   let () =
     g ();
