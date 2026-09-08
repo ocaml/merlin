@@ -121,8 +121,15 @@ let add_intermediate_locs (current_loc, acc) locs =
 
 let expr_locs acc ~current_loc (exp : Typedtree.expression) =
   match exp with
-  | { exp_loc; exp_extra; _ } ->
-    let loc_stack = Mbrowse.node_loc_stack (Expression exp) in
+  | { exp_extra; _ } ->
+    (* Exclude locations not fully containing current_loc. This is to avoid when
+       the cursor is eg on a closing parenthesis, including the innermost
+       location would not take the closing parenthesis. *)
+    let loc_stack =
+      Mbrowse.node_loc_stack (Expression exp)
+      |> List.filter ~f:(fun loc -> current_loc <= loc)
+    in
+    let exp_loc = Mbrowse.node_loc (Expression exp) in
     let acc =
       add_intermediate_locs (current_loc, acc) (loc_stack @ [ exp_loc ])
     in

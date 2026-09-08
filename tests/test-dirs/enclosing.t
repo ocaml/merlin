@@ -78,16 +78,14 @@ FIXME: with 5.2 new function representation we lost some granularity
 
   $ $MERLIN single enclosing -position 1:15 -end-position 1:26  -filename main.ml <main.ml | jq .value | extract_ranges main.ml
   ---------- Range 0 ----------
-              ···succ 1 + 3)···
-  ---------- Range 1 ----------
              ···(succ 1 + 3)···
-  ---------- Range 2 ----------
+  ---------- Range 1 ----------
          ···x + (succ 1 + 3)···
-  ---------- Range 3 ----------
+  ---------- Range 2 ----------
          ···x + (succ 1 + 3) + 10···
-  ---------- Range 4 ----------
+  ---------- Range 3 ----------
      ···x = x + (succ 1 + 3) + 10···
-  ---------- Range 5 ----------
+  ---------- Range 4 ----------
   let f x = x + (succ 1 + 3) + 10···
 
 ---------
@@ -635,7 +633,7 @@ When a node is under parenthesis or begin ... end, we should not go into it. Oth
     ( (); (* 4 *)
       ()  (* 5 *))···
 
-FIXME: When the cursor sits on a delimiter, we should be careful not to include it
+When the cursor sits on a delimiter, we should be careful not to include it
 without the closing counterpart. On the opening one:
 
   $ cat >main.ml <<EOF
@@ -644,32 +642,28 @@ without the closing counterpart. On the opening one:
 
   $ $MERLIN single enclosing -position 1:11 -filename main.ml <main.ml | jq .value | extract_ranges main.ml
   ---------- Range 0 ----------
-          ···(x···
-  ---------- Range 1 ----------
           ···(x)···
-  ---------- Range 2 ----------
+  ---------- Range 1 ----------
          ···((x))···
-  ---------- Range 3 ----------
+  ---------- Range 2 ----------
          ···((x)) + 1···
-  ---------- Range 4 ----------
+  ---------- Range 3 ----------
      ···x = ((x)) + 1···
-  ---------- Range 5 ----------
+  ---------- Range 4 ----------
   let f x = ((x)) + 1···
 
-FIXME: And on the closing one:
+And on the closing one:
 
   $ $MERLIN single enclosing -position 1:14 -filename main.ml <main.ml | jq .value | extract_ranges main.ml
   ---------- Range 0 ----------
-           ···x)···
-  ---------- Range 1 ----------
           ···(x)···
-  ---------- Range 2 ----------
+  ---------- Range 1 ----------
          ···((x))···
-  ---------- Range 3 ----------
+  ---------- Range 2 ----------
          ···((x)) + 1···
-  ---------- Range 4 ----------
+  ---------- Range 3 ----------
      ···x = ((x)) + 1···
-  ---------- Range 5 ----------
+  ---------- Range 4 ----------
   let f x = ((x)) + 1···
 
 FIXME: Patterns also need intermediate ranges for parenthesis
@@ -722,20 +716,17 @@ one. Testing that:
   ··( g ();···
   ---------- Range 3 ----------
   ··( g ();
-      g ()···
-  ---------- Range 4 ----------
-  ··( g ();
       g ())···
-  ---------- Range 5 ----------
+  ---------- Range 4 ----------
   ··g ();
     ( g ();
       g ())···
-  ---------- Range 6 ----------
+  ---------- Range 5 ----------
   let () =
     g ();
     ( g ();
       g ())···
-  ---------- Range 7 ----------
+  ---------- Range 6 ----------
   let g () = ()
   let () =
     g ();
