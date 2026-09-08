@@ -139,15 +139,28 @@ let push_loc x acc =
   then acc
   else x :: acc
 
+(* Mirrors [p***_loc_stack] but with attributes. Contrary to the former,
+   attributes survive the translation to the typedtree, and can be used by
+   merlin. *)
+let push_loc_attr x acc =
+  if x.Location.loc_ghost
+  then acc
+  else
+    let name = mkloc "merlin.loc_stack" x in
+    { attr_name = name; attr_loc = x; attr_payload = PStr [] } :: acc
+
 let reloc_pat ~loc x =
   { x with ppat_loc = make_loc loc;
-           ppat_loc_stack = push_loc x.ppat_loc x.ppat_loc_stack }
+           ppat_loc_stack = push_loc x.ppat_loc x.ppat_loc_stack;
+           ppat_attributes = push_loc_attr x.ppat_loc x.ppat_attributes }
 let reloc_exp ~loc x =
   { x with pexp_loc = make_loc loc;
-           pexp_loc_stack = push_loc x.pexp_loc x.pexp_loc_stack }
+           pexp_loc_stack = push_loc x.pexp_loc x.pexp_loc_stack;
+           pexp_attributes = push_loc_attr x.pexp_loc x.pexp_attributes }
 let reloc_typ ~loc x =
   { x with ptyp_loc = make_loc loc;
-           ptyp_loc_stack = push_loc x.ptyp_loc x.ptyp_loc_stack }
+           ptyp_loc_stack = push_loc x.ptyp_loc x.ptyp_loc_stack;
+           ptyp_attributes = push_loc_attr x.ptyp_loc x.ptyp_attributes }
 
 let mkexpvar ~loc (name : string) =
   mkexp ~loc (Pexp_ident(mkrhs (Lident name) loc))
@@ -2452,10 +2465,10 @@ fun_seq_expr:
   | fun_expr    %prec below_SEMI  { $1 }
   | fun_expr SEMI                 { $1 }
   | mkexp(fun_expr SEMI seq_expr
-    { Pexp_sequence($1, $3) })
+    { Pexp_sequence($1, (merloc $endpos($2) $3)) })
     { $1 }
   | fun_expr SEMI PERCENT attr_id seq_expr
-    { mkexp_attrs ~loc:$sloc (Pexp_sequence ($1, $5)) (Some $4, []) }
+    { mkexp_attrs ~loc:$sloc (Pexp_sequence ($1, (merloc $endpos($4) $5))) (Some $4, []) }
 ;
 seq_expr:
   | or_function(fun_seq_expr) { $1 }
@@ -2659,7 +2672,7 @@ let_pattern [@recovery default_pattern ()]:
 ;
 %inline simple_expr_attrs:
   | BEGIN ext = ext attrs = attributes e = seq_expr END
-      { e.pexp_desc, (ext, attrs @ e.pexp_attributes) }
+      { e.pexp_desc, (ext, attrs @ push_loc_attr e.pexp_loc e.pexp_attributes) }
   | BEGIN ext_attributes END
       { Pexp_construct (mkloc (Lident "()") (make_loc $sloc), None), $2 }
   (*
@@ -3987,7 +4000,7 @@ tuple_type:
 *)
 delimited_type_supporting_local_open:
   | LPAREN type_ = core_type RPAREN
-      { type_ }
+      { reloc_typ ~loc:$sloc type_ }
   | LPAREN MODULE ext_attrs = ext_attributes package_type = package_type_ RPAREN
       { mktyp_attrs ~loc:$sloc (Ptyp_package package_type) ext_attrs }
   | mktyp(
