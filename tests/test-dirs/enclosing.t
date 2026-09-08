@@ -635,9 +635,7 @@ And on the closing one:
   ---------- Range 4 ----------
   let f x = ((x)) + 1···
 
-FIXME: only expressions are relocated over their parentheses. Patterns and
-core types jump straight from the innermost node to whatever encloses the
-whole parenthesised group.
+Patterns get their steps too:
 
   $ cat >main.ml <<EOF
   > let f ((x)) = x
@@ -645,11 +643,17 @@ whole parenthesised group.
 
   $ $MERLIN single enclosing -position 1:9 -filename main.ml <main.ml | jq .value | extract_ranges main.ml
   ---------- Range 0 ----------
-     ···((x))···
+       ···x···
   ---------- Range 1 ----------
-     ···((x)) = x···
+      ···(x)···
   ---------- Range 2 ----------
+     ···((x))···
+  ---------- Range 3 ----------
+     ···((x)) = x···
+  ---------- Range 4 ----------
   let f ((x)) = x···
+
+And so do core types:
 
   $ cat >main.ml <<EOF
   > let f (x : ((int))) = x
@@ -659,6 +663,10 @@ whole parenthesised group.
   ---------- Range 0 ----------
             ···int···
   ---------- Range 1 ----------
-     ···(x : ((int))) = x···
+           ···(int)···
   ---------- Range 2 ----------
+          ···((int))···
+  ---------- Range 3 ----------
+     ···(x : ((int))) = x···
+  ---------- Range 4 ----------
   let f (x : ((int))) = x···
