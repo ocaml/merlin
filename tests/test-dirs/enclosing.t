@@ -670,3 +670,41 @@ And so do core types:
      ···(x : ((int))) = x···
   ---------- Range 4 ----------
   let f (x : ((int))) = x···
+
+FIXME: splitting a node that is itself parenthesised uses its relocated
+location, so the left part starts at the opening delimiter. With the cursor
+inside the group:
+
+  $ cat >main.ml <<EOF
+  > let g () = ()
+  > let () =
+  >   g ();
+  >   ( g ();
+  >     g ())
+  > EOF
+
+  $ $MERLIN single enclosing -position 4:4 -filename main.ml <main.ml | jq .value | extract_ranges main.ml
+  ---------- Range 0 ----------
+   ···g···
+  ---------- Range 1 ----------
+   ···g ()···
+  ---------- Range 2 ----------
+  ··( g ();···
+  ---------- Range 3 ----------
+  ··( g ();
+      g ())···
+  ---------- Range 4 ----------
+  ··g ();
+    ( g ();
+      g ())···
+  ---------- Range 5 ----------
+  let () =
+    g ();
+    ( g ();
+      g ())···
+  ---------- Range 6 ----------
+  let g () = ()
+  let () =
+    g ();
+    ( g ();
+      g ())···
