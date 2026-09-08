@@ -634,3 +634,31 @@ And on the closing one:
      ···x = ((x)) + 1···
   ---------- Range 4 ----------
   let f x = ((x)) + 1···
+
+FIXME: only expressions are relocated over their parentheses. Patterns and
+core types jump straight from the innermost node to whatever encloses the
+whole parenthesised group.
+
+  $ cat >main.ml <<EOF
+  > let f ((x)) = x
+  > EOF
+
+  $ $MERLIN single enclosing -position 1:9 -filename main.ml <main.ml | jq .value | extract_ranges main.ml
+  ---------- Range 0 ----------
+     ···((x))···
+  ---------- Range 1 ----------
+     ···((x)) = x···
+  ---------- Range 2 ----------
+  let f ((x)) = x···
+
+  $ cat >main.ml <<EOF
+  > let f (x : ((int))) = x
+  > EOF
+
+  $ $MERLIN single enclosing -position 1:13 -filename main.ml <main.ml | jq .value | extract_ranges main.ml
+  ---------- Range 0 ----------
+            ···int···
+  ---------- Range 1 ----------
+     ···(x : ((int))) = x···
+  ---------- Range 2 ----------
+  let f (x : ((int))) = x···
