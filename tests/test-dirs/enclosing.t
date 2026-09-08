@@ -74,16 +74,14 @@ FIXME: with 5.2 new function representation we lost some granularity
 
   $ $MERLIN single enclosing -position 1:15 -end-position 1:26  -filename main.ml <main.ml | jq .value | extract_ranges main.ml
   ---------- Range 0 ----------
-              ···succ 1 + 3)···
-  ---------- Range 1 ----------
              ···(succ 1 + 3)···
-  ---------- Range 2 ----------
+  ---------- Range 1 ----------
          ···x + (succ 1 + 3)···
-  ---------- Range 3 ----------
+  ---------- Range 2 ----------
          ···x + (succ 1 + 3) + 10···
-  ---------- Range 4 ----------
+  ---------- Range 3 ----------
      ···x = x + (succ 1 + 3) + 10···
-  ---------- Range 5 ----------
+  ---------- Range 4 ----------
   let f x = x + (succ 1 + 3) + 10···
 
 In range mode the expansion starts from the requested selection, so every
@@ -602,9 +600,10 @@ When a node is under parenthesis or begin ... end, we should not go into it. Oth
     ( (); (* 4 *)
       ()  (* 5 *))···
 
-FIXME: when the cursor sits on a delimiter, the innermost location of the
-stack does not contain it, and merging it in produces a range holding one
-delimiter without its counterpart. On the opening one:
+A location of the stack is only usable while it contains the cursor: on a
+delimiter it does not, and merging it in would give a range holding that
+delimiter without its counterpart. The first step is the delimited group
+instead. On the opening one:
 
   $ cat >main.ml <<EOF
   > let f x = ((x)) + 1
@@ -612,30 +611,26 @@ delimiter without its counterpart. On the opening one:
 
   $ $MERLIN single enclosing -position 1:11 -filename main.ml <main.ml | jq .value | extract_ranges main.ml
   ---------- Range 0 ----------
-          ···(x···
-  ---------- Range 1 ----------
           ···(x)···
-  ---------- Range 2 ----------
+  ---------- Range 1 ----------
          ···((x))···
-  ---------- Range 3 ----------
+  ---------- Range 2 ----------
          ···((x)) + 1···
-  ---------- Range 4 ----------
+  ---------- Range 3 ----------
      ···x = ((x)) + 1···
-  ---------- Range 5 ----------
+  ---------- Range 4 ----------
   let f x = ((x)) + 1···
 
 And on the closing one:
 
   $ $MERLIN single enclosing -position 1:14 -filename main.ml <main.ml | jq .value | extract_ranges main.ml
   ---------- Range 0 ----------
-           ···x)···
-  ---------- Range 1 ----------
           ···(x)···
-  ---------- Range 2 ----------
+  ---------- Range 1 ----------
          ···((x))···
-  ---------- Range 3 ----------
+  ---------- Range 2 ----------
          ···((x)) + 1···
-  ---------- Range 4 ----------
+  ---------- Range 3 ----------
      ···x = ((x)) + 1···
-  ---------- Range 5 ----------
+  ---------- Range 4 ----------
   let f x = ((x)) + 1···
