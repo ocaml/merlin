@@ -59,20 +59,38 @@ let rec go_down_right acc ~current_loc (expr : Typedtree.expression) =
   if Mbrowse.node_loc (Expression expr) <= current_loc then (current_loc, acc)
   else
     let go right_expr =
-      let left_loc =
-        let full_loc = Mbrowse.node_loc (Expression expr) in
-        let right_merlin_loc =
-          Mbrowse.node_merlin_loc (Expression right_expr)
+      (* The location without [begin ... end] or parenthesis delimiters. *)
+      let undelimited_loc =
+        match Mbrowse.node_loc_stack (Expression expr) with
+        | [] -> Some (Mbrowse.node_loc (Expression expr))
+        | innermost :: _ ->
+          (* If we are in a delimited environment, and we don't come from below,
+             we don't want to continue. Example, where brackets are current_loc
+             and curlies are innermost:
+
+             {[
+               [let x = 1 in
+               {let y = 2 in]
+                x + y}
+             ]}*)
+          if current_loc <= innermost then Some innermost else None
+      in
+      match undelimited_loc with
+      | None -> (current_loc, acc)
+      | Some full_loc ->
+        let left_loc =
+          let right_merlin_loc =
+            Mbrowse.node_merlin_loc (Expression right_expr)
+          in
+          { full_loc with loc_end = right_merlin_loc.loc_start }
         in
-        { full_loc with loc_end = right_merlin_loc.loc_start }
-      in
-      let current_loc = current_loc ++ left_loc in
-      let acc = current_loc :: acc in
-      let is_splittable =
-        Mbrowse.node_loc_stack (Expression right_expr) |> List.is_empty
-      in
-      if not is_splittable then (current_loc, acc)
-      else go_down_right acc ~current_loc right_expr
+        let current_loc = current_loc ++ left_loc in
+        let acc = current_loc :: acc in
+        let is_splittable =
+          Mbrowse.node_loc_stack (Expression right_expr) |> List.is_empty
+        in
+        if not is_splittable then (current_loc, acc)
+        else go_down_right acc ~current_loc right_expr
     in
     match expr with
     (* [let x = exp1 in][ exp2] *)

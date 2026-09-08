@@ -702,7 +702,7 @@ Core types also need intermediate ranges for parenthesis
   ---------- Range 4 ----------
   let f (x : ((int))) = x···
 
-FIXME: splitting a node that is itself parenthesised uses the location with
+Splitting a node that is itself parenthesised uses the location with
 parenthesis, so the left part starts at the opening delimiter. As a consequence,
 without care an opening parenthesis could be included without the closing
 one. Testing that:
@@ -721,20 +721,23 @@ one. Testing that:
   ---------- Range 1 ----------
    ···g ()···
   ---------- Range 2 ----------
-  ··( g ();···
+   ···g ();···
   ---------- Range 3 ----------
+   ···g ();
+      g ()···
+  ---------- Range 4 ----------
   ··( g ();
       g ())···
-  ---------- Range 4 ----------
+  ---------- Range 5 ----------
   ··g ();
     ( g ();
       g ())···
-  ---------- Range 5 ----------
+  ---------- Range 6 ----------
   let () =
     g ();
     ( g ();
       g ())···
-  ---------- Range 6 ----------
+  ---------- Range 7 ----------
   let g () = ()
   let () =
     g ();
