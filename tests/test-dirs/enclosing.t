@@ -562,3 +562,45 @@ Both delimiters nest, in either order:
   ---------- Range 6 ----------
   let f x =
     (begin (x) end) + 1···
+
+When a node is under parenthesis or begin ... end, we should not go into it. Otherwise only the first delimiter is included.
+
+  $ cat >main.ml <<EOF
+  > let () =
+  >   (); (* 1 *)
+  >   (); (* 2 *)
+  >   (); (* 3 *)
+  >   ( (); (* 4 *)
+  >     ()  (* 5 *))
+  > EOF
+
+  $ $MERLIN single enclosing -position 4:3 -end-position 4:3  -filename main.ml <main.ml | jq .value | extract_ranges main.ml
+  ---------- Range 0 ----------
+  ··()···
+  ---------- Range 1 ----------
+  ··();···
+  ---------- Range 2 ----------
+  ··(); (* 3 *)
+    ( ();···
+  ---------- Range 3 ----------
+  ··(); (* 3 *)
+    ( (); (* 4 *)
+      ()  (* 5 *))···
+  ---------- Range 4 ----------
+  ··(); (* 2 *)
+    (); (* 3 *)
+    ( (); (* 4 *)
+      ()  (* 5 *))···
+  ---------- Range 5 ----------
+  ··(); (* 1 *)
+    (); (* 2 *)
+    (); (* 3 *)
+    ( (); (* 4 *)
+      ()  (* 5 *))···
+  ---------- Range 6 ----------
+  let () =
+    (); (* 1 *)
+    (); (* 2 *)
+    (); (* 3 *)
+    ( (); (* 4 *)
+      ()  (* 5 *))···
