@@ -101,3 +101,7 @@ let print_loc f () {Location. txt; loc} =
 let is_relaxed_location = function
   | { Location. txt = "merlin.relaxed-location" | "merlin.loc"; _ } -> true
   | _ -> false
+
+let is_loc_stack_location = function
+  | { Location. txt = "merlin.loc_stack"; _ } -> true
+  | _ -> false

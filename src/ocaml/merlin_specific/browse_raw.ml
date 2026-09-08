@@ -242,6 +242,14 @@ let has_attr ~name node =
       str.Location.txt = name)
     attrs
 
+let node_loc_stack node =
+  let stack = node_attributes node in
+  List.fold_left stack
+    ~f:(fun acc { Parsetree.attr_name; _ } ->
+      if Location_aux.is_loc_stack_location attr_name then attr_name.loc :: acc
+      else acc)
+    ~init:[]
+
 let node_merlin_loc loc0 node =
   let attributes = node_attributes node in
   let loc =

@@ -139,12 +139,23 @@ let push_loc x acc =
   then acc
   else x :: acc
 
+(* Mirrors [p***_loc_stack] but with attributes. Contrary to the former,
+   attributes survive the translation to the typedtree, and can be used by
+   merlin. *)
+let push_loc_attr x acc =
+  if x.Location.loc_ghost
+  then acc
+  else
+    let name = mkloc "merlin.loc_stack" x in
+    { attr_name = name; attr_loc = x; attr_payload = PStr [] } :: acc
+
 let reloc_pat ~loc x =
   { x with ppat_loc = make_loc loc;
            ppat_loc_stack = push_loc x.ppat_loc x.ppat_loc_stack }
 let reloc_exp ~loc x =
   { x with pexp_loc = make_loc loc;
-           pexp_loc_stack = push_loc x.pexp_loc x.pexp_loc_stack }
+           pexp_loc_stack = push_loc x.pexp_loc x.pexp_loc_stack;
+           pexp_attributes = push_loc_attr x.pexp_loc x.pexp_attributes }
 let reloc_typ ~loc x =
   { x with ptyp_loc = make_loc loc;
            ptyp_loc_stack = push_loc x.ptyp_loc x.ptyp_loc_stack }
@@ -2659,7 +2670,7 @@ let_pattern [@recovery default_pattern ()]:
 ;
 %inline simple_expr_attrs:
   | BEGIN ext = ext attrs = attributes e = seq_expr END
-      { e.pexp_desc, (ext, attrs @ e.pexp_attributes) }
+      { e.pexp_desc, (ext, attrs @ push_loc_attr e.pexp_loc e.pexp_attributes) }
   | BEGIN ext_attributes END
       { Pexp_construct (mkloc (Lident "()") (make_loc $sloc), None), $2 }
   (*

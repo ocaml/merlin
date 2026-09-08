@@ -74,14 +74,16 @@ FIXME: with 5.2 new function representation we lost some granularity
 
   $ $MERLIN single enclosing -position 1:15 -end-position 1:26  -filename main.ml <main.ml | jq .value | extract_ranges main.ml
   ---------- Range 0 ----------
-             ···(succ 1 + 3)···
+              ···succ 1 + 3)···
   ---------- Range 1 ----------
-         ···x + (succ 1 + 3)···
+             ···(succ 1 + 3)···
   ---------- Range 2 ----------
-         ···x + (succ 1 + 3) + 10···
+         ···x + (succ 1 + 3)···
   ---------- Range 3 ----------
-     ···x = x + (succ 1 + 3) + 10···
+         ···x + (succ 1 + 3) + 10···
   ---------- Range 4 ----------
+     ···x = x + (succ 1 + 3) + 10···
+  ---------- Range 5 ----------
   let f x = x + (succ 1 + 3) + 10···
 
 In range mode the expansion starts from the requested selection, so every
@@ -467,3 +469,96 @@ Constraints!
   ---------- Range 5 ----------
   let f () =
     (((x : int) : int) : int)···
+
+Parentheses are not nodes of their own: the parser relocates the expression
+they enclose. The [merlin.loc_stack] attributes mirroring [pexp_loc_stack] let
+each level of parenthesising be an expansion step of its own.
+
+  $ cat >main.ml <<EOF
+  > let f x = ((x)) + 1
+  > EOF
+
+  $ $MERLIN single enclosing -position 1:12 -filename main.ml <main.ml | jq .value | extract_ranges main.ml
+  ---------- Range 0 ----------
+           ···x···
+  ---------- Range 1 ----------
+          ···(x)···
+  ---------- Range 2 ----------
+         ···((x))···
+  ---------- Range 3 ----------
+         ···((x)) + 1···
+  ---------- Range 4 ----------
+     ···x = ((x)) + 1···
+  ---------- Range 5 ----------
+  let f x = ((x)) + 1···
+
+Also when the parenthesised expression is not a leaf:
+
+  $ cat >main.ml <<EOF
+  > let f x =
+  >   (x + 1) * 2
+  > EOF
+
+  $ $MERLIN single enclosing -position 2:3 -filename main.ml <main.ml | jq .value | extract_ranges main.ml
+  ---------- Range 0 ----------
+  ···x···
+  ---------- Range 1 ----------
+  ···x + 1···
+  ---------- Range 2 ----------
+  ··(x + 1)···
+  ---------- Range 3 ----------
+  ··(x + 1) * 2···
+  ---------- Range 4 ----------
+     ···x =
+    (x + 1) * 2···
+  ---------- Range 5 ----------
+  let f x =
+    (x + 1) * 2···
+
+[begin ... end] does not go through [reloc_exp] -- it rebuilds the node to
+carry its extension and attributes, dropping everything else -- so the parser
+pushes the location explicitly there:
+
+  $ cat >main.ml <<EOF
+  > let f x =
+  >   begin x end + 1
+  > EOF
+
+  $ $MERLIN single enclosing -position 2:8 -filename main.ml <main.ml | jq .value | extract_ranges main.ml
+  ---------- Range 0 ----------
+       ···x···
+  ---------- Range 1 ----------
+  ··begin x end···
+  ---------- Range 2 ----------
+  ··begin x end + 1···
+  ---------- Range 3 ----------
+     ···x =
+    begin x end + 1···
+  ---------- Range 4 ----------
+  let f x =
+    begin x end + 1···
+
+Both delimiters nest, in either order:
+
+  $ cat >main.ml <<EOF
+  > let f x =
+  >   (begin (x) end) + 1
+  > EOF
+
+  $ $MERLIN single enclosing -position 2:10 -filename main.ml <main.ml | jq .value | extract_ranges main.ml
+  ---------- Range 0 ----------
+         ···x···
+  ---------- Range 1 ----------
+        ···(x)···
+  ---------- Range 2 ----------
+  ···begin (x) end···
+  ---------- Range 3 ----------
+  ··(begin (x) end)···
+  ---------- Range 4 ----------
+  ··(begin (x) end) + 1···
+  ---------- Range 5 ----------
+     ···x =
+    (begin (x) end) + 1···
+  ---------- Range 6 ----------
+  let f x =
+    (begin (x) end) + 1···
