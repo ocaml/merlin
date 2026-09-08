@@ -601,3 +601,41 @@ When a node is under parenthesis or begin ... end, we should not go into it. Oth
     (); (* 3 *)
     ( (); (* 4 *)
       ()  (* 5 *))···
+
+FIXME: when the cursor sits on a delimiter, the innermost location of the
+stack does not contain it, and merging it in produces a range holding one
+delimiter without its counterpart. On the opening one:
+
+  $ cat >main.ml <<EOF
+  > let f x = ((x)) + 1
+  > EOF
+
+  $ $MERLIN single enclosing -position 1:11 -filename main.ml <main.ml | jq .value | extract_ranges main.ml
+  ---------- Range 0 ----------
+          ···(x···
+  ---------- Range 1 ----------
+          ···(x)···
+  ---------- Range 2 ----------
+         ···((x))···
+  ---------- Range 3 ----------
+         ···((x)) + 1···
+  ---------- Range 4 ----------
+     ···x = ((x)) + 1···
+  ---------- Range 5 ----------
+  let f x = ((x)) + 1···
+
+And on the closing one:
+
+  $ $MERLIN single enclosing -position 1:14 -filename main.ml <main.ml | jq .value | extract_ranges main.ml
+  ---------- Range 0 ----------
+           ···x)···
+  ---------- Range 1 ----------
+          ···(x)···
+  ---------- Range 2 ----------
+         ···((x))···
+  ---------- Range 3 ----------
+         ···((x)) + 1···
+  ---------- Range 4 ----------
+     ···x = ((x)) + 1···
+  ---------- Range 5 ----------
+  let f x = ((x)) + 1···
