@@ -3,6 +3,8 @@ unreleased
 
   + merlin library
     - destruct: allow to destruct let-bindings's patterns (#2117)
+    - Fix detection of expression at cursor in case of type-constrained
+      expression (#2120)
 
 merlin 5.8.1
 ============
