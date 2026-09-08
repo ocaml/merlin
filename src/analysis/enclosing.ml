@@ -136,6 +136,22 @@ let expr_locs acc ~current_loc (exp : Typedtree.expression) =
     add_intermediate_locs acc
       (List.rev_map ~f:(fun (_, loc, _) -> loc) exp_extra)
 
+let pat_locs acc ~current_loc pat =
+  let loc_stack =
+    Mbrowse.node_loc_stack (Pattern pat)
+    |> List.filter ~f:(fun loc -> current_loc <= loc)
+  in
+  let pat_loc = Mbrowse.node_loc (Pattern pat) in
+  add_intermediate_locs (current_loc, acc) (loc_stack @ [ pat_loc ])
+
+let typ_locs acc ~current_loc typ =
+  let loc_stack =
+    Mbrowse.node_loc_stack (Core_type typ)
+    |> List.filter ~f:(fun loc -> current_loc <= loc)
+  in
+  let typ_loc = Mbrowse.node_loc (Core_type typ) in
+  add_intermediate_locs (current_loc, acc) (loc_stack @ [ typ_loc ])
+
 let rec expand_node acc ~current_loc (nodes : Browse_raw.node list) =
   match nodes with
   | [] -> List.rev acc
@@ -149,6 +165,12 @@ let rec expand_node acc ~current_loc (nodes : Browse_raw.node list) =
   | Expression exp :: nodes ->
     let current_loc, acc = go_down_right acc ~current_loc exp in
     let current_loc, acc = expr_locs acc ~current_loc exp in
+    expand_node acc ~current_loc nodes
+  | Pattern pat :: nodes ->
+    let current_loc, acc = pat_locs acc ~current_loc pat in
+    expand_node acc ~current_loc nodes
+  | Core_type typ :: nodes ->
+    let current_loc, acc = typ_locs acc ~current_loc typ in
     expand_node acc ~current_loc nodes
   | node :: q ->
     let loc = Mbrowse.node_loc node in

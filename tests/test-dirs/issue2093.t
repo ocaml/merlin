@@ -21,11 +21,11 @@ FIXME: the current results promoted is wrong.
       {
         "start": {
           "line": 1,
-          "col": 25
+          "col": 24
         },
         "end": {
           "line": 1,
-          "col": 32
+          "col": 33
         },
         "type": 1,
         "tail": "no"

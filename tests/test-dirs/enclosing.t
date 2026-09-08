@@ -666,7 +666,7 @@ And on the closing one:
   ---------- Range 4 ----------
   let f x = ((x)) + 1···
 
-FIXME: Patterns also need intermediate ranges for parenthesis
+Patterns also need intermediate ranges for parenthesis
 
   $ cat >main.ml <<EOF
   > let f ((x)) = x
@@ -674,13 +674,17 @@ FIXME: Patterns also need intermediate ranges for parenthesis
 
   $ $MERLIN single enclosing -position 1:9 -filename main.ml <main.ml | jq .value | extract_ranges main.ml
   ---------- Range 0 ----------
-     ···((x))···
+       ···x···
   ---------- Range 1 ----------
-     ···((x)) = x···
+      ···(x)···
   ---------- Range 2 ----------
+     ···((x))···
+  ---------- Range 3 ----------
+     ···((x)) = x···
+  ---------- Range 4 ----------
   let f ((x)) = x···
 
-FIXME: Core types also need intermediate ranges for parenthesis
+Core types also need intermediate ranges for parenthesis
 
   $ cat >main.ml <<EOF
   > let f (x : ((int))) = x
@@ -690,8 +694,12 @@ FIXME: Core types also need intermediate ranges for parenthesis
   ---------- Range 0 ----------
             ···int···
   ---------- Range 1 ----------
-     ···(x : ((int))) = x···
+           ···(int)···
   ---------- Range 2 ----------
+          ···((int))···
+  ---------- Range 3 ----------
+     ···(x : ((int))) = x···
+  ---------- Range 4 ----------
   let f (x : ((int))) = x···
 
 FIXME: splitting a node that is itself parenthesised uses the location with
