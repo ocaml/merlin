@@ -108,17 +108,22 @@ let rec go_down_right acc ~current_loc (expr : Typedtree.expression) =
       go right_expr
     | _ -> (current_loc, acc)
 
+let add_intermediate_locs (current_loc, acc) locs =
+  List.fold_left
+    ~f:(fun (current_loc, acc) loc ->
+      let current_loc = current_loc ++ loc in
+      (current_loc, current_loc :: acc))
+    ~init:(current_loc, acc) locs
+
 let expr_locs acc ~current_loc (exp : Typedtree.expression) =
   match exp with
   | { exp_loc; exp_extra; _ } ->
-    let current_loc = current_loc ++ exp_loc in
-    let acc = current_loc :: acc in
-    let exp_extra = List.rev exp_extra in
-    List.fold_left
-      ~f:(fun (current_loc, acc) (_, loc, _) ->
-        let current_loc = current_loc ++ loc in
-        (current_loc, current_loc :: acc))
-      ~init:(current_loc, acc) exp_extra
+    let loc_stack = Mbrowse.node_loc_stack (Expression exp) in
+    let acc =
+      add_intermediate_locs (current_loc, acc) (loc_stack @ [ exp_loc ])
+    in
+    add_intermediate_locs acc
+      (List.rev_map ~f:(fun (_, loc, _) -> loc) exp_extra)
 
 let rec expand_node acc ~current_loc (nodes : Browse_raw.node list) =
   match nodes with
