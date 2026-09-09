@@ -746,7 +746,7 @@ one. Testing that:
 
 ---------
 
-FIXME: cursor on delimiters of type constraints:
+cursor on delimiters of type constraints:
 
   $ cat >main.ml <<EOF
   > let f x = (x : int)
@@ -757,27 +757,23 @@ FIXME: cursor on delimiters of type constraints:
   let f x = █x : int)
   $ $MERLIN single enclosing -position $LOC -filename main.ml <main.ml | jq .value | extract_ranges main.ml
   ---------- Range 0 ----------
-         ···(x···
-  ---------- Range 1 ----------
          ···(x : int)···
-  ---------- Range 2 ----------
+  ---------- Range 1 ----------
      ···x = (x : int)···
-  ---------- Range 3 ----------
+  ---------- Range 2 ----------
   let f x = (x : int)···
 
-FIXME: And on the closing one:
+And on the closing one:
 
   $ LOC=1:19
   $ show_location main.ml $LOC
   let f x = (x : int)█
   $ $MERLIN single enclosing -position $LOC -filename main.ml <main.ml | jq .value | extract_ranges main.ml
   ---------- Range 0 ----------
-          ···x : int)···
-  ---------- Range 1 ----------
          ···(x : int)···
-  ---------- Range 2 ----------
+  ---------- Range 1 ----------
      ···x = (x : int)···
-  ---------- Range 3 ----------
+  ---------- Range 2 ----------
   let f x = (x : int)···
 
 ---------
