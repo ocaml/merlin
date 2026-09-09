@@ -299,13 +299,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
         Mbrowse.range_enclosing ~start:pos ~stop [ structures ]
       | None -> Mbrowse.enclosing pos [ structures ]
     in
-    (* We remove possible duplicates from the list*)
-    List.fold_left mbrowse ~init:[] ~f:(fun acc node ->
-        let loc = Mbrowse.node_loc (snd node) in
-        match acc with
-        | hd :: _ as acc when Location_aux.compare hd loc = 0 -> acc
-        | _ -> loc :: acc)
-    |> List.rev
+    Enclosing.locs mbrowse
   | Locate_type pos ->
     let typer = Mpipeline.typer_result pipeline in
     let local_defs = Mtyper.get_typedtree typer in
