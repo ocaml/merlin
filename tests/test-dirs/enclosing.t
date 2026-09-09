@@ -596,7 +596,7 @@ Both delimiters nested, in either order:
   let f x =
     (begin (x) end) + 1···
 
-FIXME: When a node is under parenthesis or begin ... end, we should not go into it. Otherwise only the first delimiter is included.
+When a node is under parenthesis or begin ... end, we should not go into it. Otherwise only the first delimiter is included.
 
   $ cat >main.ml <<EOF
   > let () =
@@ -614,23 +614,20 @@ FIXME: When a node is under parenthesis or begin ... end, we should not go into 
   ··();···
   ---------- Range 2 ----------
   ··(); (* 3 *)
-    ( ();···
-  ---------- Range 3 ----------
-  ··(); (* 3 *)
     ( (); (* 4 *)
       ()  (* 5 *))···
-  ---------- Range 4 ----------
+  ---------- Range 3 ----------
   ··(); (* 2 *)
     (); (* 3 *)
     ( (); (* 4 *)
       ()  (* 5 *))···
-  ---------- Range 5 ----------
+  ---------- Range 4 ----------
   ··(); (* 1 *)
     (); (* 2 *)
     (); (* 3 *)
     ( (); (* 4 *)
       ()  (* 5 *))···
-  ---------- Range 6 ----------
+  ---------- Range 5 ----------
   let () =
     (); (* 1 *)
     (); (* 2 *)

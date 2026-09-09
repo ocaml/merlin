@@ -68,7 +68,11 @@ let rec go_down_right acc ~current_loc (expr : Typedtree.expression) =
       in
       let current_loc = current_loc ++ left_loc in
       let acc = current_loc :: acc in
-      go_down_right acc ~current_loc right_expr
+      let is_splittable =
+        Mbrowse.node_loc_stack (Expression right_expr) |> List.is_empty
+      in
+      if not is_splittable then (current_loc, acc)
+      else go_down_right acc ~current_loc right_expr
     in
     match expr with
     (* [let x = exp1 in][ exp2] *)
