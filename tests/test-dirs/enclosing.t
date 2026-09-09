@@ -286,8 +286,7 @@ Let operators
   ---------- Range 0 ----------
           ···()···
   ---------- Range 1 ----------
-  ··let> x = () in
-    ···
+  ··let> x = () in···
   ---------- Range 2 ----------
   ··let> x = () in
     ()···
@@ -367,26 +366,22 @@ Multiple let operators
   ---------- Range 0 ----------
       ···c···
   ---------- Range 1 ----------
-  ··let+ c = 5 in
-    ···
+  ··let+ c = 5 in···
   ---------- Range 2 ----------
   ··let+ c = 5 in
     let+ x = 5
-    and+ y = 6 in
-    ···
+    and+ y = 6 in···
   ---------- Range 3 ----------
   ··let+ c = 5 in
     let+ x = 5
     and+ y = 6 in
-    let+ d = 5 in
-    ···
+    let+ d = 5 in···
   ---------- Range 4 ----------
   ··let+ c = 5 in
     let+ x = 5
     and+ y = 6 in
     let+ d = 5 in
-    let+ e = 5 in
-    ···
+    let+ e = 5 in···
   ---------- Range 5 ----------
   ··let+ c = 5 in
     let+ x = 5
@@ -812,7 +807,7 @@ FIXME: and with the cursor on parenthesis
 
 ---------
 
-FIXME: letop body should have merlin loc to behave like normal let:
+Letop body should have merlin loc to behave like normal let:
 
   $ cat >main.ml <<EOF
   > let () =
@@ -857,8 +852,7 @@ versus letop::
   ---------- Range 0 ----------
           ···()···
   ---------- Range 1 ----------
-  ··let> x = () in
-    ···
+  ··let> x = () in···
   ---------- Range 2 ----------
   ··let> x = () in
     ignore x···
