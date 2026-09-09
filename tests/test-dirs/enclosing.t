@@ -778,7 +778,7 @@ And on the closing one:
 
 ---------
 
-FIXME: type constraints on patterns:
+Type constraints on patterns:
 
   $ cat >main.ml <<EOF
   > let f (x : ((int))) = x
@@ -791,8 +791,10 @@ FIXME: type constraints on patterns:
   ---------- Range 0 ----------
       ···x···
   ---------- Range 1 ----------
-     ···(x : ((int))) = x···
+     ···(x : ((int)))···
   ---------- Range 2 ----------
+     ···(x : ((int))) = x···
+  ---------- Range 3 ----------
   let f (x : ((int))) = x···
 
 FIXME: and with the cursor on parenthesis
@@ -802,7 +804,7 @@ FIXME: and with the cursor on parenthesis
   let f █x : ((int))) = x
   $ $MERLIN single enclosing -position $LOC -filename main.ml <main.ml | jq .value | extract_ranges main.ml
   ---------- Range 0 ----------
-     ···(x···
+     ···(x : ((int)))···
   ---------- Range 1 ----------
      ···(x : ((int))) = x···
   ---------- Range 2 ----------
