@@ -103,12 +103,10 @@ caller already had selected.
 
   $ $MERLIN single enclosing -position 2:2 -end-position 4:13 -filename main.ml <main.ml | jq .value | extract_ranges main.ml
   ---------- Range 0 ----------
-  ··print_int 1;
-    ···
+  ··print_int 1;···
   ---------- Range 1 ----------
   ··print_int 1;
-    print_int 2;
-    ···
+    print_int 2;···
   ---------- Range 2 ----------
   ··print_int 1;
     print_int 2;
@@ -241,7 +239,7 @@ caller already had selected.
 
 ---------
 
-FIXME: Intermediate ranges of a sequence should stop right after the ';'
+Intermediate ranges of a sequence should stop right after the ';'
 
   $ cat >main.ml <<EOF
   > let () =
@@ -256,12 +254,10 @@ FIXME: Intermediate ranges of a sequence should stop right after the ';'
   ---------- Range 0 ----------
   ··()···
   ---------- Range 1 ----------
-  ··(); (* 3 *)
-    ···
+  ··();···
   ---------- Range 2 ----------
   ··(); (* 3 *)
-    (); (* 4 *)
-    ···
+    ();···
   ---------- Range 3 ----------
   ··(); (* 3 *)
     (); (* 4 *)
@@ -609,12 +605,10 @@ FIXME: When a node is under parenthesis or begin ... end, we should not go into 
   ---------- Range 0 ----------
   ··()···
   ---------- Range 1 ----------
-  ··(); (* 3 *)
-    ···
+  ··();···
   ---------- Range 2 ----------
   ··(); (* 3 *)
-    ( (); (* 4 *)
-      ···
+    ( ();···
   ---------- Range 3 ----------
   ··(); (* 3 *)
     ( (); (* 4 *)
@@ -714,8 +708,7 @@ one. Testing that:
   ---------- Range 1 ----------
    ···g ()···
   ---------- Range 2 ----------
-  ··( g ();
-      ···
+  ··( g ();···
   ---------- Range 3 ----------
   ··( g ();
       g ())···

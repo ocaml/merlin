@@ -2452,10 +2452,10 @@ fun_seq_expr:
   | fun_expr    %prec below_SEMI  { $1 }
   | fun_expr SEMI                 { $1 }
   | mkexp(fun_expr SEMI seq_expr
-    { Pexp_sequence($1, $3) })
+    { Pexp_sequence($1, (merloc $endpos($2) $3)) })
     { $1 }
   | fun_expr SEMI PERCENT attr_id seq_expr
-    { mkexp_attrs ~loc:$sloc (Pexp_sequence ($1, $5)) (Some $4, []) }
+    { mkexp_attrs ~loc:$sloc (Pexp_sequence ($1, (merloc $endpos($4) $5))) (Some $4, []) }
 ;
 seq_expr:
   | or_function(fun_seq_expr) { $1 }
