@@ -44,3 +44,49 @@
   
   let _ =
     let%map () = () and () = () in ()···
+
+FIXME: [merlin.loc_stack] attributes are not stripped from the parsetree that
+[expand-ppx] prints, so every parenthesised expression, pattern and type shows
+up annotated in the expansion:
+
+  $ cat >main.ml <<EOF
+  > module Let_syntax = struct
+  >   let map x ~f = f x
+  >   let both x y = x,y
+  > end
+  > 
+  > let _ =
+  >   let%map (x) = (5) in (x)
+  > EOF
+
+  $ dune build @check
+
+  $ LOC=7:7
+  $ show_location main.ml $LOC
+  module Let_syntax = struct
+    let map x ~f = f x
+    let both x y = x,y
+  end
+  
+  let _ =
+    let%m█p (x) = (5) in (x)
+  $ $MERLIN single expand-ppx -position $LOC -filename main.ml <main.ml
+  {
+    "class": "return",
+    "value": {
+      "code": "Let_syntax.map ((5)[@merlin.loc_stack ])
+    ~f:(fun ((x)[@merlin.loc_stack ]) -> ((x)
+          [@merlin.loc ][@merlin.loc_stack ]))",
+      "deriver": {
+        "start": {
+          "line": 7,
+          "col": 2
+        },
+        "end": {
+          "line": 7,
+          "col": 26
+        }
+      }
+    },
+    "notifications": []
+  }

@@ -743,3 +743,133 @@ one. Testing that:
     g ();
     ( g ();
       g ())···
+
+---------
+
+FIXME: cursor on delimiters of type constraints:
+
+  $ cat >main.ml <<EOF
+  > let f x = (x : int)
+  > EOF
+
+  $ LOC=1:10
+  $ show_location main.ml $LOC
+  let f x = █x : int)
+  $ $MERLIN single enclosing -position $LOC -filename main.ml <main.ml | jq .value | extract_ranges main.ml
+  ---------- Range 0 ----------
+         ···(x···
+  ---------- Range 1 ----------
+         ···(x : int)···
+  ---------- Range 2 ----------
+     ···x = (x : int)···
+  ---------- Range 3 ----------
+  let f x = (x : int)···
+
+FIXME: And on the closing one:
+
+  $ LOC=1:19
+  $ show_location main.ml $LOC
+  let f x = (x : int)█
+  $ $MERLIN single enclosing -position $LOC -filename main.ml <main.ml | jq .value | extract_ranges main.ml
+  ---------- Range 0 ----------
+          ···x : int)···
+  ---------- Range 1 ----------
+         ···(x : int)···
+  ---------- Range 2 ----------
+     ···x = (x : int)···
+  ---------- Range 3 ----------
+  let f x = (x : int)···
+
+---------
+
+FIXME: type constraints on patterns:
+
+  $ cat >main.ml <<EOF
+  > let f (x : ((int))) = x
+  > EOF
+
+  $ LOC=1:7
+  $ show_location main.ml $LOC
+  let f (█ : ((int))) = x
+  $ $MERLIN single enclosing -position $LOC -filename main.ml <main.ml | jq .value | extract_ranges main.ml
+  ---------- Range 0 ----------
+      ···x···
+  ---------- Range 1 ----------
+     ···(x : ((int))) = x···
+  ---------- Range 2 ----------
+  let f (x : ((int))) = x···
+
+FIXME: and with the cursor on parenthesis
+
+  $ LOC=1:6
+  $ show_location main.ml $LOC
+  let f █x : ((int))) = x
+  $ $MERLIN single enclosing -position $LOC -filename main.ml <main.ml | jq .value | extract_ranges main.ml
+  ---------- Range 0 ----------
+     ···(x···
+  ---------- Range 1 ----------
+     ···(x : ((int))) = x···
+  ---------- Range 2 ----------
+  let f (x : ((int))) = x···
+
+---------
+
+FIXME: letop body should have merlin loc to behave like normal let:
+
+  $ cat >main.ml <<EOF
+  > let () =
+  >   let x = () in
+  >   ignore x
+  > EOF
+
+  $ LOC=2:11
+  $ show_location main.ml $LOC
+  let () =
+    let x = (█ in
+    ignore x
+  $ $MERLIN single enclosing -position $LOC -filename main.ml <main.ml | jq .value | extract_ranges main.ml
+  ---------- Range 0 ----------
+         ···()···
+  ---------- Range 1 ----------
+  ··let x = () in···
+  ---------- Range 2 ----------
+  ··let x = () in
+    ignore x···
+  ---------- Range 3 ----------
+  let () =
+    let x = () in
+    ignore x···
+
+versus letop::
+
+  $ cat >main.ml <<EOF
+  > let (let>) x f = f x
+  > let () =
+  >   let> x = () in
+  >   ignore x
+  > EOF
+
+  $ LOC=3:12
+  $ show_location main.ml $LOC
+  let (let>) x f = f x
+  let () =
+    let> x = (█ in
+    ignore x
+  $ $MERLIN single enclosing -position $LOC -filename main.ml <main.ml | jq .value | extract_ranges main.ml
+  ---------- Range 0 ----------
+          ···()···
+  ---------- Range 1 ----------
+  ··let> x = () in
+    ···
+  ---------- Range 2 ----------
+  ··let> x = () in
+    ignore x···
+  ---------- Range 3 ----------
+  let () =
+    let> x = () in
+    ignore x···
+  ---------- Range 4 ----------
+  let (let>) x f = f x
+  let () =
+    let> x = () in
+    ignore x···
