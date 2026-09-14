@@ -6,32 +6,51 @@
  (public_name ocamlmerlin-server)
  (flags
   :standard
-  -open Ocaml_utils
-  -open Ocaml_parsing
-  -open Ocaml_typing
-  -open Merlin_kernel
-  -open Merlin_utils
-  -open Merlin_analysis
-  -open Merlin_kernel
-  -open Merlin_commands)
- (libraries merlin-lib.config yojson merlin-lib.analysis merlin-lib.kernel
-            merlin-lib.utils merlin-lib.os_ipc merlin-lib.ocaml_parsing
-            merlin-lib.query_protocol merlin-lib.query_commands
-            merlin-lib.ocaml_typing merlin-lib.ocaml_utils
-            merlin-lib.commands
-            unix str))
+  -open
+  Ocaml_utils
+  -open
+  Ocaml_parsing
+  -open
+  Ocaml_typing
+  -open
+  Merlin_kernel
+  -open
+  Merlin_utils
+  -open
+  Merlin_analysis
+  -open
+  Merlin_kernel
+  -open
+  Merlin_commands)
+ (libraries
+  merlin-lib.config
+  yojson
+  merlin-lib.analysis
+  merlin-lib.kernel
+  merlin-lib.utils
+  merlin-lib.os_ipc
+  merlin-lib.ocaml_parsing
+  merlin-lib.query_protocol
+  merlin-lib.query_commands
+  merlin-lib.ocaml_typing
+  merlin-lib.ocaml_utils
+  merlin-lib.commands
+  unix
+  str))
 
 ; Write one flag per line in the output file
 
 (rule
- (enabled_if (= %{ocaml-config:ccomp_type} "cc"))
+ (enabled_if
+  (= %{ocaml-config:ccomp_type} "cc"))
  (action
   (progn
    (write-file ldlibs "")
    (write-file outputexe "-o"))))
 
 (rule
- (enabled_if (= %{ocaml-config:ccomp_type} "msvc"))
+ (enabled_if
+  (= %{ocaml-config:ccomp_type} "msvc"))
  (action
   (progn
    (write-file ldlibs "advapi32.lib")
@@ -61,10 +80,19 @@
 
 (rule
  (target ocamlmerlin.exe)
- (deps   (:c ocamlmerlin.c))
- (action (run %{cc} %{read-strings:cflags} %{read:outputexe}%{target} %{c} %{read-strings:ldlibs})))
+ (deps
+  (:c ocamlmerlin.c))
+ (action
+  (run
+   %{cc}
+   %{read-strings:cflags}
+   %{ocaml-config:native_c_libraries}
+   %{read:outputexe}%{target}
+   %{c}
+   %{read-strings:ldlibs})))
 
 (install
  (package merlin)
  (section bin)
- (files   (ocamlmerlin.exe as ocamlmerlin)))
+ (files
+  (ocamlmerlin.exe as ocamlmerlin)))
