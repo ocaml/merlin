@@ -165,6 +165,8 @@ let get_identifier_from_nodes nodes pos =
       |> with_none (Location.mkloc (Longident.Lident name.txt) name.loc)
     | (_, Browse_raw.Expression { exp_desc = Texp_ident (_path, lid, _); _ })
       :: _ -> Some lid
+    | (_, Browse_raw.Module_expr { mod_desc = Tmod_ident (_path, lid); _ }) :: _
+      -> Some lid
     | _ -> None
   in
   let is_type_error (lid : Longident.t Location.loc) =
