@@ -6,7 +6,7 @@ Testing the behavior of custom operators
   > let () = ( := ) "foo"  3
   > EOF
 
-  $ $MERLIN single locate -look-for ml -position 2:17 \
+  $ $MERLIN single locate -look-for ml  -position 2:17 \
   > -filename ./main.ml < ./main.ml | jq '.value'
   "Not a valid identifier"
 
@@ -22,26 +22,16 @@ Testing custom indexing operators
   > let name = "baz"
   > let () = name.%{2;4}
   > let () = name.%{5}
+  > let () = ( .%{;..} ) name 7
   > let () = ( .%{ } ) name 3
   > EOF
 
+Should be on line 1
   $ $MERLIN single locate -look-for ml -position 4:15 \
   > -filename ./main.ml < ./main.ml | jq '.value'
   "Not in environment '%'"
 
   $ $MERLIN single locate -look-for ml -position 4:16 \
-  > -filename ./main.ml < ./main.ml | jq '.value'
-  "Not a valid identifier"
-
-  $ $MERLIN single locate -look-for ml -position 5:15 \
-  > -filename ./main.ml < ./main.ml | jq '.value'
-  "Not in environment '%'"
-
-  $ $MERLIN single locate -look-for ml -position 5:15 \
-  > -filename ./main.ml < ./main.ml | jq '.value'
-  "Not in environment '%'"
-
-  $ $MERLIN single locate -look-for ml -position 5:16 \
   > -filename ./main.ml < ./main.ml | jq '.value'
   "Not a valid identifier"
 
@@ -54,5 +44,22 @@ Testing custom indexing operators
   "Not a valid identifier"
 
   $ $MERLIN single locate -look-for ml -position 6:15 \
+  > -filename ./main.ml < ./main.ml | jq '.value'
+  "Not a valid identifier"
+
+Should be on line 2
+  $ $MERLIN single locate -look-for ml -position 5:15 \
+  > -filename ./main.ml < ./main.ml | jq '.value'
+  "Not in environment '%'"
+
+  $ $MERLIN single locate -look-for ml -position 5:15 \
+  > -filename ./main.ml < ./main.ml | jq '.value'
+  "Not in environment '%'"
+
+  $ $MERLIN single locate -look-for ml -position 5:16 \
+  > -filename ./main.ml < ./main.ml | jq '.value'
+  "Not a valid identifier"
+
+  $ $MERLIN single locate -look-for ml -position 7:15 \
   > -filename ./main.ml < ./main.ml | jq '.value'
   "Not a valid identifier"
