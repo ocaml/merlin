@@ -8,11 +8,23 @@ Testing the behavior of custom operators
 
   $ $MERLIN single locate -look-for ml  -position 2:17 \
   > -filename ./main.ml < ./main.ml | jq '.value'
-  "Not a valid identifier"
+  {
+    "file": "$TESTCASE_ROOT/main.ml",
+    "pos": {
+      "line": 1,
+      "col": 4
+    }
+  }
 
   $ $MERLIN single locate -look-for ml -position 3:12 \
   > -filename ./main.ml < ./main.ml | jq '.value'
-  "Not a valid identifier"
+  {
+    "file": "$TESTCASE_ROOT/main.ml",
+    "pos": {
+      "line": 1,
+      "col": 4
+    }
+  }
 
 Testing custom indexing operators
 
@@ -29,7 +41,13 @@ Testing custom indexing operators
 Should be on line 1
   $ $MERLIN single locate -look-for ml -position 4:15 \
   > -filename ./main.ml < ./main.ml | jq '.value'
-  "Not in environment '%'"
+  {
+    "file": "$TESTCASE_ROOT/main.ml",
+    "pos": {
+      "line": 1,
+      "col": 4
+    }
+  }
 
   $ $MERLIN single locate -look-for ml -position 4:16 \
   > -filename ./main.ml < ./main.ml | jq '.value'
@@ -37,24 +55,54 @@ Should be on line 1
 
   $ $MERLIN single locate -look-for ml -position 6:13 \
   > -filename ./main.ml < ./main.ml | jq '.value'
-  "Not in environment '%'"
+  {
+    "file": "$TESTCASE_ROOT/main.ml",
+    "pos": {
+      "line": 1,
+      "col": 4
+    }
+  }
 
   $ $MERLIN single locate -look-for ml -position 6:14 \
   > -filename ./main.ml < ./main.ml | jq '.value'
-  "Not a valid identifier"
+  {
+    "file": "$TESTCASE_ROOT/main.ml",
+    "pos": {
+      "line": 1,
+      "col": 4
+    }
+  }
 
   $ $MERLIN single locate -look-for ml -position 6:15 \
   > -filename ./main.ml < ./main.ml | jq '.value'
-  "Not a valid identifier"
+  {
+    "file": "$TESTCASE_ROOT/main.ml",
+    "pos": {
+      "line": 1,
+      "col": 4
+    }
+  }
 
 Should be on line 2
   $ $MERLIN single locate -look-for ml -position 5:15 \
   > -filename ./main.ml < ./main.ml | jq '.value'
-  "Not in environment '%'"
+  {
+    "file": "$TESTCASE_ROOT/main.ml",
+    "pos": {
+      "line": 2,
+      "col": 4
+    }
+  }
 
   $ $MERLIN single locate -look-for ml -position 5:15 \
   > -filename ./main.ml < ./main.ml | jq '.value'
-  "Not in environment '%'"
+  {
+    "file": "$TESTCASE_ROOT/main.ml",
+    "pos": {
+      "line": 2,
+      "col": 4
+    }
+  }
 
   $ $MERLIN single locate -look-for ml -position 5:16 \
   > -filename ./main.ml < ./main.ml | jq '.value'
@@ -62,4 +110,10 @@ Should be on line 2
 
   $ $MERLIN single locate -look-for ml -position 7:15 \
   > -filename ./main.ml < ./main.ml | jq '.value'
-  "Not a valid identifier"
+  {
+    "file": "$TESTCASE_ROOT/main.ml",
+    "pos": {
+      "line": 2,
+      "col": 4
+    }
+  }

@@ -39,3 +39,10 @@ val reconstruct_identifier :
   Lexing.position ->
   (string * int) option ->
   string Location.loc list
+
+val get_or_reconstruct_identifier :
+  Mpipeline.t ->
+  Lexing.position ->
+  (string * int) option ->
+  [ `Strings of string Location.loc list
+  | `Longidents of Longident.t Location.loc list ]
