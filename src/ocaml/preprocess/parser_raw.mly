@@ -380,6 +380,15 @@ let builtin_arraylike_name loc _ ~assign paren_kind n =
        Ldot(mknoloc (Lident "Bigarray"), mknoloc submodule_name) in
    ghloc ~loc (Ldot(mknoloc prefix, mknoloc opname))
 
+let mk_arraylike ~loc content =
+  let loc =
+    match (content, List.rev content) with
+    | first :: _, last :: _ ->
+        (first.pexp_loc.Location.loc_start, last.pexp_loc.Location.loc_end)
+    | _ -> loc
+  in
+  ghexp ~loc (Pexp_array content)
+
 let builtin_arraylike_index loc paren_kind index = match paren_kind with
     | Paren | Bracket -> One, [Nolabel, index]
     | Brace ->
@@ -388,7 +397,7 @@ let builtin_arraylike_index loc paren_kind index = match paren_kind with
      | [x] -> One, [Nolabel, x]
      | [x;y] -> Two, [Nolabel, x; Nolabel, y]
      | [x;y;z] -> Three, [Nolabel, x; Nolabel, y; Nolabel, z]
-     | coords -> Many, [Nolabel, ghexp ~loc (Pexp_array coords)]
+     | coords -> Many, [Nolabel, mk_arraylike ~loc coords]
 
 let builtin_indexing_operators : (unit, expression) array_family  =
   { index = builtin_arraylike_index; name = builtin_arraylike_name }
@@ -416,7 +425,7 @@ let user_index loc _ index =
      ([a.%[1;2;3;4]]) *)
   match index with
     | [a] -> One, [Nolabel, a]
-    | l -> Many, [Nolabel, mkexp ~loc (Pexp_array l)]
+    | l -> Many, [Nolabel, mk_arraylike ~loc l]
 
 let user_indexing_operators:
       (Longident.t option * string, expression list) array_family
