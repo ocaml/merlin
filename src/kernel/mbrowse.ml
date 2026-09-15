@@ -118,14 +118,18 @@ let compare_locations ?tie_break pos l1 l2 =
   let t1_first = -1 in
   match (Location_aux.compare_pos pos l1, Location_aux.compare_pos pos l2) with
   (* Cursor inside both locations: favor non-ghost, fallback to user-provided
-     tie-break, fallback to being closer to the end *)
+     tie-break, fallback to being closer to the cursor *)
   | 0, 0 ->
     begin match (tie_break, l1.Location.loc_ghost, l2.Location.loc_ghost) with
     | _, true, false -> 1
     | _, false, true -> -1
     | Some Tie_breaker.Prefer_first, _, _ -> t1_first
     | Some Prefer_second, _, _ -> t2_first
-    | _ -> Lexing.compare_pos l1.Location.loc_end l2.Location.loc_end
+    | _ -> (
+      (* Favor the location starting at the cursor over one ending there *)
+      match Lexing.compare_pos l2.Location.loc_start l1.Location.loc_start with
+      | 0 -> Lexing.compare_pos l1.Location.loc_end l2.Location.loc_end
+      | n -> n)
     end
   (* Cursor inside one location: it has priority *)
   | 0, _ -> t1_first
