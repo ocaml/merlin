@@ -861,22 +861,22 @@ let infer_namespace ?namespaces ~pos lid browse is_label =
         "dropping inferred context, it is not precise enough";
       `Ok [ `Labels ])
 
-let from_string ~config ~env ~local_defs ~pos ?namespaces path =
+let from_longident ~config ~env ~local_defs ~pos ?namespaces lid =
   File_switching.reset ();
   let browse = Mbrowse.of_typedtree local_defs in
+  let ident, is_label = Longident.keep_suffix lid in
+  match infer_namespace ?namespaces ~pos lid browse is_label with
+  | `Error e -> e
+  | `Ok nss -> from_longident ~config ~env ~local_defs nss ident
+
+let from_string ~config ~env ~local_defs ~pos ?namespaces path =
   let lid = Type_utils.parse_longident path in
-  let from_lid lid =
-    let ident, is_label = Longident.keep_suffix lid in
-    match infer_namespace ?namespaces ~pos lid browse is_label with
-    | `Error e -> e
-    | `Ok nss ->
-      log ~title:"from_string"
-        "looking for the source of '%s' (prioritizing %s files)" path
-        (match config.ml_or_mli with
-        | `ML | `Smart -> ".ml"
-        | `MLI -> ".mli");
-      from_longident ~config ~env ~local_defs nss ident
-  in
+  log ~title:"from_string"
+    "looking for the source of '%s' (prioritizing %s files)" path
+    (match config.ml_or_mli with
+    | `ML | `Smart -> ".ml"
+    | `MLI -> ".mli");
+  let from_lid = from_longident ~config ~env ~local_defs ~pos ?namespaces in
   Option.value_map ~f:from_lid ~default:(`Not_found (path, None)) lid
 
 let find_doc_attribute attrs =

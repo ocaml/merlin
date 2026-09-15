@@ -83,6 +83,20 @@ val from_path :
   | `Not_in_env of string
   | `Not_found of string * string option ]
 
+val from_longident :
+  config:config ->
+  env:Env.t ->
+  local_defs:Mtyper.typedtree ->
+  pos:Lexing.position ->
+  ?namespaces:Env_lookup.Namespace.inferred_basic list ->
+  Longident.t ->
+  [> `File_not_found of result
+  | `Found of result
+  | `Builtin of Shape.Uid.t * string
+  | `Missing_labels_namespace
+  | `Not_in_env of string
+  | `At_origin ]
+
 val from_string :
   config:config ->
   env:Env.t ->
