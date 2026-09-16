@@ -208,31 +208,47 @@ module Ppx_phase = struct
   end
 
   module Fingerprint = struct
-    type t = Single_fingerprint.t list * reader_cache
+    type t =
+      { single_ppx : Single_fingerprint.t list;
+        reader_cache : reader_cache;
+        deps_hash : File_id.t list
+      }
 
     let make { config; reader_cache; _ } =
-      let rec all_fingerprints acc = function
-        | [] -> acc
-        | { Std.workdir; workval } :: tl -> (
-          match Std.String.split_on_char ~sep:' ' workval with
-          | [] -> Error ("unhandled workval" ^ workval)
-          | binary :: args ->
-            Result.bind
-              ~f:(fun fp ->
-                all_fingerprints (Result.map ~f:(List.cons fp) acc) tl)
-              (Single_fingerprint.make ~binary ~args ~workdir))
+      let open Result.Syntax in
+      let result_list_rev_map ~f l =
+        let rec loop acc = function
+          | [] -> Ok acc
+          | hd :: tl -> (
+            match f hd with
+            | Error _ as e -> e
+            | Ok res -> loop (res :: acc) tl)
+        in
+        loop [] l
       in
-      Result.map (all_fingerprints (Ok []) config.ocaml.ppx) ~f:(fun l ->
-          (l, reader_cache))
+      let* all_fingerprints =
+        result_list_rev_map config.ocaml.ppx ~f:(fun { Std.workdir; workval } ->
+            match Std.String.split_on_char ~sep:' ' workval with
+            | [] -> Error ("unhandled workval" ^ workval)
+            | binary :: args -> Single_fingerprint.make ~binary ~args ~workdir)
+      in
+      let+ deps_hash =
+        result_list_rev_map
+          ~f:(fun deps -> File_id.get_res deps)
+          config.merlin.ppx_dependencies
+      in
+
+      { single_ppx = all_fingerprints; reader_cache; deps_hash }
 
     let equal_cache_version cv1 cv2 =
       match (cv1, cv2) with
       | Off, _ | _, Off -> false
       | Version v1, Version v2 -> Int.equal v1 v2
 
-    let equal (f1, rcv1) (f2, rcv2) =
-      equal_cache_version rcv1 rcv2
-      && List.equal ~eq:Single_fingerprint.equal f1 f2
+    let equal f1 f2 =
+      equal_cache_version f1.reader_cache f2.reader_cache
+      && List.equal ~eq:Single_fingerprint.equal f1.single_ppx f2.single_ppx
+      && List.equal ~eq:File_id.check f1.deps_hash f2.deps_hash
   end
 end
 

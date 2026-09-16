@@ -49,7 +49,8 @@ type config =
     wrapping_prefix : string option;
     reader : string list;
     exclude_query_dir : bool;
-    use_ppx_cache : bool
+    use_ppx_cache : bool;
+    ppx_dependencies : string list
   }
 
 let empty_config =
@@ -69,7 +70,8 @@ let empty_config =
     wrapping_prefix = None;
     reader = [];
     exclude_query_dir = false;
-    use_ppx_cache = false
+    use_ppx_cache = false;
+    ppx_dependencies = []
   }
 
 let white_regexp = Str.regexp "[ \t]+"
@@ -264,6 +266,9 @@ let prepend_config ~dir:cwd configurator (directives : directive list) config =
       | `READER reader -> ({ config with reader }, errors)
       | `EXCLUDE_QUERY_DIR -> ({ config with exclude_query_dir = true }, errors)
       | `USE_PPX_CACHE -> ({ config with use_ppx_cache = true }, errors)
+      | `PPX_DEPS dep ->
+        ( { config with ppx_dependencies = dep :: config.ppx_dependencies },
+          errors )
       | `ERROR_MSG str -> (config, str :: errors)
       | `UNKNOWN_TAG _ when configurator = Configurator.Dune ->
         (* For easier forward compatibility we ignore unknown configuration tags
@@ -292,7 +297,9 @@ let postprocess_config config =
     wrapping_prefix = config.wrapping_prefix;
     reader = config.reader;
     exclude_query_dir = config.exclude_query_dir;
-    use_ppx_cache = config.use_ppx_cache
+    use_ppx_cache = config.use_ppx_cache;
+    ppx_dependencies =
+      List.sort_uniq ~cmp:String.compare config.ppx_dependencies
   }
 
 type context =
