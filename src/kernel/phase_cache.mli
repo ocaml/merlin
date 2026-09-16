@@ -14,7 +14,7 @@ module type S = sig
   val title : string
 
   module Fingerprint : sig
-    type input
+    type input := t
 
     (** Fingerprint used to determine whether the cache should be invalidated *)
     type t
@@ -25,7 +25,6 @@ module type S = sig
     (** Determines whether two fingerprints are the same *)
     val equal : t -> t -> bool
   end
-  with type input := t
 end
 
 module With_cache (Phase : S) : sig
