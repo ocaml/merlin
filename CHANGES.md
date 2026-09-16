@@ -7,6 +7,8 @@ unreleased
       expression (#2120)
     - enclosing: drastically improve the ranges! (#2121)
     - Fix oversharing in Parsetree cache (#2131)
+    - Add `PPX_DEPS` to advertise PPX dependencies in Merlin configuration
+      (#2127)
   + merlin binary
     - Use c library flags from `ocamlc -config`. Fixes Haiku build (#2124)
   + test suite
