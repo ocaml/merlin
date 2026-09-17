@@ -1,5 +1,7 @@
 open Std
 
+let section = Type_enclosing.log_section
+
 module Path : sig
   val is_opened : Env.t -> Path.t -> bool
 
@@ -125,6 +127,9 @@ let split_lid_up_to_cursor cursor_pos lid =
   aux [] lid
 
 let find_record_field fields loc =
+  Logger.log ~section ~title:"find_record_field"
+    "Looking for the field corresponding to %a" Logger.fmt
+    (Fun.flip Location.print_loc loc);
   Array.find_map
     (fun (_lbl_desc, lbl_def) ->
       match lbl_def with
@@ -136,6 +141,9 @@ let find_record_field fields loc =
     fields
 
 let find_pat_record_field fields loc =
+  Logger.log ~section ~title:"find_pat_record_field"
+    "Looking for the field corresponding to %a" Logger.fmt
+    (Fun.flip Location.print_loc loc);
   List.find_some fields ~f:(fun (lid, _lbl_desc, (pat : Typedtree.pattern)) ->
       match pat.pat_desc with
       | Tpat_var _ ->
@@ -167,6 +175,11 @@ let get_identifier_from_nodes nodes pos =
       :: _ -> Some lid
     | (_, Browse_raw.Module_expr { mod_desc = Tmod_ident (_path, lid); _ }) :: _
       -> Some lid
+    | (_, Browse_raw.Record_field (_, _, lid)) :: _ -> Some lid
+    | ( _,
+        Browse_raw.Extension_constructor { ext_kind = Text_rebind (_, lid); _ }
+      )
+      :: _ -> Some lid
     | _ -> None
   in
   let is_type_error (lid : Longident.t Location.loc) =
@@ -179,6 +192,12 @@ let get_identifier_from_nodes nodes pos =
   | Some lid when is_type_error lid -> []
   | Some lid -> split_lid_up_to_cursor pos lid
 
+let log_identifiers lids =
+  Logger.log ~section ~title:"get-identifier" "From the typedtree: %a"
+    Logger.fmt (fun fmt ->
+      let lids = List.map lids ~f:(fun { Location.txt; _ } -> txt) in
+      (Format.pp_print_list Pprintast.longident fmt) lids)
+
 let get_or_reconstruct_identifier pipeline pos idento =
   match idento with
   | Some _ -> `Strings (reconstruct_identifier pipeline pos idento)
@@ -189,5 +208,6 @@ let get_or_reconstruct_identifier pipeline pos idento =
         pos
     in
     let from_node = get_identifier_from_nodes nodes pos in
+    let () = log_identifiers from_node in
     if not (List.is_empty from_node) then `Longidents from_node
     else `Strings (reconstruct_identifier pipeline pos None)
