@@ -195,7 +195,10 @@ module Ppx_phase = struct
     type t = { binary_id : File_id.t; args : string list; workdir : string }
 
     let make ~binary ~args ~workdir =
-      let qualified_binary = Filename.concat workdir binary in
+      let qualified_binary =
+        if Filename.is_relative binary then Filename.concat workdir binary
+        else binary
+      in
       match File_id.get_res qualified_binary with
       | Ok binary_id -> Ok { binary_id; args; workdir }
       | Error err -> Error err
