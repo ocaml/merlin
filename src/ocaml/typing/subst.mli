@@ -135,6 +135,9 @@ module Lazy : sig
       mdl_attributes: Parsetree.attributes;
       mdl_loc: Location.t;
       mdl_uid: Uid.t;
+      mdl_discourse: Discourse_types.t;
+      mdl_discourse_alias:
+        (Longident.t Asttypes.loc * Discourse_types.Item.t) option;
     }
 
   and modtype =
@@ -150,6 +153,7 @@ module Lazy : sig
       mtdl_attributes: Parsetree.attributes;
       mtdl_loc: Location.t;
       mtdl_uid: Uid.t;
+      mtdl_discourse: Discourse_types.t;
     }
 
   and signature

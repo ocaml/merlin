@@ -87,6 +87,8 @@ val find_type: Path.t -> t -> type_declaration
 val find_type_descrs: Path.t -> t -> type_descriptions
 val find_module: Path.t -> t -> module_declaration
 val find_modtype: Path.t -> t -> modtype_declaration
+val find_module_lazy: Path.t -> t -> Subst.Lazy.module_decl
+val find_modtype_lazy: Path.t -> t -> Subst.Lazy.modtype_declaration
 val find_class: Path.t -> t -> class_declaration
 val find_cltype: Path.t -> t -> class_type_declaration
 
@@ -279,6 +281,10 @@ val find_module_by_name:
   Longident.t -> t -> Path.t * module_declaration
 val find_modtype_by_name:
   Longident.t -> t -> Path.t * modtype_declaration
+val find_module_by_name_lazy:
+  Longident.t -> t -> Path.t * Subst.Lazy.module_decl
+val find_modtype_by_name_lazy:
+  Longident.t -> t -> Path.t * Subst.Lazy.modtype_declaration
 val find_class_by_name:
   Longident.t -> t -> Path.t * class_declaration
 val find_cltype_by_name:
@@ -320,8 +326,6 @@ val make_copy_of_types: t -> (t -> t)
 val add_value:
     ?check:(string -> Warnings.t) -> Ident.t -> value_description -> t -> t
 val add_type:
-  check:bool -> ?shape:Shape.t -> Ident.t -> type_declaration -> t -> t
-val add_type_long_path:
   check:bool -> ?shape:Shape.t -> Ident.t -> type_declaration -> t -> t
 val add_extension:
   check:bool -> ?shape:Shape.t -> rebind:bool -> Ident.t ->
@@ -386,9 +390,7 @@ val remove_last_open: Path.t -> t -> t option
 val enter_value:
     ?check:(string -> Warnings.t) ->
     string -> value_description -> t -> Ident.t * t
-val enter_type:
-  ?long_path:bool -> scope:int ->
-  string -> type_declaration -> t -> Ident.t * t
+val enter_type: scope:int -> string -> type_declaration -> t -> Ident.t * t
 val reenter_type: Ident.t -> type_declaration -> t -> t
 val enter_extension:
   scope:int -> rebind:bool -> string ->

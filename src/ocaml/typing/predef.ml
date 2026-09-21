@@ -250,9 +250,17 @@ and ident_cons = ident_create "::"
 and ident_none = ident_create "None"
 and ident_some = ident_create "Some"
 
+let discourse = ref Discourse_types.empty
+
 let decl_of_type_constr tconstr =
   let name = name_of_type_constr tconstr in
-  let type_uid = Uid.of_predef_id (ident_of_type_constr tconstr) in
+  let type_ident = ident_of_type_constr tconstr in
+  let () =
+    let path = Pident type_ident in
+    discourse :=
+      Discourse_types.add (Shape.Sig_component_kind.Type, path) !discourse
+  in
+  let type_uid = Uid.of_predef_id type_ident in
   let decl0
       ?(immediate = Type_immediacy.Unknown)
       ?(kind = Type_external name)
@@ -272,6 +280,7 @@ let decl_of_type_constr tconstr =
      type_immediate = immediate;
      type_unboxed_default = false;
      type_uid;
+     type_discourse = Discourse_types.empty;
     }
   in
   let decl1
@@ -310,6 +319,7 @@ let decl_of_type_constr tconstr =
       cd_loc = Location.none;
       cd_attributes = [];
       cd_uid = Uid.of_predef_id id;
+      cd_discourse = Discourse_types.empty;
     }
   in
   let variant constrs =
@@ -395,3 +405,5 @@ let builtin_values =
   List.map (fun id -> (Ident.name id, id)) all_predef_exns
 
 let builtin_idents = List.rev !builtin_idents
+
+let discourse () = !discourse

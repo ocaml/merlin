@@ -1,0 +1,2 @@
+module Topic = Repro2_types__Topic
+module Topic_name = Repro2_types__Topic_name

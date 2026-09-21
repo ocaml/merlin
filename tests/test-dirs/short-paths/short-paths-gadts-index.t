@@ -17,7 +17,7 @@ GADT indexation through aliases
   $ $MERLIN single type-enclosing -short-paths -position 7:6 -filename sample.ml < sample.ml \
   > | tr '\r\n' ' ' \
   > | jq .value[0].type -r
-  i g * s g * (i, s) result g
+  int g * string g * (int, string) result g
 
 GADT indexation through aliases with abstraction
 
@@ -74,4 +74,4 @@ GADT indexation through aliases with abstraction at call-site
   $ $MERLIN single type-enclosing -short-paths -position 15:5 -filename sample.ml < sample.ml \
   > | tr '\r\n' ' ' \
   > | jq .value[0].type -r
-  bbb g * aaa g * (bbb, aaa) result g
+  int g * string g * (int, string) result g

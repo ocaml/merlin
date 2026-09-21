@@ -94,12 +94,9 @@ let get_unboxed_from_attributes sdecl =
 
 (* Enter all declared types in the environment as abstract types *)
 
-let add_type ~long_path ~check ?shape id decl env =
+let add_type ~check ?shape id decl env =
   Builtin_attributes.warning_scope ~ppwarning:false decl.type_attributes
-    (fun () ->
-       match long_path with
-       | true -> Env.add_type_long_path ~check ?shape id decl env
-       | false -> Env.add_type ~check ?shape id decl env)
+    (fun () -> Env.add_type ~check ?shape id decl env)
 
 (* Add a dummy type declaration to the environment, with the given arity.
    The [type_kind] is [Type_abstract], but there is a generic [type_manifest]
@@ -144,9 +141,10 @@ let enter_type ?abstract_abbrevs rec_flag env sdecl (id, uid) =
       type_immediate = Unknown;
       type_unboxed_default = false;
       type_uid = uid;
+      type_discourse = Discourse_types.empty;
     }
   in
-  add_type ~long_path:true ~check:true id decl env
+  add_type ~check:true id decl env
 
 (* Determine if a type's values are represented by floats at run-time. *)
 let is_float env ty =
@@ -229,16 +227,19 @@ let transl_labels env univars closed lbls =
          raise(Error(loc, Duplicate_label name));
        all_labels := String.Set.add name !all_labels)
     lbls;
-  let mk {pld_name=name;pld_mutable=mut;pld_type=arg;pld_loc=loc;
-          pld_attributes=attrs} =
+  let mk d {pld_name=name;pld_mutable=mut;pld_type=arg;pld_loc=loc;
+            pld_attributes=attrs} =
     Builtin_attributes.warning_scope attrs
       (fun () ->
          let arg = Ast_helper.Typ.force_poly arg in
-         let cty = transl_simple_type env ?univars ~closed arg in
+         let cty, discourse =
+           transl_simple_type_with_discourse env ?univars ~closed arg
+         in
          let is_atomic = Builtin_attributes.has_atomic attrs in
          let is_mutable = match mut with Mutable -> true | Immutable -> false in
          if is_atomic && not is_mutable then
            raise (Error (loc, Atomic_field_must_be_mutable name.txt));
+         Discourse_types.union d discourse,
          {ld_id = Ident.create_local name.txt;
           ld_name = name;
           ld_uid = Uid.mk ~current_unit:(Env.get_current_unit ());
@@ -247,7 +248,7 @@ let transl_labels env univars closed lbls =
           ld_type = cty; ld_loc = loc; ld_attributes = attrs}
       )
   in
-  let lbls = List.map mk lbls in
+  let discourse, lbls = List.fold_left_map mk Discourse_types.empty lbls in
   let lbls' =
     List.map
       (fun ld ->
@@ -263,42 +264,52 @@ let transl_labels env univars closed lbls =
          }
       )
       lbls in
-  lbls, lbls'
+  lbls, lbls', discourse
 
 let transl_constructor_arguments env univars closed = function
   | Pcstr_tuple l ->
-      let l = List.map (transl_simple_type env ?univars ~closed) l in
+      let discourse, l =
+        List.fold_left_map (fun acc_discourse sty ->
+            let cty, discourse =
+              transl_simple_type_with_discourse env ?univars ~closed sty
+            in
+            Discourse_types.union acc_discourse discourse, cty)
+          Discourse_types.empty l
+      in
       Types.Cstr_tuple (List.map (fun t -> t.ctyp_type) l),
-      Cstr_tuple l
+      Cstr_tuple l,
+      discourse
   | Pcstr_record l ->
-      let lbls, lbls' = transl_labels env univars closed l in
+      let lbls, lbls', discourse = transl_labels env univars closed l in
       Types.Cstr_record lbls',
-      Cstr_record lbls
+      Cstr_record lbls,
+      discourse
 
 let make_constructor env loc type_path type_params svars sargs sret_type =
   match sret_type with
   | None ->
-      let args, targs =
+      let args, targs, discourse =
         transl_constructor_arguments env None true sargs
       in
-        targs, None, args, None
+        targs, None, args, None, discourse
   | Some sret_type ->
       (* if it's a generalized constructor we must first narrow and
          then widen so as to not introduce any new constraints *)
       (* narrow and widen are now invoked through wrap_type_variable_scope *)
       TyVarEnv.with_local_scope begin fun () ->
       let closed = svars <> [] in
-      let targs, tret_type, args, ret_type, univars =
+      let targs, tret_type, args, ret_type, univars, discourse =
         Ctype.with_local_level_generalize_if closed begin fun () ->
           TyVarEnv.reset ();
           let univar_list =
             TyVarEnv.make_poly_univars (List.map (fun v -> v.txt) svars) in
           let univars = if closed then Some univar_list else None in
-          let args, targs =
+          let args, targs, args_discourse =
             transl_constructor_arguments env univars closed sargs
           in
-          let tret_type =
-            transl_simple_type env ?univars ~closed sret_type in
+          let tret_type, tret_discourse =
+            transl_simple_type_with_discourse env ?univars ~closed sret_type
+          in
           let ret_type = tret_type.ctyp_type in
           (* TODO add back type_path as a parameter ? *)
           begin match get_desc ret_type with
@@ -316,7 +327,8 @@ let make_constructor env loc type_path type_params svars sargs sret_type =
                            Constraint_failed(
                            env, Errortrace.unification_error ~trace)))
           end;
-          (targs, tret_type, args, ret_type, univar_list)
+          let discourse = Discourse_types.union args_discourse tret_discourse in
+          (targs, tret_type, args, ret_type, univar_list, discourse)
         end
       in
       if closed then begin
@@ -325,7 +337,7 @@ let make_constructor env loc type_path type_params svars sargs sret_type =
         Btype.iter_type_expr_cstr_args set_level args;
         set_level ret_type
       end;
-      targs, Some tret_type, args, Some ret_type
+      targs, Some tret_type, args, Some ret_type, discourse
       end
 
 
@@ -354,10 +366,16 @@ let transl_declaration env sdecl (id, uid) =
   TyVarEnv.reset();
   let tparams = make_params env sdecl.ptype_params in
   let params = List.map (fun (cty, _) -> cty.ctyp_type) tparams in
-  let constraints = List.map
-    (fun (sty, sty', loc) ->
-      transl_simple_type env ~closed:false sty,
-      transl_simple_type env ~closed:false sty', loc)
+  let discourse, constraints = List.fold_left_map
+    (fun acc_d (sty, sty', loc) ->
+      let ct, d =
+        transl_simple_type_with_discourse env ~closed:false sty
+      in
+      let ct', d' =
+        transl_simple_type_with_discourse env ~closed:false sty'
+      in
+      Discourse_types.(union (union acc_d d) d'), (ct, ct', loc))
+    Discourse_types.empty
     sdecl.ptype_constraints
   in
   let unboxed_attr = get_unboxed_from_attributes sdecl in
@@ -405,10 +423,11 @@ let transl_declaration env sdecl (id, uid) =
       Option.is_none unboxed_attr
     | _ -> false, false (* Not unboxable, mark as boxed *)
   in
-  let (tkind, kind) =
+  let (tkind, kind, discourse) =
     match sdecl.ptype_kind with
-      | Ptype_abstract -> Ttype_abstract, Type_abstract Definition
-      | Ptype_external name -> Ttype_external name, Type_external name
+      | Ptype_abstract -> Ttype_abstract, Type_abstract Definition, discourse
+      | Ptype_external name ->
+        Ttype_external name, Type_external name, discourse
       | Ptype_variant scstrs ->
         if List.exists (fun cstr -> cstr.pcd_res <> None) scstrs then begin
           match constraints with
@@ -427,9 +446,9 @@ let transl_declaration env sdecl (id, uid) =
             (List.filter (fun cd -> cd.pcd_args <> Pcstr_tuple []) scstrs)
            > (Config.max_tag + 1) then
           raise(Error(sdecl.ptype_loc, Too_many_constructors));
-        let make_cstr scstr =
+        let make_cstr acc_discourse scstr =
           let name = Ident.create_local scstr.pcd_name.txt in
-          let targs, tret_type, args, ret_type =
+          let targs, tret_type, args, ret_type, cd_discourse =
             make_constructor env scstr.pcd_loc (Path.Pident id) params
                              scstr.pcd_vars scstr.pcd_args scstr.pcd_res
           in
@@ -449,19 +468,24 @@ let transl_declaration env sdecl (id, uid) =
               cd_res = ret_type;
               cd_loc = scstr.pcd_loc;
               cd_attributes = scstr.pcd_attributes;
-              cd_uid = tcstr.cd_uid; }
+              cd_uid = tcstr.cd_uid;
+              cd_discourse }
           in
-            tcstr, cstr
+          let discourse = Discourse_types.union acc_discourse cd_discourse in
+          (discourse, (tcstr, cstr))
         in
-        let make_cstr scstr =
+        let make_cstr acc scstr =
           Builtin_attributes.warning_scope scstr.pcd_attributes
-            (fun () -> make_cstr scstr)
+            (fun () -> make_cstr acc scstr)
         in
         let rep = if unbox then Variant_unboxed else Variant_regular in
-        let tcstrs, cstrs = List.split (List.map make_cstr scstrs) in
-          Ttype_variant tcstrs, Type_variant (cstrs, rep)
+        let discourse, cstrs =
+          List.fold_left_map make_cstr discourse scstrs
+        in
+        let tcstrs, cstrs = List.split cstrs in
+          Ttype_variant tcstrs, Type_variant (cstrs, rep), discourse
       | Ptype_record lbls ->
-          let lbls, lbls' = transl_labels env None true lbls in
+          let lbls, lbls', lbls_discourse = transl_labels env None true lbls in
           let rep =
             if unbox then (
               Record_unboxed false
@@ -474,16 +498,19 @@ let transl_declaration env sdecl (id, uid) =
             else
               Record_regular
           in
-          Ttype_record lbls, Type_record(lbls', rep)
-      | Ptype_open -> Ttype_open, Type_open
+          let discourse = Discourse_types.union discourse lbls_discourse in
+          Ttype_record lbls, Type_record(lbls', rep), discourse
+      | Ptype_open -> Ttype_open, Type_open, discourse
       in
   begin
-    let (tman, man) = match sdecl.ptype_manifest with
-        None -> None, None
+    let (tman, man, type_discourse) = match sdecl.ptype_manifest with
+        None -> None, None, discourse
       | Some sty ->
         let no_row = not (is_fixed_type sdecl) in
-        let cty = transl_simple_type env ~closed:no_row sty in
-        Some cty, Some cty.ctyp_type
+        let cty, d =
+          transl_simple_type_with_discourse env ~closed:no_row sty
+        in
+        Some cty, Some cty.ctyp_type, Discourse_types.union discourse d
     in
     let arity = List.length params in
     let decl =
@@ -501,6 +528,7 @@ let transl_declaration env sdecl (id, uid) =
         type_immediate = Unknown;
         type_unboxed_default = unboxed_default;
         type_uid = uid;
+        type_discourse;
       } in
 
   (* Check constraints *)
@@ -1111,7 +1139,7 @@ let update_type temp_env env id loc =
 let add_types_to_env decls shapes env =
   List.fold_right2
     (fun (id, decl) shape env ->
-      add_type ~long_path:false ~check:true ~shape id decl env)
+      add_type ~check:true ~shape id decl env)
     decls shapes env
 
 (* Translate a set of type declarations, mutually recursive or not *)
@@ -1282,7 +1310,7 @@ let transl_extension_constructor ~scope env type_path type_params
   let args, ret_type, kind =
     match sext.pext_kind with
       Pext_decl(svars, sargs, sret_type) ->
-        let targs, tret_type, args, ret_type =
+        let targs, tret_type, args, ret_type, _discourse =
           make_constructor env sext.pext_loc type_path typext_params
             svars sargs sret_type
         in
@@ -1665,7 +1693,9 @@ let check_unboxable env loc ty =
 
 (* Translate a value declaration *)
 let transl_value_decl env loc valdecl =
-  let cty = Typetexp.transl_type_scheme env valdecl.pval_type in
+  let cty, val_discourse =
+    Typetexp.transl_type_scheme env valdecl.pval_type
+  in
   let ty = cty.ctyp_type in
   let v =
   match valdecl.pval_prim with
@@ -1673,6 +1703,7 @@ let transl_value_decl env loc valdecl =
       { val_type = ty; val_kind = Val_reg; Types.val_loc = loc;
         val_attributes = valdecl.pval_attributes;
         val_uid = Uid.mk ~current_unit:(Env.get_current_unit ());
+        val_discourse;
       }
   | [] ->
       raise (Error(valdecl.pval_loc, Val_in_structure))
@@ -1705,6 +1736,7 @@ let transl_value_decl env loc valdecl =
       { val_type = ty; val_kind = Val_prim prim; Types.val_loc = loc;
         val_attributes = valdecl.pval_attributes;
         val_uid = Uid.mk ~current_unit:(Env.get_current_unit ());
+        val_discourse;
       }
   in
   let (id, newenv) =
@@ -1821,6 +1853,7 @@ let transl_with_constraint id ?fixed_row_path ~sig_env ~sig_decl ~outer_env
       type_immediate = Unknown;
       type_unboxed_default;
       type_uid = Uid.mk ~current_unit:(Env.get_current_unit ());
+      type_discourse = Discourse_types.empty;
     }
   in
   Option.iter (fun p -> set_private_row env sdecl.ptype_loc p new_sig_decl)
@@ -1859,6 +1892,7 @@ let transl_with_constraint id ?fixed_row_path ~sig_env ~sig_decl ~outer_env
       type_loc = new_sig_decl.type_loc;
       type_attributes = new_sig_decl.type_attributes;
       type_uid = new_sig_decl.type_uid;
+      type_discourse = Discourse_types.empty;
 
       type_variance = new_type_variance;
       type_immediate = new_type_immediate;
@@ -1896,7 +1930,8 @@ let transl_package_constraint ~loc env ty =
       type_attributes = [];
       type_immediate = Unknown;
       type_unboxed_default = false;
-      type_uid = Uid.mk ~current_unit:(Env.get_current_unit ())
+      type_uid = Uid.mk ~current_unit:(Env.get_current_unit ());
+      type_discourse = Discourse_types.empty;
     }
   in
   let new_type_immediate =
@@ -1925,6 +1960,7 @@ let abstract_type_decl ~injective ~explanation arity =
       type_immediate = Unknown;
       type_unboxed_default = false;
       type_uid = Uid.internal_not_actually_unique;
+      type_discourse = Discourse_types.empty;
     }
   end
 

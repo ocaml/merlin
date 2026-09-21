@@ -6,6 +6,7 @@
 
 (** {1 Relevant settings}
     Parameters from OCaml compiler which affect Merlin behavior. *)
+val legacy_short_path    : bool ref
 val cmi_file             : string option ref
 val include_dirs         : string list ref
 val hidden_include_dirs  : string list ref

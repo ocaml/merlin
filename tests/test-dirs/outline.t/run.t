@@ -1024,7 +1024,7 @@
   "A.a"
   null
   $ $MERLIN single outline -short-paths < path.ml | jq '.value[].type'
-  "a"
+  "int"
   null
   $ $MERLIN single outline -filename foo.mli < foo.mli
   {

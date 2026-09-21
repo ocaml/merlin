@@ -14,7 +14,7 @@
   $ $MERLIN single type-enclosing -short-paths -position 4:5 -filename sample.ml < sample.ml \
   > | tr '\r\n' ' ' \
   > | jq .value[0].type -r
-  'a -> 'a t
+  'a -> 'a option
 
 # Type exposed by include struct with ascription
 
@@ -32,4 +32,4 @@
   $ $MERLIN single type-enclosing -short-paths -position 4:5 -filename sample.ml < sample.ml \
   > | tr '\r\n' ' ' \
   > | jq .value[0].type -r
-  'a -> int -> int t
+  'a -> int -> int option

@@ -41,7 +41,7 @@ Test 1.2 with short paths
           "line": 2,
           "col": 5
         },
-        "type": "foo",
+        "type": "int",
         "tail": "no"
       }
     ],
@@ -92,7 +92,7 @@ Test 2.2 with shortpaths
           "line": 2,
           "col": 5
         },
-        "type": "foo",
+        "type": "int",
         "tail": "no"
       }
     ],

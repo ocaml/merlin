@@ -264,9 +264,15 @@ exception Error_forward of Location.error
 val report_error: loc:Location.t -> Env.t -> error -> Location.error
  (** @deprecated.  Use {!Location.error_of_exn}, {!Location.print_report}. *)
 
+type module_discourse = {
+  paths : Discourse_types.t;
+  alias : (Longident.t Asttypes.loc * Discourse_types.Item.t) option;
+}
+
 (* Forward declaration, to be filled in by Typemod.type_module *)
 val type_module:
-  (Env.t -> Parsetree.module_expr -> Typedtree.module_expr * Shape.t) ref
+  (Env.t -> Parsetree.module_expr ->
+    Typedtree.module_expr * Shape.t * module_discourse) ref
 val type_str_item:
   (Env.t -> Parsetree.structure_item -> Typedtree.structure_item * Env.t) ref
 (* Forward declaration, to be filled in by Typemod.type_open *)

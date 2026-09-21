@@ -503,7 +503,8 @@ module Gen = struct
                   val_kind = Val_reg;
                   val_loc = Location.none;
                   val_attributes = [];
-                  val_uid = Uid.mk ~current_unit:(Env.get_current_unit ())
+                  val_uid = Uid.mk ~current_unit:(Env.get_current_unit ());
+                  val_discourse = Discourse_types.empty
                 }
               in
               let env =

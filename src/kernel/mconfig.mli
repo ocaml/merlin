@@ -19,7 +19,8 @@ type ocaml =
     open_modules : string list;
     ppx : string with_workdir list;
     pp : string with_workdir option;
-    warnings : Warnings.state
+    warnings : Warnings.state;
+    legacy_short_path : bool
   }
 
 val dump_ocaml : ocaml -> json

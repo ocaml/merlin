@@ -41,7 +41,7 @@
   $ $MERLIN single type-enclosing -short-paths -position 7:5 -filename sample.ml < sample.ml \
   > | tr '\r\n' ' ' \
   > | jq .value[0].type -r
-  (unit, 'a) t -> unit
+  (unit, 'a) result -> unit
 
 # Alias on existing types (Result) with opening (shadow)
 
@@ -64,4 +64,4 @@
   $ $MERLIN single type-enclosing -short-paths -position 7:5 -filename sample.ml < sample.ml \
   > | tr '\r\n' ' ' \
   > | jq .value[0].type -r
-  (unit, 'a) t -> unit
+  (unit, 'a) result -> unit

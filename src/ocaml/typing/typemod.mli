@@ -29,7 +29,8 @@ module Signature_names : sig
 end
 
 val type_module:
-        Env.t -> Parsetree.module_expr -> Typedtree.module_expr * Shape.t
+        Env.t -> Parsetree.module_expr -> Typedtree.module_expr * Shape.t *
+        Typecore.module_discourse
 val type_structure:
   Env.t -> Parsetree.structure ->
   Typedtree.structure * Types.signature * Signature_names.t * Shape.t *

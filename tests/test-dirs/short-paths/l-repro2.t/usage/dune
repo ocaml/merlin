@@ -1,0 +1,4 @@
+(library
+ (name repro2_standalone)
+ (libraries repro2_main repro2_types))
+

@@ -852,7 +852,9 @@ let shorten_module_path =
 
 let md md_type =
   {md_type; md_attributes=[]; md_loc=Location.none
-  ;md_uid = Uid.internal_not_actually_unique}
+  ;md_uid = Uid.internal_not_actually_unique
+  ; md_discourse = Discourse_types.empty
+  ; md_discourse_alias = None}
 
 (* Print addresses *)
 
@@ -986,6 +988,8 @@ let sign_of_cmi ~freshen { Persistent_env.Persistent_signature.cmi; _ } =
       md_loc = Location.none;
       md_attributes = [];
       md_uid = Uid.of_compilation_unit_id id;
+      md_discourse = Discourse_types.empty;
+      md_discourse_alias = None;
     }
   in
   let mda_address = Lazy_backtrack.create_forced (Aident id) in
@@ -2450,7 +2454,9 @@ let add_module_lazy ~update_summary id presence mty env =
   let md = Subst.Lazy.{mdl_type = mty;
                        mdl_attributes = [];
                        mdl_loc = Location.none;
-                       mdl_uid = Uid.internal_not_actually_unique}
+                       mdl_uid = Uid.internal_not_actually_unique;
+                       mdl_discourse = Discourse_types.empty;
+                       mdl_discourse_alias = None}
   in
   add_module_declaration_lazy ~update_summary id presence md env
 
@@ -2470,9 +2476,9 @@ let enter_value ?check name desc env =
   let env = store_value ?check id addr desc (Shape.leaf desc.val_uid) env in
   (id, env)
 
-let enter_type ?(long_path = false) ~scope name info env =
+let enter_type ~scope name info env =
   let id = Ident.create_scoped ~scope name in
-  let env = store_type ~check:true ~predef:false ~long_path
+  let env = store_type ~check:true ~predef:false ~long_path:false
     id info (Shape.leaf info.type_uid) env
   in
   (id, env)
@@ -2816,9 +2822,6 @@ let initial =
     (add_type ~check:false ~predef:true ~long_path:false)
     (add_extension ~check:false ~rebind:false)
     empty
-
-let add_type_long_path ~check ?shape id info env =
-  add_type ~check ?shape ~predef:false ~long_path:true id info env
 
 let add_type ~check ?shape id info env =
   add_type ~check ?shape ~predef:false ~long_path:false id info env
@@ -3413,6 +3416,13 @@ let find_module_by_name lid env =
   let loc = Location.(in_file !input_name) in
   lookup_module ~errors:false ~use:false ~loc lid env
 
+let find_module_by_name_lazy lid env =
+  let loc = Location.(in_file !input_name) in
+  let path =
+    lookup_module_path ~errors:false ~use:false ~loc ~load:true lid env
+  in
+  path, find_module_lazy path env
+
 let find_value_by_name lid env =
   let loc = Location.(in_file !input_name) in
   lookup_value ~errors:false ~use:false ~loc lid env
@@ -3424,6 +3434,10 @@ let find_type_by_name lid env =
 let find_modtype_by_name lid env =
   let loc = Location.(in_file !input_name) in
   lookup_modtype ~errors:false ~use:false ~loc lid env
+
+let find_modtype_by_name_lazy lid env =
+  let loc = Location.(in_file !input_name) in
+  lookup_modtype_lazy ~errors:false ~use:false ~loc lid env
 
 let find_class_by_name lid env =
   let loc = Location.(in_file !input_name) in

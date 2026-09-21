@@ -56,6 +56,9 @@ val valid_tyvar_name : string -> bool
 val transl_simple_type:
         Env.t -> ?univars:TyVarEnv.poly_univars -> closed:bool
         -> Parsetree.core_type -> Typedtree.core_type
+val transl_simple_type_with_discourse:
+        Env.t -> ?univars:TyVarEnv.poly_univars -> closed:bool
+        -> Parsetree.core_type -> Typedtree.core_type * Discourse_types.t
 val transl_simple_type_univars:
         Env.t -> Parsetree.core_type -> Typedtree.core_type
 val transl_simple_type_delayed
@@ -66,7 +69,7 @@ val transl_simple_type_delayed
            the type, an instance of the corresponding type_expr, and a
            function that binds the type variable. *)
 val transl_type_scheme:
-        Env.t -> Parsetree.core_type -> Typedtree.core_type
+        Env.t -> Parsetree.core_type -> Typedtree.core_type * Discourse_types.t
 val transl_type_param:
   Env.t -> Parsetree.core_type -> Typedtree.core_type
 

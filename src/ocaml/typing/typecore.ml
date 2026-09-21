@@ -337,9 +337,15 @@ let error_of_filter_arrow_failure ~explanation ~first ty_fun
 
 (* Forward declaration, to be filled in by Typemod.type_module *)
 
+type module_discourse = {
+  paths : Discourse_types.t;
+  alias : (Longident.t loc * Discourse_types.Item.t) option;
+}
+
 let type_module =
   ref ((fun _env _md -> assert false) :
-       Env.t -> Parsetree.module_expr -> Typedtree.module_expr * Shape.t)
+       Env.t -> Parsetree.module_expr ->
+         Typedtree.module_expr * Shape.t * module_discourse)
 
 let type_str_item =
   ref ((fun _env _sstr -> assert false) :
@@ -581,7 +587,7 @@ let type_continuation_pat env expected_ty sp =
       let desc =
         { val_type = expected_ty; val_kind = Val_reg;
           Types.val_loc = loc; val_attributes = [];
-          val_uid = Uid.mk ~current_unit:(Env.get_current_unit ()); }
+          val_uid = Uid.mk ~current_unit:(Env.get_current_unit ()); val_discourse = Discourse_types.empty }
       in
         Some (id, desc)
   | Ppat_extension ext ->
@@ -1110,8 +1116,7 @@ let solve_constructor_annotation
           new_local_type ~loc:name.loc Definition
             ~manifest_and_scope:(tv, Ident.lowest_scope) in
         let (id, new_env) =
-          (* These redundant types should not be added to the shortpath graph *)
-          Env.enter_type ~long_path:true ~scope:expansion_scope name.txt decl !!penv in
+          Env.enter_type ~scope:expansion_scope name.txt decl !!penv in
         Pattern_env.set_env penv new_env;
         ({name with txt = id}, (decl, tv)))
       name_list
@@ -2426,6 +2431,7 @@ let add_pattern_variables ?check ?check_as env pv =
          {val_type = pv_type; val_kind = Val_reg; Types.val_loc = pv_loc;
           val_attributes = pv_attributes;
           val_uid = pv_uid;
+          val_discourse = Discourse_types.empty;
          } env
     )
     pv env
@@ -2438,7 +2444,7 @@ let add_module_variables env module_variables =
   in
   List.fold_left (fun env { mv_id; mv_loc; mv_name; mv_uid } ->
     Typetexp.TyVarEnv.with_local_scope begin fun () ->
-      let modl, md_shape =
+      let modl, md_shape, discourse =
         !type_module env
           Ast_helper.(
             Mod.unpack ~loc:mv_loc
@@ -2454,7 +2460,9 @@ let add_module_variables env module_variables =
       let md =
         { md_type = modl.mod_type; md_attributes = [];
           md_loc = mv_name.loc;
-          md_uid = mv_uid; }
+          md_uid = mv_uid;
+          md_discourse = discourse.paths;
+          md_discourse_alias = discourse.alias }
       in
       Env.add_module_declaration ~shape:md_shape ~check:true mv_id pres md env
     end
@@ -2529,6 +2537,7 @@ let type_class_arg_pattern cl_num val_env met_env l spat =
             ; val_attributes = pv_attributes
             ; val_loc = pv_loc
             ; val_uid
+            ; val_discourse = Discourse_types.empty
             }
             val_env
          in
@@ -2539,6 +2548,7 @@ let type_class_arg_pattern cl_num val_env met_env l spat =
             ; val_attributes = pv_attributes
             ; val_loc = pv_loc
             ; val_uid
+            ; val_discourse = Discourse_types.empty
             }
             met_env
          in
@@ -4395,6 +4405,7 @@ and type_expect ?recarg env sexp ty_expected_explained =
                             val_loc = loc;
                             val_attributes = [];
                             val_uid = Uid.internal_not_actually_unique;
+                            val_discourse = Discourse_types.empty;
                           });
             exp_loc = loc;
             exp_extra = [];
@@ -4419,6 +4430,7 @@ and type_expect_
   match sexp.pexp_desc with
   | Pexp_ident lid ->
       let path, desc = type_ident env ~recarg lid in
+      Discourse.use_value env lid path;
       let exp_desc =
         match desc.val_kind with
         | Val_ivar (_, cl_num) ->
@@ -5025,6 +5037,7 @@ and type_expect_
                val_kind = Val_reg;
                val_loc = loc;
                val_uid = Uid.mk ~current_unit:(Env.get_current_unit ());
+               val_discourse = Discourse_types.empty;
               } env
               ~check:(fun s -> Warnings.Unused_for_index s)
         | _ ->
@@ -6060,6 +6073,8 @@ and type_moddep_fun ~env ~name ~pack_param ~rest ~arg_label ~first
     md_attributes = [];
     md_loc = pparam_loc;
     md_uid = pv_uid;
+    md_discourse = Discourse_types.empty;
+    md_discourse_alias = None;
   } in
   let (res_ty, params, body, newtypes, contains_gadt), s_ident =
     with_local_level begin fun () ->
@@ -6147,6 +6162,16 @@ and type_label_access env srecord usage lid =
     let label =
       wrap_disambiguate "This expression has" (mk_expected ty_exp)
         (Label.disambiguate usage lid env expected_type) labels in
+    let () =
+      match labels with
+      | Ok ((label1, _) :: _) when label1 == label ->
+          (* We only add labels not used via type-based disambiguation to the
+            discourse. See the [Discourse] module. A label did not need
+            disambiguation if the selected name is the last introduced in scope.
+          *)
+          Discourse.use_label env lid label
+      | _ -> ()
+    in
     (record, label, expected_type)
   with exn ->
     raise_error exn;
@@ -6163,6 +6188,7 @@ and type_label_access env srecord usage lid =
       lbl_loc = lid.loc;
       lbl_attributes = [];
       lbl_uid = Uid.internal_not_actually_unique;
+      lbl_discourse = Discourse_types.empty;
     } in
     (record, fake_label, expected_type)
 
@@ -6529,6 +6555,7 @@ and type_argument_ ?explanation ?recarg env sarg ty_expected' ty_expected =
             val_attributes = [];
             val_loc = Location.none;
             val_uid = Uid.mk ~current_unit:(Env.get_current_unit ());
+            val_discourse = Discourse_types.empty;
           }
         in
         let exp_env = Env.add_value id desc env in
@@ -6604,6 +6631,7 @@ and type_argument ?explanation ?recarg env sarg ty_expected' ty_expected =
                             val_loc = loc;
                             val_attributes = [];
                             val_uid = Uid.internal_not_actually_unique;
+                            val_discourse = Discourse_types.empty;
                           });
             exp_loc = loc;
             exp_extra = [];
@@ -6762,6 +6790,16 @@ and type_construct env ~sexp lid sarg ty_expected_explained =
     wrap_disambiguate "This variant expression is expected to have"
       ty_expected_explained
       (Constructor.disambiguate Env.Positive lid env expected_type) constrs
+  in
+  let () =
+    match constrs with
+    | Ok ((constr1, _) :: _) when constr1 == constr ->
+        (* We only add constructors not used via type-based disambiguation to
+           the discourse. See the [Discourse] module. A constructor did not need
+           disambiguation if the selected name is the last introduced in scope.
+        *)
+        Discourse.use_constructor env lid constr
+    | _ -> ()
   in
   let sargs =
     match sarg with

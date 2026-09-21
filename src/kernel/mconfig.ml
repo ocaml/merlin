@@ -21,7 +21,8 @@ type ocaml =
     open_modules : string list;
     ppx : string with_workdir list;
     pp : string with_workdir option;
-    warnings : Warnings.state
+    warnings : Warnings.state;
+    legacy_short_path : bool
   }
 
 let dump_warnings st =
@@ -46,7 +47,8 @@ let dump_ocaml x =
       ("open_modules", Json.list Json.string x.open_modules);
       ("ppx", Json.list (dump_with_workdir Json.string) x.ppx);
       ("pp", Json.option (dump_with_workdir Json.string) x.pp);
-      ("warnings", dump_warnings x.warnings)
+      ("warnings", dump_warnings x.warnings);
+      ("legacy_short_path", `Bool x.legacy_short_path)
     ]
 
 (** Some paths can be resolved relative to a current working directory *)
@@ -568,6 +570,9 @@ let ocaml_flags =
     ( "-short-paths",
       Marg.unit (fun ocaml -> { ocaml with real_paths = false }),
       " Shorten paths in types" );
+    ( "-legacy-short-path",
+      Marg.unit (fun ocaml -> { ocaml with legacy_short_path = true }),
+      " Use legacy short path implementation" );
     ( "-rectypes",
       Marg.unit (fun ocaml -> { ocaml with recursive_types = true }),
       " Allow arbitrary recursive types" );
@@ -655,7 +660,8 @@ let initial =
         open_modules = [];
         ppx = [];
         pp = None;
-        warnings = Warnings.backup ()
+        warnings = Warnings.backup ();
+        legacy_short_path = false
       };
     merlin =
       { build_path = [];

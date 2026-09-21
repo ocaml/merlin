@@ -46,7 +46,8 @@ let setup_reader_config config =
   applicative_functors := ocaml.applicative_functors;
   nopervasives := ocaml.nopervasives;
   strict_formats := ocaml.strict_formats;
-  open_modules := ocaml.open_modules
+  open_modules := ocaml.open_modules;
+  legacy_short_path := ocaml.legacy_short_path
 
 let setup_typer_config config =
   setup_reader_config config;

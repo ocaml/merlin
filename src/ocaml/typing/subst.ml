@@ -143,6 +143,34 @@ let rec type_path s path =
          | Pcstr_ty _ -> Pextra_ty (type_path s p, extra)
          | Pext_ty -> Pextra_ty (value_path s p, extra)
 
+let type_path_opt s path =
+  (* TODO CR Ulysse it is suspicious that we hit the assert case here but it does
+     happen, notably when building the compiler itself. *)
+  match type_path s path with
+  | exception (Not_found | Assert_failure _) -> None
+  | p -> Some (Shape.Sig_component_kind.Type, p)
+
+let discourse_item s (kind, path) =
+  match (kind : Shape.Sig_component_kind.t) with
+  | Type -> type_path_opt s path
+  | Value | Extension_constructor | Class | Class_type ->
+    Some (kind, value_path s path)
+  | Module -> Some (kind, module_path s path)
+  | Module_type ->
+    begin try Some (kind, modtype_path s path) with
+    | Module_type_path_substituted_away _ -> None
+    end
+  | _ -> Some (kind, path)
+
+let discourse s d = Discourse_types.Paths.filter_map (discourse_item s) d
+
+let discourse_alias s = function
+  | None -> None
+  | Some (lid, item) ->
+    (* TODO CR Ulysse it seems that the longident is not actually required, we
+       should remove it. This will simplify this case. *)
+    Option.map (fun item -> (lid, item)) (discourse_item s item)
+
 let to_subst_by_type_function s p =
   match Path.Map.find p s.types with
   | Path _ -> false
@@ -399,6 +427,7 @@ let constructor_declaration copy_scope s c =
     cd_loc = loc s c.cd_loc;
     cd_attributes = attrs s c.cd_attributes;
     cd_uid = c.cd_uid;
+    cd_discourse = discourse s c.cd_discourse;
   }
 
 let type_declaration' copy_scope s decl =
@@ -431,6 +460,7 @@ let type_declaration' copy_scope s decl =
     type_immediate = decl.type_immediate;
     type_unboxed_default = decl.type_unboxed_default;
     type_uid = decl.type_uid;
+    type_discourse = discourse s decl.type_discourse;
   }
 
 let type_declaration s decl =
@@ -473,6 +503,7 @@ let class_declaration' copy_scope s decl =
     cty_loc = loc s decl.cty_loc;
     cty_attributes = attrs s decl.cty_attributes;
     cty_uid = decl.cty_uid;
+    cty_discourse = discourse s decl.cty_discourse;
   }
 
 let class_declaration s decl =
@@ -487,6 +518,7 @@ let cltype_declaration' copy_scope s decl =
     clty_loc = loc s decl.clty_loc;
     clty_attributes = attrs s decl.clty_attributes;
     clty_uid = decl.clty_uid;
+    clty_discourse = discourse s decl.clty_discourse;
   }
 
 let cltype_declaration s decl =
@@ -501,6 +533,7 @@ let value_description' copy_scope s descr =
     val_loc = loc s descr.val_loc;
     val_attributes = attrs s descr.val_attributes;
     val_uid = descr.val_uid;
+    val_discourse = discourse s descr.val_discourse;
    }
 
 let value_description s descr =
@@ -554,6 +587,9 @@ module Lazy_types = struct
       mdl_attributes: Parsetree.attributes;
       mdl_loc: Location.t;
       mdl_uid: Uid.t;
+      mdl_discourse: Discourse_types.t;
+      mdl_discourse_alias:
+        (Longident.t Asttypes.loc * Discourse_types.Item.t) option;
     }
 
   and modtype =
@@ -569,6 +605,7 @@ module Lazy_types = struct
       mtdl_attributes: Parsetree.attributes;
       mtdl_loc: Location.t;
       mtdl_uid: Uid.t;
+      mtdl_discourse: Discourse_types.t;
     }
 
   and signature' =
@@ -652,21 +689,27 @@ let rename_bound_idents scoping s sg =
   { mdl_type = lazy_modtype md.md_type;
     mdl_attributes = md.md_attributes;
     mdl_loc = md.md_loc;
-    mdl_uid = md.md_uid }
+    mdl_uid = md.md_uid;
+    mdl_discourse = md.md_discourse;
+    mdl_discourse_alias = md.md_discourse_alias }
 
 and subst_lazy_module_decl scoping s md =
   let mdl_type = subst_lazy_modtype scoping s md.mdl_type in
   { mdl_type;
     mdl_attributes = attrs s md.mdl_attributes;
     mdl_loc = loc s md.mdl_loc;
-    mdl_uid = md.mdl_uid }
+    mdl_uid = md.mdl_uid;
+    mdl_discourse = discourse s md.mdl_discourse;
+    mdl_discourse_alias = discourse_alias s md.mdl_discourse_alias }
 
 and force_module_decl md =
   let md_type = force_modtype md.mdl_type in
   { md_type;
     md_attributes = md.mdl_attributes;
     md_loc = md.mdl_loc;
-    md_uid = md.mdl_uid }
+    md_uid = md.mdl_uid;
+    md_discourse = md.mdl_discourse;
+    md_discourse_alias = md.mdl_discourse_alias }
 
 and lazy_modtype = function
   | Mty_ident p -> MtyL_ident p
@@ -723,20 +766,23 @@ and lazy_modtype_decl mtd =
   { mtdl_type;
     mtdl_attributes = mtd.mtd_attributes;
     mtdl_loc = mtd.mtd_loc;
-    mtdl_uid = mtd.mtd_uid }
+    mtdl_uid = mtd.mtd_uid;
+    mtdl_discourse = mtd.mtd_discourse }
 
 and subst_lazy_modtype_decl scoping s mtd =
   { mtdl_type = Option.map (subst_lazy_modtype scoping s) mtd.mtdl_type;
     mtdl_attributes = attrs s mtd.mtdl_attributes;
     mtdl_loc = loc s mtd.mtdl_loc;
-    mtdl_uid = mtd.mtdl_uid }
+    mtdl_uid = mtd.mtdl_uid;
+    mtdl_discourse = discourse s mtd.mtdl_discourse }
 
 and force_modtype_decl mtd =
   let mtd_type = Option.map force_modtype mtd.mtdl_type in
   { mtd_type;
     mtd_attributes = mtd.mtdl_attributes;
     mtd_loc = mtd.mtdl_loc;
-    mtd_uid = mtd.mtdl_uid }
+    mtd_uid = mtd.mtdl_uid;
+    mtd_discourse = mtd.mtdl_discourse }
 
 and subst_lazy_signature scoping s sg =
   match Lazy_backtrack.get_contents sg with

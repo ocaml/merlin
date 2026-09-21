@@ -16,13 +16,13 @@ We get a bad path for `hello`
   > let hello : Foo.t = 0
   > EOF
 
-It happens regardless of whether short-paths is enabled
+It happens does not appear if short-paths is enabled
   $ $MERLIN single type-enclosing -position 13:5 -filename foo.ml < foo.ml | jq .value[0].type -r
   Bar.Foo.t
 
   $ echo "FLG -short-paths" > .merlin
   $ $MERLIN single type-enclosing -position 13:5 -filename foo.ml < foo.ml | jq .value[0].type -r
-  Bar.Foo.t
+  Foo.t
 
 It seems to be related to shadowing somehow. This works:
   $ cat > foo.ml <<EOF
@@ -42,4 +42,4 @@ It seems to be related to shadowing somehow. This works:
   > EOF
 
   $ $MERLIN single type-enclosing -position 13:5 -filename foo.ml < foo.ml | jq .value[0].type -r
-  Foo.t
+  Baz.t

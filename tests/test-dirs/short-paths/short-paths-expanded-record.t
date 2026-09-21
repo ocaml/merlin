@@ -18,7 +18,7 @@ Mix and match of alias and primitive types
   $ $MERLIN single type-enclosing -short-paths -position 8:5 -filename sample.ml < sample.ml \
   > | tr '\r\n' ' ' \
   > | jq .value[0].type -r
-  i -> i * i * s * s -> (i, s) result -> t
+  int -> int * int * string * string -> (int, string) result -> t
 
 Mix and match of alias and primitive types with opening
 
@@ -45,4 +45,4 @@ Mix and match of alias and primitive types with opening
   $ $MERLIN single type-enclosing -short-paths -position 13:5 -filename sample.ml < sample.ml \
   > | tr '\r\n' ' ' \
   > | jq .value[0].type
-  "new_int -> new_int * new_int * new_string * new_string -> (new_int, new_string) result -> t"
+  "int -> int * int * string * string -> (int, string) result -> t"
