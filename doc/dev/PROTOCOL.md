@@ -249,8 +249,10 @@ Otherwise, Merlin looks for the documentation for the entity under the cursor (a
     -position <position>  Position to complete
 
 Returns a list of locations `{'start': position, 'end': position}` in increasing size of all entities surrounding the position.
-(In a lisp, this would be the locations of all s-exps that contain the cursor.)
+
 If `-end-position` is given, only enclosings containing the range `[position; stop]`  will be returned.
+
+Note that enclosings do not necessarily correspond to actual nodes in the OCaml AST (contrary to `type-enclosing`).
 
 ### `errors`
 

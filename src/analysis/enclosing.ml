@@ -1,3 +1,28 @@
+(*
+  This computes the "enclosing" ranges a given location. Those ranges do not
+  necessarily correspond to a node in the AST.
+
+  The ranges are purely syntactic, however the AST used here is the
+  typedtree. This creates several issues, where some information has been lost
+  during a translation phase. We worked around those limitations, but for the
+  record, here is a (potentially non-exhaustive) list of things that would be
+  improved by switching to the (non-preprocessed) parsetree instead:
+
+   - [let%map ... in ...] could be recogized without having to recognize the
+     rewritten expression
+
+   - Parenthesized expression could recover their inner/outer locations without
+     [node_loc_stack] (which we could get rid of)
+
+   - Let bindings turned into match node in the typedtree would not need special
+     handling.
+
+   On the other hand, a "parsetree" version of [MBrowse] does not exist yet, and
+   we use it to get the node at cursor, as well as some of its helper
+   functions. So, reader, whenever the parsetree version get added, rewrite this
+   module!
+*)
+
 open Std
 
 let ( << ) (x : Location.t) (y : Location.t) =
