@@ -865,3 +865,22 @@ versus letop::
   let () =
     let> x = () in
     ignore x···
+
+---------
+
+Testing type+subtype constraint in a single parenthesis
+
+  $ cat >main.ml <<EOF
+  > let _ = (6 : int :> int)
+  > EOF
+
+  $ LOC=1:9
+  $ show_location main.ml $LOC
+  let _ = (█ : int :> int)
+  $ $MERLIN single enclosing -position $LOC -filename main.ml <main.ml | jq .value | extract_ranges main.ml
+  ---------- Range 0 ----------
+        ···6···
+  ---------- Range 1 ----------
+       ···(6 : int :> int)···
+  ---------- Range 2 ----------
+  let _ = (6 : int :> int)···
