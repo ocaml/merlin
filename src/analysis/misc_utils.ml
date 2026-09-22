@@ -1,5 +1,7 @@
 open Std
 
+let section = Type_enclosing.log_section
+
 module Path : sig
   val is_opened : Env.t -> Path.t -> bool
 
@@ -111,3 +113,101 @@ let reconstruct_identifier pipeline pos = function
       else aux acc (succ i)
     in
     aux [] offset
+
+let split_lid_up_to_cursor cursor_pos lid =
+  let rec aux acc (lid : Longident.t Location.loc) =
+    match lid with
+    | { txt = Lident _; _ } -> lid :: acc
+    | { txt = Ldot (_lid, { loc; _ }); _ }
+    | { txt = Lapply (_lid, { loc; _ }); _ }
+      when Lexing.compare_pos loc.loc_start cursor_pos <= 0 -> lid :: acc
+    | { txt = Ldot (lid', _); _ } -> aux (lid :: acc) lid'
+    | { txt = Lapply (lid', _); _ } -> aux (lid :: acc) lid'
+  in
+  aux [] lid
+
+let find_record_field fields loc =
+  Logger.log ~section ~title:"find_record_field"
+    "Looking for the field corresponding to %a" Logger.fmt
+    (Fun.flip Location.print_loc loc);
+  Array.find_map
+    (fun (_lbl_desc, lbl_def) ->
+      match lbl_def with
+      | Typedtree.Overridden (lid, { exp_desc = Texp_ident _; exp_loc; _ })
+        when lid.Location.loc.loc_ghost
+             && Location_aux.compare lid.Location.loc exp_loc = 0
+             && Location_aux.compare loc exp_loc = 0 -> Some lid
+      | Overridden _ | Kept _ -> None)
+    fields
+
+let find_pat_record_field fields loc =
+  Logger.log ~section ~title:"find_pat_record_field"
+    "Looking for the field corresponding to %a" Logger.fmt
+    (Fun.flip Location.print_loc loc);
+  List.find_some fields ~f:(fun (lid, _lbl_desc, (pat : Typedtree.pattern)) ->
+      match pat.pat_desc with
+      | Tpat_var _ ->
+        lid.Location.loc.loc_ghost
+        && Location_aux.compare lid.Location.loc pat.pat_loc = 0
+        && Location_aux.compare loc pat.pat_loc = 0
+      | _ -> false)
+  |> Option.map ~f:(fun (lid, _lbl_desc, _pat) -> lid)
+
+let with_none v = function
+  | None -> Some v
+  | Some v -> Some v
+
+let get_identifier_from_nodes nodes pos =
+  let lid =
+    (* The first two cases handle record punning *)
+    match nodes with
+    | ( _,
+        Browse_raw.Expression { exp_desc = Texp_ident (_, lid, _); exp_loc; _ }
+      )
+      :: (_, Browse_raw.Expression { exp_desc = Texp_record { fields; _ }; _ })
+      :: _ -> find_record_field fields exp_loc |> with_none lid
+    | (_, Browse_raw.Pattern { pat_desc = Tpat_var (_, name, _); pat_loc; _ })
+      :: (_, Browse_raw.Pattern { pat_desc = Tpat_record (fields, _); _ })
+      :: _ ->
+      find_pat_record_field fields pat_loc
+      |> with_none (Location.mkloc (Longident.Lident name.txt) name.loc)
+    | (_, Browse_raw.Expression { exp_desc = Texp_ident (_path, lid, _); _ })
+      :: _ -> Some lid
+    | (_, Browse_raw.Module_expr { mod_desc = Tmod_ident (_path, lid); _ }) :: _
+      -> Some lid
+    | (_, Browse_raw.Record_field (_, _, lid)) :: _ -> Some lid
+    | ( _,
+        Browse_raw.Extension_constructor { ext_kind = Text_rebind (_, lid); _ }
+      )
+      :: _ -> Some lid
+    | _ -> None
+  in
+  let is_type_error (lid : Longident.t Location.loc) =
+    match lid.txt with
+    | Longident.Lident "*type-error*" -> true
+    | _ -> false
+  in
+  match lid with
+  | None -> []
+  | Some lid when is_type_error lid -> []
+  | Some lid -> split_lid_up_to_cursor pos lid
+
+let log_identifiers lids =
+  Logger.log ~section ~title:"get-identifier" "From the typedtree: %a"
+    Logger.fmt (fun fmt ->
+      let lids = List.map lids ~f:(fun { Location.txt; _ } -> txt) in
+      (Format.pp_print_list Pprintast.longident fmt) lids)
+
+let get_or_reconstruct_identifier pipeline pos idento =
+  match idento with
+  | Some _ -> `Strings (reconstruct_identifier pipeline pos idento)
+  | None ->
+    let nodes =
+      Mtyper.node_at ~disambiguate:Mbrowse.Tie_breaker.prefer_expression
+        (Mpipeline.typer_result pipeline)
+        pos
+    in
+    let from_node = get_identifier_from_nodes nodes pos in
+    let () = log_identifiers from_node in
+    if not (List.is_empty from_node) then `Longidents from_node
+    else `Strings (reconstruct_identifier pipeline pos None)

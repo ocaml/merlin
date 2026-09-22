@@ -37,7 +37,7 @@ Locate on `M.(| * )` should work:
     "file": "test.ml",
     "pos": {
       "line": 1,
-      "col": 7
+      "col": 22
     }
   }
 

@@ -576,44 +576,54 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     in
     let path =
       match patho with
-      | Some p -> p
+      | Some p -> `String p
       | None ->
-        let path = Misc_utils.reconstruct_identifier pipeline pos None in
-        let path = Mreader_lexer.identifier_suffix path in
-        let path = List.map ~f:(fun { Location.txt; _ } -> txt) path in
-        let path = String.concat ~sep:"." path in
-        Locate.log ~title:"reconstructed identifier" "%s" path;
+        let paths =
+          Misc_utils.get_or_reconstruct_identifier pipeline pos None
+        in
+        let path =
+          match paths with
+          | `Strings (path :: _) -> `String path.txt
+          | `Longidents (path :: _) -> `Longident path.txt
+          | _ -> `None
+        in
         path
     in
-    if path = "" then `Invalid_context
-    else
-      let ml_or_mli =
-        match ml_or_mli with
-        | `ML -> `Smart
-        | `MLI -> `MLI
-      in
-      let config =
-        Locate.
-          { mconfig = Mpipeline.final_config pipeline;
-            ml_or_mli;
-            traverse_aliases = true
-          }
-      in
-      begin match Locate.from_string ~config ~env ~local_defs ~pos path with
-      | `Found { file; location; _ } ->
-        Locate.log ~title:"result" "found: %s" file;
-        `Found (Some file, location.loc_start)
-      | `Missing_labels_namespace ->
-        (* Can't happen because we haven't passed a namespace as input. *)
-        assert false
-      | `Builtin (_, s) ->
-        Locate.log ~title:"result" "found builtin %s" s;
-        `Builtin s
-      | `File_not_found { file = reason; _ } -> `File_not_found reason
-      | (`Not_found _ | `At_origin | `Not_in_env _) as otherwise ->
-        Locate.log ~title:"result" "not found";
-        otherwise
-      end
+    let ml_or_mli =
+      match ml_or_mli with
+      | `ML -> `Smart
+      | `MLI -> `MLI
+    in
+    let config =
+      Locate.
+        { mconfig = Mpipeline.final_config pipeline;
+          ml_or_mli;
+          traverse_aliases = true
+        }
+    in
+    let result =
+      match path with
+      | `None -> `Invalid_context
+      | `String path -> Locate.from_string ~config ~env ~local_defs ~pos path
+      | `Longident path ->
+        Locate.from_longident ~config ~env ~local_defs ~pos path
+    in
+    begin match result with
+    | `Found { file; location; _ } ->
+      Locate.log ~title:"result" "found: %s" file;
+      `Found (Some file, location.loc_start)
+    | `Missing_labels_namespace ->
+      (* Can't happen because we haven't passed a namespace as input. *)
+      assert false
+    | `Builtin (_, s) ->
+      Locate.log ~title:"result" "found builtin %s" s;
+      `Builtin s
+    | `File_not_found { file = reason; _ } -> `File_not_found reason
+    | (`Not_found _ | `At_origin | `Not_in_env _ | `Invalid_context) as
+      otherwise ->
+      Locate.log ~title:"result" "not found";
+      otherwise
+    end
   | Jump (target, pos) ->
     let typer = Mpipeline.typer_result pipeline in
     let typedtree = Mtyper.get_typedtree typer in

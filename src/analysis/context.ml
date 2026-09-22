@@ -60,6 +60,11 @@ let cursor_on_longident_end ~cursor:cursor_pos
     ~lid_loc:{ Asttypes.loc; txt = lid } name =
   match lid with
   | Longident.Lident _ -> true
+  | Longident.Ldot (_, s) when not s.loc.loc_ghost ->
+    (* When the last segment carries a real location we can rely on it: it spans
+       the parentheses for operators (like in [M.( * )]), which the size-based
+       heuristic fails to reconstruct. *)
+    Lexing.compare_pos cursor_pos s.loc.loc_start >= 0
   | _ ->
     let end_offset = loc.loc_end.pos_cnum in
     let cstr_name_size =
