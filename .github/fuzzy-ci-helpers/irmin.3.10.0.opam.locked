@@ -18,14 +18,15 @@ depends: [
   "bigstringaf" {= "0.10.0" & ?vendor}
   "checkseum" {= "0.5.3" & ?vendor}
   "cmdliner" {= "1.3.0+dune" & ?vendor}
+  "compiler-cloning" {= "enabled"}
   "conf-gmp" {= "5"}
   "conf-gnuplot" {= "0.1"}
   "cppo" {= "1.8.0" & ?vendor}
   "csexp" {= "1.5.2" & ?vendor}
   "cstruct" {= "6.2.0" & ?vendor}
   "digestif" {= "1.3.0" & ?vendor}
-  "dune" {= "3.23.0"}
-  "dune-configurator" {= "3.23.0" & ?vendor}
+  "dune" {= "3.24.0"}
+  "dune-configurator" {= "3.24.0" & ?vendor}
   "either" {= "1.0.0" & ?vendor}
   "eqaf" {= "0.10" & ?vendor}
   "findlib" {= "1.9.5+dune" & ?vendor}
@@ -40,11 +41,10 @@ depends: [
   "metrics" {= "0.5.0" & ?vendor}
   "metrics-unix" {= "0.5.0" & ?vendor}
   "mtime" {= "2.1.0+dune" & ?vendor}
-  "ocaml" {= "5.4.0"}
-  "ocaml-base-compiler" {= "5.4.0"}
-  "ocaml-compiler" {= "5.4.0"}
+  "ocaml" {= "5.5.0"}
+  "ocaml-base-compiler" {= "5.5.0"}
+  "ocaml-compiler" {= "5.5.0"}
   "ocaml-compiler-libs" {= "v0.17.0" & ?vendor}
-  "ocaml-config" {= "3"}
   "ocaml-options-vanilla" {= "1"}
   "ocaml-syntax-shims" {= "1.0.0" & ?vendor}
   "ocamlfind" {= "1.9.5+dune" & ?vendor}
@@ -166,8 +166,8 @@ pin-depends: [
     "https://github.com/mirage/digestif/releases/download/v1.3.0/digestif-1.3.0.tbz"
   ]
   [
-    "dune-configurator.3.23.0"
-    "https://github.com/ocaml/dune/releases/download/3.23.0/dune-3.23.0.tbz"
+    "dune-configurator.3.24.0"
+    "https://github.com/ocaml/dune/releases/download/3.24.0/dune-3.24.0.tbz"
   ]
   [
     "either.1.0.0"
@@ -351,7 +351,7 @@ pin-depends: [
   ]
 ]
 x-opam-monorepo-cli-args: [
-  "irmin" "irmin-pack" "irmin-tezos" "--ocaml-version=5.4.0"
+  "irmin" "irmin-pack" "irmin-tezos" "--ocaml-version=5.5.0"
 ]
 x-opam-monorepo-duniverse-dirs: [
   [
@@ -522,7 +522,11 @@ x-opam-monorepo-duniverse-dirs: [
   [
     "https://github.com/inhabitedtype/bigstringaf/archive/0.10.0.tar.gz"
     "bigstringaf"
-    ["md5=be0a44416840852777651150757a0a3b"]
+    [
+      "sha512=b51c756925d7016ffd7eac49e69393a1897391ca2685a8c30c7b6e3917b4d66c9400b49e8986d0f03329197b95ad52e096ff83dea5e03571cb5bc3d9a5170602"
+      "sha256=ed92f5b05fbc11b9defcec734d59b1068f3717a9ae4f9705c16c7f7ac3729f28"
+      "md5=be0a44416840852777651150757a0a3b"
+    ]
   ]
   [
     "https://github.com/janestreet/ocaml-compiler-libs/archive/refs/tags/v0.17.0.tar.gz"
@@ -724,11 +728,11 @@ x-opam-monorepo-duniverse-dirs: [
     ]
   ]
   [
-    "https://github.com/ocaml/dune/releases/download/3.23.0/dune-3.23.0.tbz"
+    "https://github.com/ocaml/dune/releases/download/3.24.0/dune-3.24.0.tbz"
     "dune_"
     [
-      "sha256=e92987ffe4bc7956b18b2251b0f9844d55dfa387035ce60a3f0fd5ac4e2617d4"
-      "sha512=ef42c7ac24f300c00c429ea0e7e152bb46f7bbb1e81cf1dad225c4f41598f744b83d404a8ac949c2da074288f5560c8770421ba474a5751a20090b2f9cfa2435"
+      "sha256=501f73727a939aa954dc0537e37792a1ba189e61719c81dc367e2594fe016034"
+      "sha512=cd0a366d38ffb65f45c4c92059713190bdd7359c94f0da9c75c08e3acbd505d3852b881b0be1fc060ca2ce70e9425c1447d62560de0cf768b7ec6f9370fa3491"
     ]
   ]
   [
