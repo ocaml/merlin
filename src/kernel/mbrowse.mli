@@ -34,6 +34,14 @@ type t = (Env.t * node) list
 val fold_node :
   (Env.t -> Browse_raw.node -> 'a -> 'a) -> Env.t -> Browse_raw.node -> 'a -> 'a
 val node_loc : Browse_raw.node -> Location.t
+val node_merlin_loc : Browse_raw.node -> Location.t
+
+(** When a node is inside parenthesis or [begin ... end], the node's location
+    contains the delimiters. The locs returned by this function is the location
+    of the node inside the delimiters. In case of nesting, such as [((x))]
+    multiple locations are returned: the one for [(x)] and the one for [x]. *)
+val node_loc_stack : Browse_raw.node -> Location.t list
+
 val leaf_node : t -> Env.t * node
 val drop_leaf : t -> t option
 

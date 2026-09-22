@@ -20,6 +20,7 @@ depends: [
   "conf-jq" {with-test}
   "ppxlib" {with-test}
   "ppx_string" {with-test}
+  "ppx_let" {with-test}
 #  "reason" {with-test} Removed temporarily until reason is compatible with 5.5
 ]
 conflicts: [

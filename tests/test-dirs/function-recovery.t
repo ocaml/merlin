@@ -228,8 +228,22 @@
                           "col": 9
                         },
                         "ghost": false,
-                        "attrs": [],
+                        "attrs": [
+                          {
+                            "start": {
+                              "line": 1,
+                              "col": 7
+                            },
+                            "end": {
+                              "line": 1,
+                              "col": 8
+                            },
+                            "name": "merlin.loc_stack"
+                          }
+                        ],
                         "kind": "pattern (test.ml[1,0+6]..test.ml[1,0+9])
+    attribute \"merlin.loc_stack\"
+      []
     Tpat_var \"x/276\"
   ",
                         "children": []

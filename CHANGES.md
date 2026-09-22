@@ -5,6 +5,7 @@ unreleased
     - destruct: allow to destruct let-bindings's patterns (#2117)
     - Fix detection of expression at cursor in case of type-constrained
       expression (#2120)
+    - enclosing: drastically improve the ranges! (#2121)
   + merlin binary
     - Use c library flags from `ocamlc -config`. Fixes Haiku build (#2124)
 

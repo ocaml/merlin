@@ -292,20 +292,17 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     let typer = Mpipeline.typer_result pipeline in
     let structures = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
+    let stop = Option.map ~f:(Mpipeline.get_lexing_pos pipeline) stop in
     let mbrowse =
       match stop with
-      | Some stop ->
-        let stop = Mpipeline.get_lexing_pos pipeline stop in
-        Mbrowse.range_enclosing ~start:pos ~stop [ structures ]
+      | Some stop -> Mbrowse.range_enclosing ~start:pos ~stop [ structures ]
       | None -> Mbrowse.enclosing pos [ structures ]
     in
-    (* We remove possible duplicates from the list*)
-    List.fold_left mbrowse ~init:[] ~f:(fun acc node ->
-        let loc = Mbrowse.node_loc (snd node) in
-        match acc with
-        | hd :: _ as acc when Location_aux.compare hd loc = 0 -> acc
-        | _ -> loc :: acc)
-    |> List.rev
+    let range =
+      let loc_end = Option.value ~default:pos stop in
+      { Location.loc_start = pos; loc_end; loc_ghost = false }
+    in
+    Enclosing.locs range mbrowse
   | Locate_type pos ->
     let typer = Mpipeline.typer_result pipeline in
     let local_defs = Mtyper.get_typedtree typer in
