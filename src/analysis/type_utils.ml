@@ -321,10 +321,15 @@ let type_in_env ?(verbosity = Verbosity.default) ?keywords ~context env ppf expr
         | _ -> raise Fallback
         end;
         true
-      with _ -> (
+      with original_exn -> (
+        let try_expr () =
+          match context with
+          | Type | Module_type | Patt -> raise Fallback
+          | _ -> print_expr e
+        in
         (* Fallback to contextless typing attempts *)
         try
-          print_expr e;
+          try_expr ();
           true
         with exn -> (
           try
@@ -341,7 +346,8 @@ let type_in_env ?(verbosity = Verbosity.default) ?keywords ~context env ppf expr
                 print_constr ppf env longident;
                 true
               with _ ->
-                print_exn ppf exn;
+                let exn_to_print = match exn with Fallback -> original_exn | _ -> exn in
+                print_exn ppf exn_to_print;
                 false))))
       end
     | `Other -> (

@@ -9,25 +9,13 @@ FIXME: the current results promoted is wrong.
       {
         "start": {
           "line": 1,
-          "col": 28
-        },
-        "end": {
-          "line": 1,
-          "col": 29
-        },
-        "type": "int -> int -> int",
-        "tail": "no"
-      },
-      {
-        "start": {
-          "line": 1,
           "col": 25
         },
         "end": {
           "line": 1,
           "col": 32
         },
-        "type": 1,
+        "type": "'a * 'a",
         "tail": "no"
       },
       {
@@ -39,7 +27,7 @@ FIXME: the current results promoted is wrong.
           "line": 1,
           "col": 40
         },
-        "type": 2,
+        "type": 1,
         "tail": "no"
       },
       {
@@ -51,7 +39,7 @@ FIXME: the current results promoted is wrong.
           "line": 1,
           "col": 40
         },
-        "type": 3,
+        "type": 2,
         "tail": "no"
       },
       {
@@ -63,7 +51,7 @@ FIXME: the current results promoted is wrong.
           "line": 1,
           "col": 40
         },
-        "type": 4,
+        "type": 3,
         "tail": "no"
       }
     ],
@@ -73,8 +61,7 @@ FIXME: the current results promoted is wrong.
   $ $MERLIN single document -filename test.mli -position 1:28 < test.mli
   {
     "class": "return",
-    "value": "Integer multiplication.
-      Left-associative operator, see {!Ocaml_operators} for more information.",
+    "value": "Not in environment '*'",
     "notifications": []
   }
 

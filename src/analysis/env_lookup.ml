@@ -18,7 +18,7 @@ module Namespace = struct
     | `This_cstr of Data_types.constructor_description ]
 
   let from_context : Context.t -> inferred list = function
-    | Type -> [ `Type; `Mod; `Modtype; `Constr; `Labels; `Vals ]
+    | Type -> [ `Type; `Mod; `Modtype; `Constr; `Labels ]
     | Module_type -> [ `Modtype; `Mod; `Type; `Constr; `Labels; `Vals ]
     | Expr | Constant -> [ `Vals; `Mod; `Modtype; `Constr; `Labels; `Type ]
     | Patt -> [ `Mod; `Modtype; `Type; `Constr; `Labels; `Vals ]
