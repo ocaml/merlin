@@ -36,5 +36,8 @@ module With_cache (Phase : S) : sig
       the invalidation of the cache can be forced by setting the
       force_invalidation parameter to true.*)
   val apply :
-    ?cache_disabling:string option -> ?force_invalidation:bool -> Phase.input -> t
+    ?cache_disabling:string option ->
+    ?force_invalidation:bool ->
+    Phase.input ->
+    t
 end
