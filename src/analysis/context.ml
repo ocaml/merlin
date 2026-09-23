@@ -131,22 +131,34 @@ let inspect_browse_tree ?disambiguate ~cursor lid browse : t option =
     let node = Browse_tree.of_browse enclosings in
     log ~title:"inspect_context" "current enclosing node is: %s"
       (string_of_node node.Browse_tree.t_node);
-    match node.Browse_tree.t_node with
-    | Pattern p -> inspect_pattern ~cursor ~lid p
-    | Value_description _
-    | Type_declaration _
-    | Extension_constructor _
-    | Module_binding_name _
-    | Module_declaration_name _
-    | Label_declaration _
-    | Constructor_declaration _ -> None
-    | Module_expr _ | Open_description _ -> Some Module_path
-    | Module_type _ -> Some Module_type
-    | Core_type { ctyp_desc = Ttyp_package _; _ } -> Some Module_type
-    | Core_type _ -> Some Type
-    | Record_field (_, lbl, _) when Longident.last lid = lbl.lbl_name ->
-      (* if we stopped here, then we're on the label itself, and whether or
-            not punning is happening is not important *)
-      Some (Label lbl)
-    | Expression e -> Some (inspect_expression ~cursor ~lid e)
-    | _ -> Some Unknown)
+
+    let declared_name =
+      match node.Browse_tree.t_node with
+      | Value_description vd -> Some vd.val_name.txt
+      | Type_declaration td -> Some td.typ_name.txt
+      | _ -> None
+    in
+
+    match declared_name with
+    | Some name when name = Longident.last lid -> None
+    | Some _ -> Some Unknown
+    | None -> (
+      match node.Browse_tree.t_node with
+      | Pattern p -> inspect_pattern ~cursor ~lid p
+      | Value_description _
+      | Type_declaration _
+      | Extension_constructor _
+      | Module_binding_name _
+      | Module_declaration_name _
+      | Label_declaration _
+      | Constructor_declaration _ -> None
+      | Module_expr _ | Open_description _ -> Some Module_path
+      | Module_type _ -> Some Module_type
+      | Core_type { ctyp_desc = Ttyp_package _; _ } -> Some Module_type
+      | Core_type _ -> Some Type
+      | Record_field (_, lbl, _) when Longident.last lid = lbl.lbl_name ->
+        (* if we stopped here, then we're on the label itself, and whether or
+           not punning is happening is not important *)
+        Some (Label lbl)
+      | Expression e -> Some (inspect_expression ~cursor ~lid e)
+      | _ -> Some Unknown))
