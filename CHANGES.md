@@ -103,8 +103,6 @@ Sat Dec 20 11:15:42 CET 2025
     - Add a test reproducing issue #1983 where `document` command which sometime concatenates consecutive variants and labels (#2005)
     - Signature-help should trigger on unfinished `let ... in` bindings (#2009)
 
-
-
 merlin 5.6
 ==========
 Sat Oct 04 15:10:42 CEST 2025
