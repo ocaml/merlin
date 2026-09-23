@@ -2,20 +2,18 @@
 
 module type S = sig
   (** Phase input *)
-  type t
+  type input
 
   (** Phase output *)
   type output
 
   (** Phase computation *)
-  val f : t -> output
+  val f : input -> output
 
   (** Phase title for logging *)
   val title : string
 
   module Fingerprint : sig
-    type input
-
     (** Fingerprint used to determine whether the cache should be invalidated *)
     type t
 
@@ -25,7 +23,6 @@ module type S = sig
     (** Determines whether two fingerprints are the same *)
     val equal : t -> t -> bool
   end
-  with type input := t
 end
 
 module With_cache (Phase : S) : sig
@@ -39,5 +36,8 @@ module With_cache (Phase : S) : sig
       the invalidation of the cache can be forced by setting the
       force_invalidation parameter to true.*)
   val apply :
-    ?cache_disabling:string option -> ?force_invalidation:bool -> Phase.t -> t
+    ?cache_disabling:string option ->
+    ?force_invalidation:bool ->
+    Phase.input ->
+    t
 end

@@ -49,7 +49,8 @@ module Directive : sig
     | `SH of string
     | `CMI of string
     | `CMT of string
-    | `INDEX of string ]
+    | `INDEX of string
+    | `PPX_DEPS of string ]
 
   type no_processing_required =
     [ `EXT of string list
