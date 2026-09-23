@@ -6,6 +6,7 @@ unreleased
     - Fix detection of expression at cursor in case of type-constrained
       expression (#2120)
     - enclosing: drastically improve the ranges! (#2121)
+    - Fix oversharing in Parsetree cache (#2131)
   + merlin binary
     - Use c library flags from `ocamlc -config`. Fixes Haiku build (#2124)
   + test suite

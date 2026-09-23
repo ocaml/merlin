@@ -133,7 +133,8 @@ Also, modifying the PPX invalidates the PPX cache
   # . Phase cache - PPX phase
   Cache invalidation
 
-Also, modifying the args to the PPX invalidates the PPX cache
+Also, modifying the args to the PPX invalidates the PPX cache (and the parsetree
+cache since the parsetree depends on some config arguments)
   $ cat > .merlin <<EOF
   > FLG -ppx '_build/default/.ppx/68ba10540cd1df30ebd46af5ef6706d9/ppx.exe -as-ppx -no-color
   > USE_PPX_CACHE
@@ -144,7 +145,8 @@ Also, modifying the args to the PPX invalidates the PPX cache
   $ $MERLIN server errors -filename main.ml -log-file merlin_logs 1> /dev/null < main.ml
   $ cat merlin_logs | grep 'Phase cache' -A 1 | sed "s/[0-9]*//g"
   # . Phase cache - Reader phase
-  Cache hit
+  Cache invalidation
+  --
   # . Phase cache - PPX phase
   Cache invalidation
 
