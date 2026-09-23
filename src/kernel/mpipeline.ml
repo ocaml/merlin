@@ -134,7 +134,7 @@ let typer_result t = (typer t).Typer.result
 let typer_errors t = Lazy.force (typer t).Typer.errors
 
 module Reader_phase = struct
-  type t =
+  type input =
     { source : Msource.t * Mreader.parsetree option;
       for_completion : Msource.position option;
       config : Mconfig.t
@@ -181,7 +181,7 @@ module Reader_with_cache = Phase_cache.With_cache (Reader_phase)
 
 module Ppx_phase = struct
   type reader_cache = Off | Version of int
-  type t =
+  type input =
     { parsetree : Mreader.parsetree;
       config : Mconfig.t;
       reader_cache : reader_cache
