@@ -8,7 +8,15 @@
   > EOF
 
 Work as intended:
-  $ $MERLIN single locate -prefix typ -position 5:0 -context unknown -look-for mli -filename main.mli <main.mli
+  $ LOC=5:0
+  $ show_location main.mli $LOC
+  type typ =
+    | A
+    | B
+    | C
+  █
+  val string_of_type : typ -> string
+  $ $MERLIN single locate -prefix typ -position $LOC -context unknown -look-for mli -filename main.mli <main.mli
   {
     "class": "return",
     "value": {
@@ -22,7 +30,15 @@ Work as intended:
   }
 
 TODO: trying to find the `typ` declaration with the cursor positioned on a signature item located after the type definition fails:
-  $ $MERLIN single locate -prefix typ -position 6:10 -context unknown -look-for mli -filename main.mli <main.mli
+  $ LOC=6:10
+  $ show_location main.mli $LOC
+  type typ =
+    | A
+    | B
+    | C
+  
+  val string█of_type : typ -> string
+  $ $MERLIN single locate -prefix typ -position $LOC -context unknown -look-for mli -filename main.mli <main.mli
   {
     "class": "return",
     "value": "Already at definition point",
