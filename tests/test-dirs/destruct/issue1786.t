@@ -17,11 +17,17 @@ Create the file that we'll use to demonstrate the error
 
 In Persistent_env.find_pers_struct, the module Either fails to be found:
 
-  $ $MERLIN single case-analysis -start 3:8 -end 3:8 -filename foo.ml <<EOF
+  $ cat > foo.ml <<EOF
   > let f (x : Box.t) =
   >   match x with
   >   | Box _ -> 10
   > EOF
+  $ LOC=3:8
+  $ show_location foo.ml $LOC
+  let f (x : Box.t) =
+    match x with
+    | Box █ -> 10
+  $ $MERLIN single case-analysis -start 3:8 -end 3:8 -filename foo.ml < foo.ml
   {
     "class": "exception",
     "value": "Not_found
