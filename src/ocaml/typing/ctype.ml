@@ -6411,9 +6411,9 @@ let nondep_type_decl env mid is_covariant decl =
       type_unboxed_default = decl.type_unboxed_default;
       type_uid = decl.type_uid;
       type_discourse =
-        Discourse_types.Paths.filter
+        { decl.type_discourse with local = Discourse_types.Paths.filter
           (fun (_, path) -> not (Path.exists_free mid path))
-          decl.type_discourse;
+          decl.type_discourse.local };
     }
   with Nondep_cannot_erase _ as exn ->
     clear_hash ();

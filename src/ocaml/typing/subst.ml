@@ -162,7 +162,8 @@ let discourse_item s (kind, path) =
     end
   | _ -> Some (kind, path)
 
-let discourse s d = Discourse_types.Paths.filter_map (discourse_item s) d
+let discourse s (d : Discourse_types.t) =
+  { d with local = Discourse_types.Paths.filter_map (discourse_item s) d.local }
 
 let discourse_alias s = function
   | None -> None

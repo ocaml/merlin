@@ -34,7 +34,7 @@ Types
   $ ocamlobjinfo -quiet -discourse types/repro2_types__Topic_name.cmi
   Discourse:
   t: Repro2_priv!.Topic_name.t
-  of_topic: option/12!; t/286; Repro2_types__!.Topic.t
+  of_topic: t/286; Repro2_types__!.Topic.t
 
 
 Main

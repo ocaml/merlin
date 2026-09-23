@@ -53,11 +53,12 @@ We call D the domain of discourse:
 let recap_log_section = "discourse-recap"
 let { Logger.log = log_recap } = Logger.for_section recap_log_section
 
-let trie_of_paths paths =
+let trie_of_paths (d : Discourse_types.t) =
   let open Discourse_types in
   Paths.fold
     (fun (kind, path) acc -> Path_trie.add path kind acc)
-    paths Path_trie.empty
+    (Paths.union d.local d.extern)
+    Path_trie.empty
 
 let pp_d fmt d =
   let open Discourse_types in

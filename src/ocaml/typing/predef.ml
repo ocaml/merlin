@@ -257,8 +257,8 @@ let decl_of_type_constr tconstr =
   let type_ident = ident_of_type_constr tconstr in
   let () =
     let path = Pident type_ident in
-    discourse :=
-      Discourse_types.add (Shape.Sig_component_kind.Type, path) !discourse
+    discourse := Discourse_types.add ~predef:true
+      (Shape.Sig_component_kind.Type, path) !discourse
   in
   let type_uid = Uid.of_predef_id type_ident in
   let decl0
