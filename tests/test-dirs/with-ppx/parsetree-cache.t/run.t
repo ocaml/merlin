@@ -244,7 +244,8 @@ And Merlin does the right thing.
   }
   $ cat merlin_logs | grep 'Phase cache' -A 1 | sed "s/[0-9]*//g"
   # . Phase cache - Reader phase
-  Cache hit
+  Cache invalidation
+  --
   # . Phase cache - PPX phase
   Cache invalidation
 
