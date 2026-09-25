@@ -93,55 +93,9 @@ let { Logger.log } = Logger.for_section log_section
 open Shape.Sig_component_kind
 open Discourse_types
 
+module Item_map = Map.Make(Item)
+
 module U = struct
-  module Disambiguate_id : sig
-    type t
-    val get_id : unit -> t
-    val compare : t -> t -> int
-  end = struct
-    type t = int
-    let get_id =
-      let cpt = ref 0 in
-      fun () ->
-        incr cpt;
-        !cpt
-
-    let compare = Int.compare
-  end
-  type u_item =
-    { item : Item.t;
-      env : Env.t option;
-          (* Items added by "defined" rules (U2 and U3) do not need an env, as
-             they are in the compilation unit (and so U1 will add all paths
-             mentioned in them). TODO: Is that true for U3?
-
-             Items added by the "used" rule (U1) need an environment, to be able
-             to find them later in the translation U -> D, when applying D rules
-             such as D4, D6, D8, ... *)
-      disambiguator : Disambiguate_id.t
-          (* We cannot compare two env with a different env, in a way that it
-             makes an order (id we have transitivity, antisymetry, ...).
-
-             So when we would need to do that, we reach out to a disambigator
-             id. *)
-    }
-
-  let item_path { item = _, path; _ } = path
-  module ItemSet = Set.Make (struct
-    type t = u_item
-
-    let compare i1 i2 =
-      match (i1.env, i2.env) with
-      | None, None -> Item.compare i1.item i2.item
-      | Some _, None -> -1
-      | None, Some _ -> 1
-      | Some env1, Some env2 when env1 == env2 -> Item.compare i1.item i2.item
-      (* In order to keep order properties from compare, in case where we cannot
-         compare existing env, we disambiguate with the ID. *)
-      | Some _, Some _ ->
-        Disambiguate_id.compare i1.disambiguator i2.disambiguator
-  end)
-
   (* We build U lazily: during typing we only log [event]s, and the actual work
      (walking signatures, looking up the environment, building the tries) only
      happens in [force], which is called by [D.of_U] the first time something
@@ -176,68 +130,45 @@ module U = struct
         (** Rule U3: the components brought by opening a module path *)
 
   type u =
-    { u_paths : ItemSet.t Path.Map.t;
+    { u_paths : Env.t Item_map.t;
       substs : Discourse_types.substs;
       discourse : Path_trie.t;
       pending : event list
     }
 
-  let paths_union (ps1 : ItemSet.t Path.Map.t) (ps2 : ItemSet.t Path.Map.t) =
-    Path.Map.union
-      (fun _key set1 set2 -> Some (ItemSet.union set1 set2))
-      ps1 ps2
-
   let pp_u fmt u =
     let open Format in
     let pp_sep fmt () = fprintf fmt ";@ " in
-    let pp_env fmt env =
-      match env with
-      | None -> pp_print_string fmt "without env"
-      | Some _ -> pp_print_string fmt "with env"
-    in
-    let pp_u_item fmt { item = kind, path; env } =
-      fprintf fmt "@[<1>{item = (%s,@ %a);@ env = %a}@]"
+    let pp_u_item fmt (kind, path) =
+      fprintf fmt "@[<1>{item = (%s,@ %a)}@]"
         (Shape.Sig_component_kind.to_string kind)
         (Format_doc.compat Path.print)
-        path pp_env env
+        path
     in
-    let pp_item_set fmt set =
-      fprintf fmt "@[<1>[%a]@]"
-        (pp_print_list ~pp_sep pp_u_item)
-        (ItemSet.elements set)
-    in
-    let pp_u_paths_binding fmt (path, items) =
+    let pp_u_paths_binding fmt (((_, path) as item), _env) =
       fprintf fmt "@[<2>%a ->@ %a@]"
         (Format_doc.compat Path.print)
-        path pp_item_set items
+        path pp_u_item item
     in
     let pp_u_paths fmt map =
       fprintf fmt "@[<v>[%a]@]"
         (pp_print_list ~pp_sep pp_u_paths_binding)
-        (Path.Map.bindings map)
+        (Item_map.bindings map)
     in
     fprintf fmt "@[<v 2>{ u_paths =@ %a;@ substs =@ %a }@]" pp_u_paths u.u_paths
       Discourse_types.pp_substs u.substs
 
-  let add_item_set item item_set =
-    let path = item_path item in
-    Path.Map.update path
-      (function
-        | None -> Some (ItemSet.singleton item)
-        | Some set -> Some (ItemSet.add item set))
-      item_set
 
-  let add_item item u =
-    let u_paths = add_item_set item u.u_paths in
-    { u with u_paths }
+  let add_item item env u =
+    if Item_map.mem item u.u_paths then u
+    else { u with u_paths = Item_map.add item env u.u_paths }
 
   let empty_u : u =
-    Path.Map.
-      { u_paths = empty;
-        substs = empty;
-        discourse = Path_trie.empty;
-        pending = []
-      }
+    { u_paths = Item_map.empty;
+      substs = Path.Map.empty;
+      discourse = Path_trie.empty;
+      pending = []
+    }
   let g = Local_store.s_ref empty_u
 
   (** We call U the set of all paths used directly in a file:
@@ -470,12 +401,7 @@ module U = struct
         (Fun.flip (Format_doc.compat Path.print) path)
         Logger.fmt
         (fun fmt -> Location.print_loc fmt loc);
-      add_item
-        { item = (kind, path);
-          env = Some env;
-          disambiguator = Disambiguate_id.get_id ()
-        }
-        acc
+      add_item (kind, path) env acc
     in
     (* If a path is in D and it includes another module path within it, then that
        module path is also in D.*)
@@ -512,10 +438,7 @@ module U = struct
 
   (** {1 Forcing}
 
-      Processes the recorded events, oldest first. The order matters:
-      [Disambiguate_id]s must be allocated in the order the paths were recorded,
-      so that items sharing a path are ordered the same way as they would have
-      been if U had been built eagerly. *)
+      Processes the recorded events *)
 
   let apply_event u = function
     | Used { kind; lid; path; env } -> add_used env kind lid path u
@@ -593,8 +516,7 @@ module D = struct
     in
     loop substs path
 
-  let special_rule_for_aliases env { paths; substs } u_next path alias_lid
-      alias_path =
+  let special_rule_for_aliases env { paths; substs } path alias_lid alias_path =
     try
       let alias_path, _ =
         Env.find_module_by_name_lazy (Untypeast.lident_of_path alias_path) env
@@ -611,10 +533,15 @@ module D = struct
         U.add_subst substs path alias_path
       in
       (* TODO: This is an unwritten rule (yet): If a module in U is an alias
-         then this alias is also in U *)
-      let u_next = U.use_module env alias_lid alias_path u_next in
-      ({ paths; substs }, u_next)
-    with Not_found -> ({ paths; substs }, u_next)
+         then this alias is also in U. The alias path and its module prefixes
+         are returned to be processed as items of U. *)
+      let more =
+        U.fold_on_path_segments ~init:[] ~kind:Module
+          ~f:(fun acc kind path -> ((kind, path), env) :: acc)
+          alias_path
+      in
+      ({ paths; substs }, more)
+    with Not_found -> ({ paths; substs }, [])
 
   (* [apparent] is the path the module is reachable under, which may be shorter
      than [path] when we got here by following an alias: the components we add
@@ -655,71 +582,56 @@ module D = struct
       (paths, substs)
       (Subst.Lazy.force_signature_once sig_)
 
-  (* TODO: see if we can do better with the accumulator ([d] and
-     [u_next]): sometimes it is represented as a couple and sometimes as two
-     distinct arguments, preventing the more readable folds *)
-
-  let module_consequences { paths; substs } u_next env path : discourse * U.u =
-    let (paths, substs), u_next =
-      let md = Env.find_module_lazy path env in
-      let { paths; substs }, u_next =
-        match md.mdl_discourse_alias with
-        | None -> ({ paths; substs }, u_next)
-        | Some (alias_lid, (_Module, alias_path)) ->
-          special_rule_for_aliases env { paths; substs } u_next path alias_lid
-            alias_path
-      in
-
-      (* D5. If a module path is in U and its module description was written then
-         the paths used in that description are in D *)
-      (* TODO : If a path is in D and it includes another module path within it,
-         then that module path is also in D. *)
-      log ~title:"D5" "D5: merging discourse of module %a" Logger.fmt
-        (Fun.flip (Format_doc.compat Path.print) path);
-      let md_discourse = trie_of_paths md.mdl_discourse in
-      let paths = Path_trie.union paths md_discourse in
-      begin match md.mdl_type with
-      | MtyL_alias path' ->
-        (* D12. If a module path m in D - note D not U - is a module alias
-             with target n and another path p in D includes n within it, then
-             the path obtained by substituting the m for n in p is also in D.
-
-             We accumulate such substitution and will apply them when shortening
-             a path. *)
-        let substs =
-          follow_aliases_adding_subst "Mty_alias target" env substs path' path
-        in
-        (* We have to follow aliases to be able to add module components to
-             the discourse.
-
-             TODO now that we have md_discourse_aliases, this might be redundant
-             ? *)
-        let path' = Env.normalize_module_path None env path' in
-        (* TODO: Check, this might not be the same as the code before the
-             rebase. *)
-        let u_next =
-          U.add_item
-            { item = (Module, path');
-              env = Some env;
-              disambiguator = U.Disambiguate_id.get_id ()
-            }
-            u_next
-        in
-
-        ((paths, substs), u_next)
-      | MtyL_signature sig_ ->
-        (* D3. If a module path is in U then all the paths of its subcomponents
-             are in D *)
-        (d3_rule env path paths substs sig_, u_next)
-      | _ -> ((paths, substs), u_next)
-      end
+  let module_consequences { paths; substs } env path =
+    let md = Env.find_module_lazy path env in
+    let { paths; substs }, more =
+      match md.mdl_discourse_alias with
+      | None -> ({ paths; substs }, [])
+      | Some (alias_lid, (_Module, alias_path)) ->
+        special_rule_for_aliases env { paths; substs } path alias_lid alias_path
     in
-    ({ paths; substs }, u_next)
 
-  let consequences d u_next { U.item = kind, path; env } =
-    match (kind, env) with
-    | _, None -> (d, u_next)
-    | Module_type, Some env ->
+    (* D5. If a module path is in U and its module description was written then
+       the paths used in that description are in D *)
+    (* TODO : If a path is in D and it includes another module path within it,
+       then that module path is also in D. *)
+    log ~title:"D5" "D5: merging discourse of module %a" Logger.fmt
+      (Fun.flip (Format_doc.compat Path.print) path);
+    let md_discourse = trie_of_paths md.mdl_discourse in
+    let paths = Path_trie.union paths md_discourse in
+    match md.mdl_type with
+    | MtyL_alias path' ->
+      (* D12. If a module path m in D - note D not U - is a module alias
+           with target n and another path p in D includes n within it, then
+           the path obtained by substituting the m for n in p is also in D.
+
+           We accumulate such substitution and will apply them when shortening
+           a path. *)
+      let substs =
+        follow_aliases_adding_subst "Mty_alias target" env substs path' path
+      in
+      (* We have to follow aliases to be able to add module components to
+           the discourse.
+
+           TODO now that we have md_discourse_aliases, this might be redundant
+           ? *)
+      let path' = Env.normalize_module_path None env path' in
+      (* TODO: Check, this might not be the same as the code before the
+           rebase. *)
+      ({ paths; substs }, ((Module, path'), env) :: more)
+    | MtyL_signature sig_ ->
+      (* D3. If a module path is in U then all the paths of its subcomponents
+           are in D *)
+      let paths, substs = d3_rule env path paths substs sig_ in
+      ({ paths; substs }, more)
+    | _ -> ({ paths; substs }, more)
+
+  (* The consequences of an item are its contribution to D, together with the
+     additional items found to be in U while computing it (alias targets). *)
+
+  let consequences d env ((kind, path) : Item.t) =
+    match kind with
+    | Module_type ->
       let mtd = Env.find_modtype_lazy path env in
       (* D8. If a module type path is in U then any paths used in its definition
          are in *)
@@ -728,9 +640,9 @@ module D = struct
       (* TODO : If a path is in D and it includes another module path within it,
          then that module path is also in D. *)
       let mtd_discourse = trie_of_paths mtd.mtdl_discourse in
-      ({ d with paths = Path_trie.union d.paths mtd_discourse }, u_next)
-    | Module, Some env -> module_consequences d u_next env path
-    | Value, Some env ->
+      ({ d with paths = Path_trie.union d.paths mtd_discourse }, [])
+    | Module -> module_consequences d env path
+    | Value ->
       (* D4. If a value path is in U and its value description was written by a user -
          as opposed to being inferred - then the paths used in that description are
          in D. *)
@@ -740,8 +652,8 @@ module D = struct
       log ~title:"D4" "D4: merging discourse of value %a" Logger.fmt
         (Fun.flip (Format_doc.compat Path.print) path);
       let val_discourse = trie_of_paths vd.val_discourse in
-      ({ d with paths = Path_trie.union d.paths val_discourse }, u_next)
-    | Type, Some env ->
+      ({ d with paths = Path_trie.union d.paths val_discourse }, [])
+    | Type ->
       (* D6. If a type path is in U then any paths used in its equation or
          representation are in D. *)
       (* TODO : If a path is in D and it includes another module path within it,
@@ -752,20 +664,17 @@ module D = struct
       log ~title:"D6" "D6: merging discourse of type %a" Logger.fmt
         (Fun.flip (Format_doc.compat Path.print) path);
       let type_discourse = trie_of_paths td.type_discourse in
-      ({ d with paths = Path_trie.union d.paths type_discourse }, u_next)
-    | _ -> (d, u_next)
+      ({ d with paths = Path_trie.union d.paths type_discourse }, [])
+    | _ -> (d, [])
 
-  let add_from_u_to_d : discourse -> U.u -> U.u_item -> discourse * U.u =
-   fun d u_next (item as input) ->
+  let add_from_u_to_d :
+      discourse -> Env.t -> Item.t -> discourse * (Item.t * Env.t) list =
+   fun d env ((kind, path) as item) ->
     log ~title:"D2" "D2: %a in U so in D (kind: %s)" Logger.fmt
-      (Fun.flip (Format_doc.compat Path.print) (U.item_path item))
-      (Shape.Sig_component_kind.to_string (fst item.U.item));
-    (* TODO: If item is already in paths we should skip adding it (and more
-       importantly, skip the consequences!) *)
-    let kind, path = item.item in
+      (Fun.flip (Format_doc.compat Path.print) path)
+      (Shape.Sig_component_kind.to_string kind);
     let d =
-      (* D2 records the item under the name it reached U with, identified by
-         its own path. *)
+      (* D2 items in U are in D *)
       { d with paths = Path_trie.add path kind d.paths }
     in
     (* In some cases, [consequences] tries to load its own compilation unit,
@@ -793,51 +702,31 @@ module D = struct
 
        TODO: find why there is such a self-module added/why it sometimes load
        sometimes raises. *)
-    try consequences d u_next input
-    with Not_found | Env.Error (Lookup_error _) -> (d, u_next)
+    try consequences d env item
+    with Not_found | Env.Error (Lookup_error _) -> (d, [])
 
   let of_U u =
     (* Apply any unprocessed event. *)
     let u = U.force u in
     log_recap ~title:"U" "U at start of D.of_U:\n%a" Logger.fmt
       (Fun.flip U.pp_u u);
-    let is_empty u = Path.Map.is_empty u.U.u_paths in
-    let has_been_added item old_u =
-      match Path.Map.find_opt (U.item_path item) old_u with
-      | None -> false
-      | Some set -> U.ItemSet.mem item set
-    in
-    let rec add_u_to_d d u old_u =
-      let d, u_next =
-        Path.Map.to_seq u.U.u_paths
-        |> Seq.fold_left
-             (fun (d, u_next) (_path, (x : U.ItemSet.t)) ->
-               U.ItemSet.fold
-                 (fun item (d, u_next) ->
-                   if has_been_added item old_u then (d, u_next)
-                   else add_from_u_to_d d u_next item)
-                 x (d, u_next))
-             (d, U.empty_u)
-      in
-      let d =
-        { d with
-          substs =
-            Path.Map.union
-              (fun _ a b -> Some (Path.Set.union a b))
-              d.substs u.U.substs
-        }
-      in
-      if is_empty u_next then d
-      else (
-        log_recap ~title:"next_U" "next_U (non-empty, looping):\n%a" Logger.fmt
-          (Fun.flip U.pp_u u_next);
-        let old_u = U.paths_union u.U.u_paths old_u in
-        add_u_to_d d u_next old_u)
+    let todo = Queue.create () in
+    Item_map.iter (fun item env -> Queue.add (item, env) todo) u.U.u_paths;
+    let rec loop seen d =
+      match Queue.take_opt todo with
+      | None -> d
+      | Some (item, env) ->
+        (* There is no need to process twice the same path *)
+        if Paths.mem item seen then loop seen d
+        else begin
+          (* Processing one path might bring more work *)
+          let d, more = add_from_u_to_d d env item in
+          List.iter (fun discovered -> Queue.add discovered todo) more;
+          loop (Paths.add item seen) d
+        end
     in
     let d =
-      add_u_to_d
-        { paths = u.U.discourse; substs = Path.Map.empty }
-        u Path.Map.empty
+      loop Paths.empty { paths = u.U.discourse; substs = u.U.substs }
     in
     log_recap ~title:"D" "Final D:\n%a" Logger.fmt (Fun.flip pp_d d);
     d

@@ -79,66 +79,14 @@ This mocks the Async --include--> Async_kernel --exports--> Deferred
   # discourse-recap - U
   U at start of D.of_U:
   { u_paths =
-    [Async! ->
-       [{item = (module, Async!); env = with env};
-        {item = (module, Async!); env = with env}];
-    Async!.Let_syntax -> [{item = (module, Async!.Let_syntax); env = with env}];
-    Async!.Let_syntax.return ->
-      [{item = (value, Async!.Let_syntax.return); env = with env}]];
+    [Async! -> {item = (module, Async!)};
+    Async!.Let_syntax -> {item = (module, Async!.Let_syntax)};
+    Async!.Let_syntax.return -> {item = (value, Async!.Let_syntax.return)}];
     substs =
     Async!.Deferred -> [Deferred/22];
     Async!.Let_syntax -> [Let_syntax/23];
     Async_kernel!.Deferred -> [Deferred/22];
     Async_kernel!.Let_syntax -> [Let_syntax/23] }
-  # discourse-recap - next_U
-  next_U (non-empty, looping):
-  { u_paths =
-    [Async_kernel! -> [{item = (module, Async_kernel!); env = with env}];
-    Async_kernel!.Let_syntax ->
-      [{item = (module, Async_kernel!.Let_syntax); env = with env}];
-    Async_kernel__Deferred!.Let_syntax.Let_syntax ->
-      [{item = (module, Async_kernel__Deferred!.Let_syntax.Let_syntax);
-        env = with env}]];
-    substs =
-     }
-  # discourse-recap - next_U
-  next_U (non-empty, looping):
-  { u_paths =
-    [Async_kernel! -> [{item = (module, Async_kernel!); env = with env}];
-    Async_kernel!.Deferred ->
-      [{item = (module, Async_kernel!.Deferred); env = with env}];
-    Async_kernel!.Deferred.Let_syntax ->
-      [{item = (module, Async_kernel!.Deferred.Let_syntax); env = with env}];
-    Async_kernel__Deferred!.Let_syntax.Let_syntax ->
-      [{item = (module, Async_kernel__Deferred!.Let_syntax.Let_syntax);
-        env = with env}];
-    Async_kernel!.Deferred.Let_syntax.Let_syntax ->
-      [{item = (module, Async_kernel!.Deferred.Let_syntax.Let_syntax);
-        env = with env}]];
-    substs =
-     }
-  # discourse-recap - next_U
-  next_U (non-empty, looping):
-  { u_paths =
-    [Async_kernel__! -> [{item = (module, Async_kernel__!); env = with env}];
-    Async_kernel__Deferred! ->
-      [{item = (module, Async_kernel__Deferred!); env = with env}];
-    Async_kernel__!.Deferred ->
-      [{item = (module, Async_kernel__!.Deferred); env = with env}];
-    Async_kernel__Deferred!.Let_syntax ->
-      [{item = (module, Async_kernel__Deferred!.Let_syntax); env = with env}];
-    Async_kernel__Deferred!.Let_syntax.Let_syntax ->
-      [{item = (module, Async_kernel__Deferred!.Let_syntax.Let_syntax);
-        env = with env}]];
-    substs =
-     }
-  # discourse-recap - next_U
-  next_U (non-empty, looping):
-  { u_paths =
-    [Async_kernel__Deferred! ->
-       [{item = (module, Async_kernel__Deferred!); env = with env}]];
-    substs =
-     }
   # discourse-recap - D
   Final D:
   Discourse {
@@ -273,66 +221,14 @@ Dump the discourse so regressions show up as a diff in this test:
   # discourse-recap - U
   U at start of D.of_U:
   { u_paths =
-    [Async! ->
-       [{item = (module, Async!); env = with env};
-        {item = (module, Async!); env = with env}];
-    Async!.Let_syntax -> [{item = (module, Async!.Let_syntax); env = with env}];
-    Async!.Let_syntax.return ->
-      [{item = (value, Async!.Let_syntax.return); env = with env}]];
+    [Async! -> {item = (module, Async!)};
+    Async!.Let_syntax -> {item = (module, Async!.Let_syntax)};
+    Async!.Let_syntax.return -> {item = (value, Async!.Let_syntax.return)}];
     substs =
     Async!.Deferred -> [Deferred/22];
     Async!.Let_syntax -> [Let_syntax/23];
     Async_kernel!.Deferred -> [Deferred/22];
     Async_kernel!.Let_syntax -> [Let_syntax/23] }
-  # discourse-recap - next_U
-  next_U (non-empty, looping):
-  { u_paths =
-    [Async_kernel! -> [{item = (module, Async_kernel!); env = with env}];
-    Async_kernel!.Let_syntax ->
-      [{item = (module, Async_kernel!.Let_syntax); env = with env}];
-    Async_kernel__Deferred!.Let_syntax.Let_syntax ->
-      [{item = (module, Async_kernel__Deferred!.Let_syntax.Let_syntax);
-        env = with env}]];
-    substs =
-     }
-  # discourse-recap - next_U
-  next_U (non-empty, looping):
-  { u_paths =
-    [Async_kernel! -> [{item = (module, Async_kernel!); env = with env}];
-    Async_kernel!.Deferred ->
-      [{item = (module, Async_kernel!.Deferred); env = with env}];
-    Async_kernel!.Deferred.Let_syntax ->
-      [{item = (module, Async_kernel!.Deferred.Let_syntax); env = with env}];
-    Async_kernel__Deferred!.Let_syntax.Let_syntax ->
-      [{item = (module, Async_kernel__Deferred!.Let_syntax.Let_syntax);
-        env = with env}];
-    Async_kernel!.Deferred.Let_syntax.Let_syntax ->
-      [{item = (module, Async_kernel!.Deferred.Let_syntax.Let_syntax);
-        env = with env}]];
-    substs =
-     }
-  # discourse-recap - next_U
-  next_U (non-empty, looping):
-  { u_paths =
-    [Async_kernel__! -> [{item = (module, Async_kernel__!); env = with env}];
-    Async_kernel__Deferred! ->
-      [{item = (module, Async_kernel__Deferred!); env = with env}];
-    Async_kernel__!.Deferred ->
-      [{item = (module, Async_kernel__!.Deferred); env = with env}];
-    Async_kernel__Deferred!.Let_syntax ->
-      [{item = (module, Async_kernel__Deferred!.Let_syntax); env = with env}];
-    Async_kernel__Deferred!.Let_syntax.Let_syntax ->
-      [{item = (module, Async_kernel__Deferred!.Let_syntax.Let_syntax);
-        env = with env}]];
-    substs =
-     }
-  # discourse-recap - next_U
-  next_U (non-empty, looping):
-  { u_paths =
-    [Async_kernel__Deferred! ->
-       [{item = (module, Async_kernel__Deferred!); env = with env}]];
-    substs =
-     }
   # discourse-recap - D
   Final D:
   Discourse {

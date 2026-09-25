@@ -32,7 +32,9 @@ module Item = struct
       priority queue) before shortening, it does not seems useful tu use a
       custom path comparison function here. *)
 
-  let compare (_, p1) (_, p2) = Path.compare p1 p2
+  let compare (k1, p1) (k2, p2) =
+      let c = Path.compare p1 p2 in
+      if c <> 0 then c else Stdlib.compare k1 k2
 end
 
 module Paths = Set.Make (Item)
