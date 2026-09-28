@@ -156,6 +156,11 @@ and get_val_elements node =
   match node.t_node with
   | Expression _ ->
     List.concat_map (Lazy.force node.t_children) ~f:get_val_elements
+  | Value_binding { vb_pat = { pat_desc = Tpat_var (_, { loc; _ }, _); _ }; _ }
+    when loc.Location.loc_ghost ->
+    (* The typer generates ghost bindings for optional arguments that should not
+       show in the outline. *)
+    List.concat_map (Lazy.force node.t_children) ~f:get_val_elements
   | Class_expr _ | Class_structure _ -> get_class_elements node
   | _ -> Option.to_list (summarize node)
 
