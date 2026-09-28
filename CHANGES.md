@@ -7,11 +7,15 @@ unreleased
       expression (#2120)
     - enclosing: drastically improve the ranges! (#2121)
     - Fix oversharing in Parsetree cache (#2131)
+    - Add `PPX_DEPS` to advertise PPX dependencies in Merlin configuration
+      (#2127)
   + merlin binary
     - Use c library flags from `ocamlc -config`. Fixes Haiku build (#2124)
   + test suite
     - Add a test case illustrating `case-analysis` command fails to load module
       in issue #1786 (#2002)
+    - Add a test reproducing the locate command failure when editor position is
+      in another declaration (#2033)
     - Add a test to ensure the behavior showed in issue #1980
 
 merlin 5.8.1

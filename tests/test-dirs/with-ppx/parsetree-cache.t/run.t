@@ -152,8 +152,8 @@ cache since the parsetree depends on some config arguments)
 
 -------------
 
-However, modifying PPX dependencies doesn't invalidate the PPX cache
-and therefore can lead to wrong Merlin output, if the cache is enabled.
+However, modifying not advertised PPX dependencies doesn't invalidate the PPX
+cache and therefore can lead to wrong Merlin output, if the cache is enabled.
 
 Let's create a PPX with PPX dependency
   $ cat > my_ppx.ml <<EOF
@@ -219,10 +219,12 @@ Merlin just uses the cache, though, and doesn't notice the ppx_dep.txt change.
   # . Phase cache - PPX phase
   Cache hit
 
-That's why it's important that the build system doesn't enable the cache
-when the project has PPX dependencies
+That's why it's important that the build system advertise when the PPX has
+dependencies:
   $ cat > .merlin <<EOF
   > FLG -ppx '_build/default/.ppx/68ba10540cd1df30ebd46af5ef6706d9/ppx.exe -as-ppx
+  > PPX_DEPS ppx_dep.txt
+  > USE_PPX_CACHE
   > EOF
 
 Again: when ppx_dep.txt contains an int, there are no errors.
@@ -242,10 +244,23 @@ And Merlin does the right thing.
   }
   $ cat merlin_logs | grep 'Phase cache' -A 1 | sed "s/[0-9]*//g"
   # . Phase cache - Reader phase
-  Cache is disabled: configuration
+  Cache invalidation
   --
   # . Phase cache - PPX phase
-  Cache is disabled: reader cache is disabled
+  Cache invalidation
+
+And when we do it again, we hit cache again.
+  $ $MERLIN server errors -filename main.ml -log-file merlin_logs < main.ml
+  {
+    "class": "return",
+    "value": [],
+    "notifications": []
+  }
+  $ cat merlin_logs | grep 'Phase cache' -A 1 | sed "s/[0-9]*//g"
+  # . Phase cache - Reader phase
+  Cache hit
+  # . Phase cache - PPX phase
+  Cache hit
 
 Again: when ppx_dep.txt is changed to contain a non-int, the AST contains an error.
   $ cat > ppx_dep.txt <<EOF
@@ -255,7 +270,9 @@ Again: when ppx_dep.txt is changed to contain a non-int, the AST contains an err
   $ dune exec ./main.exe 2>/dev/null
   [1]
 
-This time, since the PPX cache isn't enabled, Merlin does the right thing here as well.
+This time, since the PPX dependency has been advertised, Merlin does the right
+thing here as well.
+
   $ $MERLIN server errors -filename main.ml -log-file merlin_logs < main.ml
   {
     "class": "return",
@@ -279,10 +296,9 @@ This time, since the PPX cache isn't enabled, Merlin does the right thing here a
   }
   $ cat merlin_logs | grep 'Phase cache' -A 1 | sed "s/[0-9]*//g"
   # . Phase cache - Reader phase
-  Cache is disabled: configuration
-  --
+  Cache hit
   # . Phase cache - PPX phase
-  Cache is disabled: reader cache is disabled
+  Cache invalidation
 
 Let's clean up
   $ $MERLIN server stop-server

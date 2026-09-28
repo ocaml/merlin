@@ -21,7 +21,7 @@ let () =
           let pre = String.sub l 0 char in
           let post =
             String.sub l
-              (Int.min (String.length l - 1) (char + 1))
+              (Int.min (String.length l) (char + 1))
               (Int.max 0 (String.length l - char - 1))
           in
           print_endline (pre ^ cursor ^ post)

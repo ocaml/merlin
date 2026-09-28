@@ -1,21 +1,19 @@
 let { Logger.log } = Logger.for_section "Phase cache"
 
 module type S = sig
-  type t
+  type input
   type output
 
-  val f : t -> output
+  val f : input -> output
 
   val title : string
 
   module Fingerprint : sig
-    type input
     type t
 
     val make : input -> (t, string) result
     val equal : t -> t -> bool
   end
-  with type input := t
 end
 
 module With_cache (Phase : S) = struct

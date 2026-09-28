@@ -46,6 +46,7 @@ type merlin =
     log_sections : string list;
     config_path : string option;
     use_ppx_cache : bool;
+    ppx_dependencies : string list;
     exclude_query_dir : bool;
     flags_to_apply : string list with_workdir list;
     flags_applied : string list with_workdir list;
