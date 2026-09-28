@@ -13,8 +13,8 @@ RUN opam install .
 
 # install merl-an
 ## cache workaround: https://github.com/ocurrent/current-bench/issues/468#issuecomment-1621030354
-ADD https://api.github.com/repos/xvw/merl-an/git/refs/heads/merl-an-530 .merl-an-info
-RUN opam pin -y merl-an https://github.com/xvw/merl-an.git#344a079bf502f27e9269498db9ed5369753f2ddb
+ADD https://api.github.com/repos/tarides/merl-an/git/refs/heads/main .merl-an-info
+RUN opam pin -y merl-an https://github.com/tarides/merl-an.git#a61cb2b6c2f57baf00b88a74f67b332c459575ef
 
 RUN eval $(opam env)
 

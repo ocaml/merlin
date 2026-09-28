@@ -2,20 +2,42 @@ exception Not_an_index of string
 
 module Lid = Lid
 module Lid_set = Granular_set.Make (Lid)
-module Uid_map = Granular_map.Make (Shape.Uid)
+module Uid_map = Union_find.Uid_map
 module Stats = Map.Make (String)
-module Uid_set = Shape.Uid.Set
+module Uid_set = Granular_set.Make (Shape.Uid)
 
 module Union_find = struct
-  type t = Uid_set.t Union_find.element Granular_marshal.link
+  type t = Uid_set.t Union_find.elt_handle Granular_marshal.link
+  type store = Uid_set.t Union_find.content Uid_map.t
 
-  let make v = Granular_marshal.link (Union_find.make v)
+  let empty () = Union_find.empty ()
 
-  let get t = Union_find.get (Granular_marshal.fetch t)
+  let new_root store uid v =
+    let store, root = Union_find.new_root store uid v in
+    (store, Granular_marshal.link root)
 
-  let union a b =
-    Granular_marshal.(
-      link (Union_find.union ~f:Uid_set.union (fetch a) (fetch b)))
+  let get store t = Union_find.get store (Granular_marshal.fetch t)
+
+  let union store a b =
+    let open Granular_marshal in
+    let store, _root =
+      Union_find.union store ~f:Uid_set.union (fetch a) (fetch b)
+    in
+    (store, a)
+
+  let merge = Union_find.merge ~f:Uid_set.union
+
+  let merge_union store map store' map' =
+    let store = ref (merge store store') in
+    let map =
+      Uid_map.union
+        (fun _ a b ->
+          let store', v = union !store a b in
+          store := store';
+          Some v)
+        map map'
+    in
+    (!store, map)
 
   let type_id : t Type.Id.t = Type.Id.make ()
 
@@ -38,13 +60,17 @@ type index =
     cu_shape : (string, Shape.t) Hashtbl.t;
     stats : stat Stats.t;
     root_directory : string option;
+    related_uids_store : Union_find.store;
     related_uids : Union_find.t Uid_map.t
   }
 
 let lidset_schema iter lidset = Lid_set.schema iter Lid.schema lidset
+let uidset_schema iter lidset =
+  Uid_set.schema iter Granular_marshal.schema_no_sublinks lidset
 
 let type_setmap : Lid_set.t Uid_map.t Type.Id.t = Type.Id.make ()
 let type_ufmap : Union_find.t Uid_map.t Type.Id.t = Type.Id.make ()
+let type_ufstore : Union_find.store Type.Id.t = Type.Id.make ()
 
 let index_schema (iter : Granular_marshal.iter) index =
   Uid_map.schema type_setmap iter
@@ -55,7 +81,12 @@ let index_schema (iter : Granular_marshal.iter) index =
     index.approximated;
   Uid_map.schema type_ufmap iter
     (fun iter _ v -> Union_find.schema iter v)
-    index.related_uids
+    index.related_uids;
+  Uid_map.schema type_ufstore iter
+    (fun iter _uid -> function
+      | Link _ -> ()
+      | Root { value; _ } -> uidset_schema iter value)
+    index.related_uids_store
 
 let compress index =
   let cache = Lid.cache () in
@@ -66,13 +97,13 @@ let compress index =
   compress_map_set index.defs;
   compress_map_set index.approximated;
   let related_uids =
-    Uid_map.map
+    (* Uid_map.map
       (fun set ->
         let uid = Uid_set.min_elt (Union_find.get set) in
         let reference_set = Uid_map.find uid index.related_uids in
         Granular_marshal.reuse reference_set;
-        reference_set)
-      index.related_uids
+        reference_set) *)
+    index.related_uids
   in
   { index with related_uids }
 
@@ -90,12 +121,12 @@ let pp_partials (fmt : Format.formatter) (partials : Lid_set.t Uid_map.t) =
     partials;
   Format.fprintf fmt "@]}"
 
-let pp_related_uids (fmt : Format.formatter)
-    (related_uids : Union_find.t Uid_map.t) =
+let pp_related_uids (related_uids_store : Union_find.store)
+    (fmt : Format.formatter) (related_uids : Union_find.t Uid_map.t) =
   let rec gather acc map =
     match Uid_map.choose_opt map with
     | Some (_key, union) ->
-      let group = Union_find.get union |> Uid_set.to_list in
+      let group = Union_find.get related_uids_store union |> Uid_set.elements in
       List.fold_left (fun acc key -> Uid_map.remove key acc) map group
       |> gather (group :: acc)
     | None -> acc
@@ -123,7 +154,9 @@ let pp (fmt : Format.formatter) pl =
     pp_partials pl.approximated;
   Format.fprintf fmt "and shapes for CUS %s.@ "
     (String.concat ";@," (Hashtbl.to_seq_keys pl.cu_shape |> List.of_seq));
-  Format.fprintf fmt "and related uids:@[{%a}@]" pp_related_uids pl.related_uids
+  Format.fprintf fmt "and related uids:@[{%a}@]"
+    (pp_related_uids pl.related_uids_store)
+    pl.related_uids
 
 let ext = "ocaml-index"
 
@@ -135,7 +168,7 @@ let write ~file index =
     (fun _temp_file_name oc ->
       output_string oc magic_number;
       let id = Random.State.(full_int (make_self_init ()) max_int) in
-      Granular_marshal.write oc ~id index_schema (index : index))
+      Granular_marshal.write oc ~filename:file ~id index_schema (index : index))
 
 type file_content = Cmt of Cmt_format.cmt_infos | Index of index | Unknown
 

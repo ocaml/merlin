@@ -68,6 +68,8 @@ let node_loc node = approximate_loc Browse_raw.node_real_loc node
 (* Fuzzy locations, more likely to locate the appropriate node *)
 let node_merlin_loc node = approximate_loc Browse_raw.node_merlin_loc node
 
+let node_loc_stack = Browse_raw.node_loc_stack
+
 let leaf_node = List.hd
 
 let drop_leaf t =

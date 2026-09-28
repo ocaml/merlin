@@ -1,5 +1,20 @@
+(** Core module for reading and writing granular values.
+
+    Note on file paths: when writing a value that was read from an existing
+    granular file, only a pointer to the original file is present in the new
+    one. This means the original file should not be moved or deleted.
+
+    These pointers are relative to the working directory of the tool that wrote
+    the new file. *)
+
 (** A pointer to an ['a] value, either residing in memory or on disk. *)
 type 'a link
+
+type cached
+
+(* val create_lru : int -> unit *)
+val set_lru_size : int -> unit
+val get_lru : unit -> cached Dbllist.t
 
 (** [link v] returns a new link to the in-memory value [v]. *)
 val link : 'a -> 'a link
@@ -61,10 +76,14 @@ exception
   Outdated_store of
     { filename : string; reason : [ `Missing_file | `Index_ids_do_not_match ] }
 
-(** [write oc ~id schema value] writes the [value] in the output channel [oc], creating unmarshalling boundaries on every link in [value] specified by the [schema]. [id] is used as index UID. *)
+(** [write oc ~id schema value] writes the [value] in the output channel [oc],
+    creating unmarshalling boundaries on every link in [value] specified by the
+    [schema]. [id] is used as index UID. File pointers are made relative to the
+    current working directory. *)
 val write :
   ?flags:Marshal.extern_flags list ->
   out_channel ->
+  filename:string ->
   id:int ->
   'a schema ->
   'a ->
@@ -72,5 +91,6 @@ val write :
 
 (** [read ic schema] reads the value marshalled in the input channel [ic],
     stopping the unmarshalling on every link boundary indicated by the [schema].
-    It returns the root [value] read.  *)
+    It returns the root [value] read. File pointers are resolved relatively to
+    the current working directory.  *)
 val read : string -> in_channel -> 'a schema -> 'a

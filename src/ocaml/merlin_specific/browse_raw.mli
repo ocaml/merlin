@@ -87,7 +87,7 @@ type node =
   | Binding_op of binding_op
   | Include_description of include_description
   | Include_declaration of include_declaration
-  | Open_description of open_description
+  | Open_description of open_description * Env.t
   | Open_declaration of open_declaration
   | Method_call of expression * meth * Location.t
   | Record_field of
@@ -111,6 +111,10 @@ val node_update_env : Env.t -> node -> Env.t
 val node_real_loc : Location.t -> node -> Location.t
 val node_merlin_loc : Location.t -> node -> Location.t
 val node_attributes : node -> attribute list
+
+(** See {!Mbrowser.node_loc_stack}. *)
+val node_loc_stack : node -> Location.t list
+
 val has_attr : name:string -> node -> bool
 
 val string_of_node : node -> string

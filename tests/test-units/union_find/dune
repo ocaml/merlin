@@ -1,0 +1,4 @@
+(test
+ (name union_find_test)
+ (package merlin-lib)
+ (libraries fmt alcotest merlin-lib.ocaml_typing merlin-lib.index_format))

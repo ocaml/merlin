@@ -59,3 +59,6 @@ val print : unit -> t -> string
 val print_loc : (unit -> 'a -> string) -> unit -> 'a Location.loc -> string
 
 val is_relaxed_location : string Location.loc -> bool
+
+(** Locations for expr inside (nested) parenthesis or [begin ... end]. *)
+val is_loc_stack_location : string Location.loc -> bool

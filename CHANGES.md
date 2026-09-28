@@ -1,3 +1,41 @@
+unreleased
+==========
+
+  + merlin library
+    - destruct: allow to destruct let-bindings's patterns (#2117)
+    - Fix detection of expression at cursor in case of type-constrained
+      expression (#2120)
+    - enclosing: drastically improve the ranges! (#2121)
+    - Fix oversharing in Parsetree cache (#2131)
+    - Add `PPX_DEPS` to advertise PPX dependencies in Merlin configuration
+      (#2127)
+  + merlin binary
+    - Use c library flags from `ocamlc -config`. Fixes Haiku build (#2124)
+  + test suite
+    - Add a test case illustrating `case-analysis` command fails to load module
+      in issue #1786 (#2002)
+    - Add a test reproducing the locate command failure when editor position is
+      in another declaration (#2033)
+    - Add a test to ensure the behavior showed in issue #1980
+
+merlin 5.8.1
+============
+Fri Jul 31 11:31:42 CEST 2026
+
+  + merlin library
+    - occurrences: fix files modified since the index was built never being
+      reported as out-of-sync. (#2104)
+    - Fix `locate` and `document` on `open` paths in `.mli` files: resolve the
+      open path in the environment before the open, so a self-shadowing
+      submodule no longer hides the opened module (fixes #1748)
+    - Fix occurrences staleness detection when the server is not running at the
+      project's source root. (#2097)
+    - Reproduce and fix a load_path staleness issue particularly visible when
+      using ocaml-lsp and dune in watch mode (#2109)
+    - Fix bug in `document` query (#2092)
+  + ocaml index
+    - Fix staleness detection in the presence of ppxes. (#2110)
+
 merlin 5.8
 ==========
 Tue Jun 23 12:15:42 CEST 2026
@@ -7,6 +45,12 @@ Tue Jun 23 12:15:42 CEST 2026
     - Fix signature-help with type aliases (#2067, fixes #1927)
     - Fix locate on punned let bindings, to use the common identifier as the
       expression (instead of the pattern) (#2066)
+    - Add destruction of open record patterns into closed one. (#2103, fixes
+      #436)
+  + index format
+    - Use a LRU to reduce memory usage when indexing. Change the way small
+      values are stored. Make sub-indexes paths relative to the working
+      directory of the indexer. (#2079)
   + test suite
     - Remove the FIXME line for #1404 as the issue was already fixed and add two tests (#2073).
 

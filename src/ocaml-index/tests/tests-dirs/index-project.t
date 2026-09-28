@@ -152,3 +152,4 @@
   - 0 compilation units shapes
   - root dir: none
   
+  $ ocaml-index aggregate -o project.uideps main.uideps foo.uideps bar.uideps 

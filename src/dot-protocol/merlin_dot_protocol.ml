@@ -37,7 +37,8 @@ module Directive = struct
     | `SH of string
     | `CMI of string
     | `CMT of string
-    | `INDEX of string ]
+    | `INDEX of string
+    | `PPX_DEPS of string ]
 
   type no_processing_required =
     [ `EXT of string list
@@ -103,6 +104,7 @@ module Sexp = struct
       | "WRAPPING_PREFIX" -> `WRAPPING_PREFIX value
       | "SUFFIX" -> `SUFFIX value
       | "ERROR" -> `ERROR_MSG value
+      | "PPX_DEPS" -> `PPX_DEPS value
       | "FLG" ->
         (* This means merlin asked dune 2.6 for configuration.
            But the protocole evolved, only dune 2.8 should be used *)
@@ -143,6 +145,7 @@ module Sexp = struct
         | `READER ss -> ("READER", [ List (atoms_of_strings ss) ])
         | `EXCLUDE_QUERY_DIR -> ("EXCLUDE_QUERY_DIR", [])
         | `USE_PPX_CACHE -> ("USE_PPX_CACHE", [])
+        | `PPX_DEPS dep -> ("PPX_DEPS", single dep)
         | `UNKNOWN_TAG tag ->
           ("ERROR", single @@ Printf.sprintf "Unknown tag in .merlin: %s" tag)
         | `ERROR_MSG s -> ("ERROR", single s)

@@ -2,7 +2,19 @@
   > let a = 1 in a + 1 ;;
   > EOF
   {
-    "class": "error",
-    "value": "Destruct not allowed on value_binding",
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 1,
+          "col": 4
+        },
+        "end": {
+          "line": 1,
+          "col": 5
+        }
+      },
+      "0 | _"
+    ],
     "notifications": []
   }

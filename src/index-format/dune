@@ -7,4 +7,4 @@
   -open Ocaml_typing
   -open Ocaml_utils
   -open Merlin_utils)
- (libraries ocaml_parsing ocaml_typing ocaml_utils merlin_utils))
+ (libraries unix ocaml_parsing ocaml_typing ocaml_utils merlin_utils))

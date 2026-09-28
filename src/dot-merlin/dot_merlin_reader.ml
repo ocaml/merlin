@@ -115,6 +115,8 @@ module Cache = File_cache.Make (struct
           tell `EXCLUDE_QUERY_DIR
         else if String.is_prefixed ~by:"USE_PPX_CACHE" line then
           tell `USE_PPX_CACHE
+        else if String.is_prefixed ~by:"PPX_DEPS " line then
+          tell (`PPX_DEPS (String.drop (String.length "PPX_DEPS ") line))
         else if String.is_prefixed ~by:"#" line then ()
         else tell (`UNKNOWN_TAG (String.split_on_char ~sep:' ' line |> List.hd));
         aux ()
@@ -327,8 +329,8 @@ let prepend_config ~cwd ~cfg =
   List.fold_left ~init:cfg
     ~f:(fun cfg (d : Merlin_dot_protocol.Directive.Raw.t) ->
       match d with
-      | (`B _ | `S _ | `BH _ | `SH _ | `CMI _ | `CMT _ | `INDEX _) as directive
-        ->
+      | (`B _ | `S _ | `BH _ | `SH _ | `CMI _ | `CMT _ | `INDEX _ | `PPX_DEPS _)
+        as directive ->
         { cfg with to_canonicalize = (cwd, directive) :: cfg.to_canonicalize }
       | ( `EXT _
         | `SUFFIX _
@@ -413,6 +415,8 @@ let postprocess cfg =
               List.map (expand ~stdlib dir path) ~f:(fun p -> `CMT p)
             | `INDEX path ->
               List.map (expand ~stdlib dir path) ~f:(fun p -> `INDEX p)
+            | `PPX_DEPS path ->
+              List.map (expand ~stdlib dir path) ~f:(fun p -> `PPX_DEPS p)
           in
           (dirs :> Merlin_dot_protocol.directive list));
       (cfg.pass_forward :> Merlin_dot_protocol.directive list);

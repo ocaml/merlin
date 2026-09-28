@@ -29,6 +29,9 @@
 
 open Std
 
+val parse_position :
+  string -> [> `End | `Logical of int * int | `Offset of int | `Start ]
+
 type command =
   | Command :
       string

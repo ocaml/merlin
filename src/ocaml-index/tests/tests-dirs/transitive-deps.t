@@ -20,8 +20,8 @@
 
 # We pass explicitely the implicit transitive dependency over lib2:
   $ ocaml-index aggregate -o main.uideps main.cmt -I lib2
-  $ ocaml-index aggregate -o lib1/foo.uideps lib1/foo.cmt
-  $ ocaml-index aggregate -o lib2/bar.uideps lib2/bar.cmt
+  $ (cd lib1 ; ocaml-index aggregate -o foo.uideps foo.cmt)
+  $ (cd lib2 ; ocaml-index aggregate -o bar.uideps bar.cmt)
 
   $ ocaml-index aggregate -o test.uideps main.uideps lib1/foo.uideps lib2/bar.uideps
 

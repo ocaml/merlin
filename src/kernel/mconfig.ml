@@ -89,6 +89,7 @@ type merlin =
     log_sections : string list;
     config_path : string option;
     use_ppx_cache : bool;
+    ppx_dependencies : string list;
     exclude_query_dir : bool;
     flags_to_apply : string list with_workdir list;
     flags_applied : string list with_workdir list;
@@ -266,7 +267,8 @@ let merge_merlin_config dot merlin ~failures ~config_path =
     reader = (if dot.reader = [] then merlin.reader else dot.reader);
     flags_to_apply = dot.flags @ merlin.flags_to_apply;
     failures = failures @ merlin.failures;
-    config_path = Some config_path
+    config_path = Some config_path;
+    ppx_dependencies = dot.ppx_dependencies @ merlin.ppx_dependencies
   }
 
 let get_external_config path t =
@@ -678,6 +680,7 @@ let initial =
         config_path = None;
         exclude_query_dir = false;
         use_ppx_cache = false;
+        ppx_dependencies = [];
         flags_to_apply = [];
         flags_applied = [];
         failures = [];

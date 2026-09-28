@@ -45,30 +45,30 @@ let arg ?(kind = `Mandatory) name doc action = (kind, (name, doc, action))
 let optional x = arg ~kind:`Optional x
 let many x = arg ~kind:`Many x
 
-let marg_position f =
-  Marg.param "position" (function
-    | "start" -> f `Start
-    | "end" -> f `End
-    | str -> (
-      match int_of_string str with
-      | n -> f (`Offset n)
-      | exception _ -> (
-        match
-          let offset = String.index str ':' in
-          let line = String.sub str ~pos:0 ~len:offset in
-          let col =
-            String.sub str ~pos:(offset + 1)
-              ~len:(String.length str - offset - 1)
-          in
-          `Logical (int_of_string line, int_of_string col)
-        with
-        | pos -> f pos
-        | exception _ ->
-          failwithf
-            "expecting position, got %S. position can be \
-             start|end|<offset>|<line>:<col>, where offset, line and col are \
-             numbers, lines are indexed from 1."
-            str)))
+let parse_position = function
+  | "start" -> `Start
+  | "end" -> `End
+  | str -> (
+    match int_of_string str with
+    | n -> `Offset n
+    | exception _ -> (
+      match
+        let offset = String.index str ':' in
+        let line = String.sub str ~pos:0 ~len:offset in
+        let col =
+          String.sub str ~pos:(offset + 1) ~len:(String.length str - offset - 1)
+        in
+        `Logical (int_of_string line, int_of_string col)
+      with
+      | pos -> pos
+      | exception _ ->
+        failwithf
+          "expecting position, got %S. position can be \
+           start|end|<offset>|<line>:<col>, where offset, line and col are \
+           numbers, lines are indexed from 1."
+          str))
+
+let marg_position f = Marg.param "position" (fun s -> f (parse_position s))
 
 let marg_completion_kind f =
   Marg.param "completion-kind" (function

@@ -177,3 +177,15 @@ val descriptions : description list
 
 (* merlin *)
 val dump : ?verbose:bool -> unit -> Std.json
+
+type modifier =
+  | Set
+  | Clear
+  | Set_all
+
+type token =
+  | Letter of char * modifier option
+  | Num of int * int * modifier
+
+val parse_warnings : string -> token list
+

@@ -74,7 +74,7 @@ type node =
   | Binding_op of binding_op
   | Include_description of include_description
   | Include_declaration of include_declaration
-  | Open_description of open_description
+  | Open_description of open_description * Env.t
   | Open_declaration of open_declaration
   | Method_call of expression * meth * Location.t
   | Record_field of
@@ -102,7 +102,8 @@ let node_update_env env0 = function
   | Structure_item (_, env)
   | Signature_item (_, env)
   | Core_type { ctyp_env = env }
-  | Class_type { cltyp_env = env } -> env
+  | Class_type { cltyp_env = env }
+  | Open_description (_, env) -> env
   | Dummy
   | Case _
   | Class_structure _
@@ -140,7 +141,6 @@ let node_update_env env0 = function
   | Class_type_field _
   | Include_description _
   | Include_declaration _
-  | Open_description _
   | Open_declaration _
   | Binding_op _ -> env0
 
@@ -178,7 +178,7 @@ let node_real_loc loc0 = function
   | Extension_constructor { ext_loc = loc }
   | Include_description { incl_loc = loc }
   | Include_declaration { incl_loc = loc }
-  | Open_description { open_loc = loc }
+  | Open_description ({ open_loc = loc }, _)
   | Open_declaration { open_loc = loc }
   | Binding_op { bop_op_name = { loc } } -> loc
   | Module_type_declaration_name { mtd_name = loc } -> loc.Location.loc
@@ -213,7 +213,7 @@ let node_attributes = function
   | Module_type mt -> mt.mty_attributes
   | Module_declaration md -> md.md_attributes
   | Module_type_declaration mtd -> mtd.mtd_attributes
-  | Open_description o -> o.open_attributes
+  | Open_description (o, _) -> o.open_attributes
   | Include_declaration i -> i.incl_attributes
   | Include_description i -> i.incl_attributes
   | Core_type ct -> ct.ctyp_attributes
@@ -242,25 +242,35 @@ let has_attr ~name node =
       str.Location.txt = name)
     attrs
 
+let node_loc_stack node =
+  let stack = node_attributes node in
+  List.fold_left stack
+    ~f:(fun acc { Parsetree.attr_name; _ } ->
+      if Location_aux.is_loc_stack_location attr_name then attr_name.loc :: acc
+      else acc)
+    ~init:[]
+
 let node_merlin_loc loc0 node =
   let attributes = node_attributes node in
-  let loc =
+  let relaxed_loc loc attributes =
     let open Parsetree in
     let pred { attr_name = loc; _ } = Location_aux.is_relaxed_location loc in
     match List.find attributes ~f:pred with
     | { attr_name; _ } -> attr_name.Location.loc
-    | exception Not_found -> node_real_loc loc0 node
+    | exception Not_found -> loc
+  in
+  let loc = relaxed_loc (node_real_loc loc0 node) attributes in
+  let extra_loc loc extra =
+    List.fold_left
+      ~f:(fun loc0 (_, loc, attributes) ->
+        let loc = relaxed_loc loc attributes in
+        Location_aux.union loc0 loc)
+      ~init:loc extra
   in
   let loc =
     match node with
-    | Expression { exp_extra; _ } ->
-      List.fold_left
-        ~f:(fun loc0 (_, loc, _) -> Location_aux.union loc0 loc)
-        ~init:loc exp_extra
-    | Pattern { pat_extra; _ } ->
-      List.fold_left
-        ~f:(fun loc0 (_, loc, _) -> Location_aux.union loc0 loc)
-        ~init:loc pat_extra
+    | Expression { exp_extra; _ } -> extra_loc loc exp_extra
+    | Pattern { pat_extra; _ } -> extra_loc loc pat_extra
     | _ -> loc
   in
   loc
@@ -514,9 +524,9 @@ and of_module_type_desc = function
     ** of_module_type mt
   | Tmty_typeof me -> of_module_expr me
 
-and of_signature_item_desc = function
+and of_signature_item_desc sig_env = function
   | Tsig_attribute _ -> id_fold
-  | Tsig_open d -> app (Open_description d)
+  | Tsig_open d -> app (Open_description (d, sig_env))
   | Tsig_value vd -> app (Value_description vd)
   | Tsig_type (_, tds) -> list_fold (fun td -> app (Type_declaration td)) tds
   | Tsig_typext text -> app (Type_extension text)
@@ -619,7 +629,8 @@ let of_node = function
         | None -> app (Signature_item (item, sig_final_env))
         | Some item' -> app (Signature_item (item, item'.sig_env)))
       sig_items
-  | Signature_item ({ sig_desc }, _) -> of_signature_item_desc sig_desc
+  | Signature_item ({ sig_desc; sig_env }, _) ->
+    of_signature_item_desc sig_env sig_desc
   | Module_declaration md ->
     of_module_type md.md_type ** app (Module_declaration_name md)
   | Module_type_declaration mtd ->

@@ -14,6 +14,7 @@ let root = ref ""
 let rewrite_root = ref false
 let store_shapes = ref false
 let do_not_use_cmt_loadpath = ref false
+let cache_size_kb = ref 1_000_000
 
 type command = Aggregate | Dump | Stats
 
@@ -38,7 +39,10 @@ let anon_fun arg =
 let speclist =
   [ ("--verbose", Arg.Set verbose, "Output more information");
     ("--debug", Arg.Set debug, "Output debugging information");
-    ("-o", Arg.Set_string output_file, "Set output file name");
+    ( "-o",
+      Arg.Set_string output_file,
+      "Set output file name. Note that sub-indexes paths remains relative to \
+       the current directory." );
     ( "--root",
       Arg.Set_string root,
       "Set the root path for all relative locations" );
@@ -63,7 +67,11 @@ let speclist =
     ( "--no-cmt-load-path",
       Arg.Set do_not_use_cmt_loadpath,
       "Do not initialize the load path with the paths found in the first input \
-       cmt file" )
+       cmt file" );
+    ( "--cache-size",
+      Arg.Set_int cache_size_kb,
+      "Set LRU cache size in kb. Will bound memory usage in read-heavy \
+       scenarios. Defaults to 1_000_000 (1gb)" )
   ]
 
 let set_log_level debug verbose =
@@ -74,6 +82,7 @@ let set_log_level debug verbose =
 let () =
   Arg.parse speclist anon_fun usage_msg;
   set_log_level !debug !verbose;
+  Granular_marshal.set_lru_size (!cache_size_kb * 1000);
   try
     (match !command with
     | Some Aggregate ->
@@ -114,6 +123,7 @@ let () =
             (Option.value ~default:"none" root_directory))
         !input_files
     | _ -> Printf.printf "Nothing to do.\n%!");
+    if !debug then Granular_marshal.get_lru () |> Dbllist.pp_stats;
     exit 0
   with Granular_marshal.Outdated_store { filename; reason } ->
     let msg =
