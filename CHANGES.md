@@ -9,6 +9,7 @@ unreleased
     - Fix oversharing in Parsetree cache (#2131)
     - Add `PPX_DEPS` to advertise PPX dependencies in Merlin configuration
       (#2127)
+    - Stop printing ghost bindings in outline (#2135)
   + merlin binary
     - Use c library flags from `ocamlc -config`. Fixes Haiku build (#2124)
   + test suite
