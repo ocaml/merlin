@@ -543,9 +543,6 @@ module D = struct
       ({ paths; substs }, more)
     with Not_found -> ({ paths; substs }, [])
 
-  (* [apparent] is the path the module is reachable under, which may be shorter
-     than [path] when we got here by following an alias: the components we add
-     are named under it, but identified by their real path. *)
   let d3_rule env path paths substs sig_ =
     let pdot id = Path.Pdot (path, Ident.name id) in
     List.fold_left
