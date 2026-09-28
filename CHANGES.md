@@ -16,6 +16,7 @@ unreleased
       in issue #1786 (#2002)
     - Add a test reproducing the locate command failure when editor position is
       in another declaration (#2033)
+    - Add a test to ensure the behavior showed in issue #1980
 
 merlin 5.8.1
 ============
