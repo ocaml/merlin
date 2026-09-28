@@ -74,12 +74,16 @@ This should say "Already at definition point" (we're defining the label):
     "notifications": []
   }
 
-FIXME we failed to parse/reconstruct the ident, that's interesting
-
   $ $MERLIN single locate -look-for ml -position 16:16 -filename ./test.ml < ./test.ml
   {
     "class": "return",
-    "value": "Not a valid identifier",
+    "value": {
+      "file": "$TESTCASE_ROOT/test.ml",
+      "pos": {
+        "line": 13,
+        "col": 11
+      }
+    },
     "notifications": []
   }
 
