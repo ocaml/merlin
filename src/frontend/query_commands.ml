@@ -705,7 +705,25 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     (* Sort errors *)
     let cmp e1 e2 =
       let n = Lexing.compare_pos (error_start e1) (error_start e2) in
-      if n <> 0 then n else Lexing.compare_pos (error_end e1) (error_end e2)
+      if n <> 0 then n
+      else
+        let n = Lexing.compare_pos (error_end e1) (error_end e2) in
+        if n <> 0 then n
+        else
+          let severity (e : Location.error) =
+            match e.source with
+            | Location.Warning ->
+              let msg = Format.asprintf "@[%a@]" Location.print_main e |> String.trim in
+              if String.is_prefixed ~by:"Error" msg then 1
+              else 2
+            | _ -> 0
+          in
+          let n = Int.compare (severity e1) (severity e2) in
+          if n <> 0 then n
+          else
+            let m1 = Format.asprintf "%a" Location.print_main e1 in
+            let m2 = Format.asprintf "%a" Location.print_main e2 in
+            String.compare m1 m2
     in
     let errors =
       List.sort_uniq ~cmp
