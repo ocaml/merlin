@@ -24,6 +24,22 @@ See https://github.com/ocaml/ocaml-lsp/issues/2143
         "type": "typer",
         "sub": [],
         "valid": true,
+        "message": "This expression has type Random.State.t -> S.elt
+  but an expression was expected of type 'a
+  The type constructor S.elt would escape its scope"
+      },
+      {
+        "start": {
+          "line": 4,
+          "col": 2
+        },
+        "end": {
+          "line": 4,
+          "col": 48
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
         "message": "Error (warning 5): this function application is partial,
   maybe some arguments are missing."
       }
@@ -46,6 +62,21 @@ See https://github.com/ocaml/ocaml-lsp/issues/2143
   {
     "class": "return",
     "value": [
+      {
+        "start": {
+          "line": 6,
+          "col": 14
+        },
+        "end": {
+          "line": 6,
+          "col": 17
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "This expression has type unit -> unit but an expression was expected of type
+    int"
+      },
       {
         "start": {
           "line": 6,
@@ -94,6 +125,21 @@ See https://github.com/ocaml/ocaml-lsp/issues/2143
         "valid": true,
         "message": "Alert deprecated: M.f
   dep"
+      },
+      {
+        "start": {
+          "line": 6,
+          "col": 9
+        },
+        "end": {
+          "line": 6,
+          "col": 12
+        },
+        "type": "warning",
+        "sub": [],
+        "valid": true,
+        "message": "Alert myalert: M.f
+  alrt"
       }
     ],
     "notifications": []
