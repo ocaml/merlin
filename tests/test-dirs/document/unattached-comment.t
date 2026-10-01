@@ -32,7 +32,8 @@ And that it also works outside of the current buffer:
     "notifications": []
   }
 
-A doc comment written for a local let is not attached by the compiler either:
+A doc comment written for a local let is not attached by the compiler either.
+Local names cannot be documented, so Merlin does not return it (#1809).
 
   $ cat >test.ml <<EOF
   > let foo () =
@@ -49,6 +50,6 @@ A doc comment written for a local let is not attached by the compiler either:
   $ $MERLIN single document -position 3:15 -filename test.ml < test.ml
   {
     "class": "return",
-    "value": "doc of y",
+    "value": "No documentation available",
     "notifications": []
   }

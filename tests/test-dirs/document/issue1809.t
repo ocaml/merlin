@@ -14,11 +14,11 @@ asked about one of its parameters (issue #1809).
 
 Get doc for the usage of the optional parameter pp
   $ document_pos 3:24
-  some doc
+  No documentation available
 
 Get doc for the definition of pp
   $ document_pos 2:10
-  some doc
+  No documentation available
 
 The same happens for any local name whose definition is next to the doc comment:
 on the line after it, on the same line, or on the line before it. The documented
@@ -32,7 +32,7 @@ Labelled parameter
   $ document_pos 2:4
   doc
   $ document_pos 2:15
-  doc
+  No documentation available
 
 Local let binding
   $ cat > test.ml <<EOF
@@ -40,7 +40,7 @@ Local let binding
   > let foo () = let x = 1 in x
   > EOF
   $ document_pos 2:26
-  doc
+  No documentation available
 
 Plain parameter and pattern variable
   $ cat > test.ml <<EOF
@@ -48,9 +48,9 @@ Plain parameter and pattern variable
   > let foo o = match o with Some v -> v | None -> 0
   > EOF
   $ document_pos 2:8
-  doc
+  No documentation available
   $ document_pos 2:35
-  doc
+  No documentation available
 
 Anonymous function parameter
   $ cat > test.ml <<EOF
@@ -58,7 +58,7 @@ Anonymous function parameter
   > let foo = fun y -> y
   > EOF
   $ document_pos 2:19
-  doc
+  No documentation available
 
 Doc comment after the definition, on the same line
   $ cat > test.ml <<EOF
@@ -67,7 +67,7 @@ Doc comment after the definition, on the same line
   $ document_pos 1:4
   doc
   $ document_pos 1:12
-  doc
+  No documentation available
 
 Doc comment on the line after the definition
   $ cat > test.ml <<EOF
@@ -77,7 +77,7 @@ Doc comment on the line after the definition
   $ document_pos 1:4
   doc
   $ document_pos 1:12
-  doc
+  No documentation available
 
 When the parameter is not on the line right after the doc comment, no doc is
 returned
@@ -105,7 +105,7 @@ Names bound by a pattern inside a local let are local
   > let foo () = let (u, w) = (1, 2) in u + w
   > EOF
   $ document_pos 2:18
-  doc
+  No documentation available
 
 Self of an object
   $ cat > test.ml <<EOF
@@ -115,7 +115,7 @@ Self of an object
   $ document_pos 2:4
   doc
   $ document_pos 2:48
-  doc
+  No documentation available
 
 Class parameter
   $ cat > test.ml <<EOF
@@ -123,7 +123,7 @@ Class parameter
   > class c (x : int) = object method m = x end
   > EOF
   $ document_pos 2:38
-  doc
+  No documentation available
 
 Functor parameter
   $ cat > test.ml <<EOF
@@ -135,9 +135,9 @@ Functor parameter
   $ document_pos 4:7
   doc
   $ document_pos 4:10
-  doc
+  No documentation available
   $ document_pos 4:48
-  doc
+  No documentation available
 
 Functor parameter in a module type
   $ cat > test.ml <<EOF
@@ -149,7 +149,7 @@ Functor parameter in a module type
   $ document_pos 4:12
   doc
   $ document_pos 4:47
-  doc
+  No documentation available
 
 Functor parameter in an interface
   $ cat > test.mli <<EOF
@@ -163,7 +163,7 @@ Functor parameter in an interface
   doc
   $ ocamlmerlin single document -position 4:31 -filename test.mli < test.mli \
   >   | jq .value -r
-  doc
+  No documentation available
 
 Locally abstract type
   $ cat > test.ml <<EOF
@@ -173,7 +173,7 @@ Locally abstract type
   $ document_pos 2:4
   doc
   $ document_pos 2:20
-  doc
+  No documentation available
 
 Local module
   $ cat > test.ml <<EOF
@@ -183,7 +183,7 @@ Local module
   >   M.z
   > EOF
   $ document_pos 4:2
-  doc
+  No documentation available
 
 Local exception
   $ cat > test.ml <<EOF
@@ -193,7 +193,7 @@ Local exception
   >   try raise (E 1) with E k -> k
   > EOF
   $ document_pos 4:13
-  doc
+  No documentation available
 
 FIXME: x is not local but the doc comment belongs to M, not to x
   $ cat > test.ml <<EOF
@@ -215,4 +215,4 @@ Completion with documentation goes through the same code
   > EOF
   $ ocamlmerlin single complete-prefix -prefix pp -position 2:37 -doc y \
   >   -filename test.ml < test.ml | jq -c '.value.entries[] | {name, info}'
-  {"name":"pp","info":"some doc"}
+  {"name":"pp","info":""}

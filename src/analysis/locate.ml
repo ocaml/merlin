@@ -1076,8 +1076,47 @@ let get_doc ~buffer_source ~config:mconfig ~env ~local_defs ~comments ~pos =
         | Core_type _ :: Core_type _ :: Label_declaration _ :: _ -> true
         | _ -> false
       in
-      doc_from_comment_list ~buffer_source ~after_only ~buffer_comments:comments
-        loc
+      (* Local names (names bound inside an expression like function parameters,
+      let-in bindings, pattern variables, let module, functor parameters etc.)
+      should not be documented. Without this check, the location-based heuristic
+      would give them the comment of the enclosing item (issue #1809).*)
+      let is_local_name =
+        match declaration with
+        | Pattern _ :: _ ->
+          (* Case of a local name bound in a pattern.*)
+          begin match
+            List.drop_while
+              ~f:(function
+                | Browse_raw.Pattern _ -> true
+                | _ -> false)
+              declaration
+          with
+          | Value_binding _ :: Structure_item _ :: _ -> false
+          | _ -> true
+          end
+        | _ -> begin
+          let enclosing =
+            List.drop_while declaration ~f:(fun node ->
+                Location_aux.compare_pos loc.Location.loc_start
+                  (Mbrowse.node_merlin_loc node)
+                <> 0)
+          in
+          match enclosing with
+          | Expression _ :: _ -> true (* (type a), for loop index *)
+          | ( Module_expr { mod_desc = Tmod_functor (Named _, _); _ }
+            | Module_type { mty_desc = Tmty_functor (Named _, _); _ } )
+            :: _ -> true (* functor arguments *)
+          | Module_binding_name _ :: Module_binding _ :: Expression _ :: _ ->
+            true (* let module *)
+          | Extension_constructor _ :: Expression _ :: _ ->
+            true (* let exception *)
+          | _ -> false
+          end
+      in
+      if is_local_name then `No_documentation
+      else
+        doc_from_comment_list ~buffer_source ~after_only
+          ~buffer_comments:comments loc
     | `Builtin _ ->
       begin match path with
       | `User_input path -> `Builtin path
