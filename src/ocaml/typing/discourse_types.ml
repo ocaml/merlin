@@ -39,10 +39,12 @@ end
 
 module Paths = Set.Make (Item)
 
-let pp_paths ppf t =
+let pp_item_list ppf items =
   let pp_sep ppf () = Format.fprintf ppf ";@;" in
-  let paths = Paths.elements t |> List.map (fun (_, p) -> p) in
+  let paths = List.map (fun (_, p) -> p) items in
   Format.pp_print_list ~pp_sep (Format_doc.compat Path.print) ppf paths
+
+let pp_paths ppf t = pp_item_list ppf (Paths.elements t)
 
 module String_map = Map.Make (String)
 
@@ -214,12 +216,92 @@ module Path_trie = struct
       (to_seq t)
 end
 
-(* Paths rooted only in predefined idents are not recorded. Paths rooted only in
-   global (persistent) idents are kept apart in [extern] since substitutions
-   never apply to them. *)
-type t = { local : Paths.t; extern : Paths.t }
+(* The discourse of a declaration is stored in the declaration itself and
+   marshalled into cmi files. Arrays are much more compact than balanced sets,
+   both in memory and on disk: items are kept in sorted (by [Item.compare]),
+   duplicate-free arrays. Discourses are small, so the linear insertion and
+   merge below are cheap. Sets ([Paths]) are still used for the in-memory
+   tries. *)
+type t = { local : Item.t array; extern : Item.t array }
+let empty = { local = [||]; extern = [||] }
 
-let empty = { local = Paths.empty; extern = Paths.empty }
+let of_paths paths = Array.of_list (Paths.elements paths)
+
+(* Given a sorted array [items], [search_sorted item items] returns the index at
+   which [item] is, or should be inserted, and whether it is already there. *)
+let search_sorted item items =
+  let rec aux lo hi =
+    if lo >= hi then (lo, false)
+    else begin
+      let mid = (lo + hi) / 2 in
+      let c = Item.compare item items.(mid) in
+      if c = 0 then (mid, true)
+      else if c < 0 then aux lo mid
+      else aux (mid + 1) hi
+    end
+  in
+  aux 0 (Array.length items)
+
+(* Already present items are not replaced. *)
+let insert_uniq item items =
+  let i, present = search_sorted item items in
+  if present then items
+  else begin
+    let n = Array.length items in
+    let result = Array.make (n + 1) item in
+    Array.blit items 0 result 0 i;
+    Array.blit items i result (i + 1) (n - i);
+    result
+  end
+
+(* On ties the item of the first argument is kept. *)
+let merge_sorted a b =
+  let la = Array.length a and lb = Array.length b in
+  if la = 0 then b
+  else if lb = 0 then a
+  else begin
+    let result = Array.make (la + lb) a.(0) in
+    let k = ref 0 in
+    let push x =
+      result.(!k) <- x;
+      incr k
+    in
+    let i = ref 0 and j = ref 0 in
+    while !i < la && !j < lb do
+      let c = Item.compare a.(!i) b.(!j) in
+      if c = 0 then begin
+        push a.(!i);
+        incr i;
+        incr j
+      end
+      else if c < 0 then begin
+        push a.(!i);
+        incr i
+      end
+      else begin
+        push b.(!j);
+        incr j
+      end
+    done;
+    for i = !i to la - 1 do
+      push a.(i)
+    done;
+    for j = !j to lb - 1 do
+      push b.(j)
+    done;
+    if !k = la + lb then result else Array.sub result 0 !k
+  end
+
+let filter f items = Array.of_list (List.filter f (Array.to_list items))
+
+let filter_map f items =
+  Array.to_list items |> List.filter_map f |> Paths.of_list |> of_paths
+
+let fold f t acc =
+  let fold items acc = Array.fold_left (fun acc item -> f item acc) acc items in
+  fold t.extern (fold t.local acc)
+
+let pp_items ppf items = pp_item_list ppf (Array.to_list items)
 
 (* We record the stamp at the time of entering a new struct or sig during
    typing. This allows us to filter out siblings of the currently typed item
@@ -243,24 +325,22 @@ let is_sibling (path : Path.t) =
     end
   | Pdot _ | Papply _ | Pextra_ty _ -> false
 
-(* TODO CR Ulysse In Merlin recording item's discourses is not necessary because
-   everything is already in U *)
 let add ?(predef = false) ((_, path) as item) t =
   let heads = Path.heads path in
   if (not predef) && List.for_all Ident.is_predef heads then t
   else if is_sibling path then t
   else if List.for_all Ident.global heads then
-    { t with extern = Paths.add item t.extern }
-  else { t with local = Paths.add item t.local }
+    { t with extern = insert_uniq item t.extern }
+  else { t with local = insert_uniq item t.local }
 
 let singleton ?predef i = add ?predef i empty
 
 let union t t' =
-  { local = Paths.union t.local t'.local;
-    extern = Paths.union t.extern t'.extern
+  { local = merge_sorted t.local t'.local;
+    extern = merge_sorted t.extern t'.extern
   }
 
-let pp fmt t = pp_paths fmt (Paths.union t.local t.extern)
+let pp fmt t = pp_items fmt (merge_sorted t.local t.extern)
 
 (* A substitution maps a path to the paths it can be replaced with. *)
 type substs = Path.Set.t Path.Map.t

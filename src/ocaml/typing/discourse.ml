@@ -55,10 +55,7 @@ let { Logger.log = log_recap } = Logger.for_section recap_log_section
 
 let trie_of_paths (d : Discourse_types.t) =
   let open Discourse_types in
-  Paths.fold
-    (fun (kind, path) acc -> Path_trie.add path kind acc)
-    (Paths.union d.local d.extern)
-    Path_trie.empty
+  fold (fun (kind, path) acc -> Path_trie.add path kind acc) d Path_trie.empty
 
 let pp_d fmt d =
   let open Discourse_types in
