@@ -71,7 +71,7 @@ Normalization will stop here because 'a <> 'a Or_error.t
     Async_kernel__!.Deferred1
   
   t: Deferred/312.t; Async_kernel__!.Or_error.t
-  return: t/313
+  return: 
 
 
   $ cat >deferred.ml <<'EOF'
@@ -90,7 +90,7 @@ Normalization will stop here because 'a <> 'a Or_error.t
   $ ocamlobjinfo -quiet -discourse Async_kernel__Deferred.cmi
   Discourse:
   t: Async_kernel__!.Deferred1.t
-  return: t/286
+  return: 
   Or_error: alias: Deferred_or_error [Async_kernel__!.Deferred_or_error]
     Async_kernel__!.Deferred_or_error
   
@@ -127,13 +127,13 @@ Normalization will stop here because 'a <> 'a Or_error.t
   Discourse:
   Deferred: 
   Deferred.t: Async_kernel__!.Deferred1.t
-  Deferred.return: t/342
+  Deferred.return: 
   Deferred.Or_error: 
   Deferred.Or_error.Deferred: alias: Deferred1 [Async_kernel__!.Deferred1]
     Async_kernel__!.Deferred1
   
   Deferred.Or_error.t: Deferred/345.t; Async_kernel__!.Or_error.t
-  Deferred.Or_error.return: t/346
+  Deferred.Or_error.return: 
 
   $ cd ..
 

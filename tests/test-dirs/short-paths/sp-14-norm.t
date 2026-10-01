@@ -66,7 +66,7 @@ some point.
   Discourse:
   Deferred: 
   Deferred.t: 
-  Deferred.create: t/288
+  Deferred.create: 
 
   $ ocamlobjinfo -quiet -discourse async_kernel/async_kernel.cmi
   Discourse:
@@ -76,7 +76,7 @@ some point.
   $ ocamlobjinfo -quiet -discourse async_kernel/async_kernel__Deferred.cmi
   Discourse:
   t: 
-  create: t/277
+  create: 
 
   $ $MERLIN single type-enclosing -position 3:5 \
   > -filename test.ml < test.ml 
