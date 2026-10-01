@@ -326,6 +326,7 @@ module U = struct
       (fun u sig_item ->
         match (sig_item : Subst.Lazy.signature_item) with
         | SigL_type (id, _, _, _) ->
+          (* TODO CR Ulysse we probably want to use a fresh ident here *)
           log ~title:"U3" "U3: type %a brought in scope by open" Logger.fmt
             (Fun.flip Ident.print id);
           let full_path = path_of_ident ~root:open_path id in
@@ -338,6 +339,7 @@ module U = struct
         | SigL_typext (_, _, _, _) -> u
         | SigL_module (id, Mp_present, { mdl_type = MtyL_signature s; _ }, _, _)
           ->
+          (* TODO CR Ulysse we should not recurse here *)
           (* We recursively bring everything that is directly defined in the
              opened module, but without following aliases. *)
           log ~title:"U3" "U3: module (present) %a brought in scope by open"
