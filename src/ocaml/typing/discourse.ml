@@ -205,7 +205,8 @@ module U = struct
       | Papply (p1, p2) ->
         let acc = aux acc Module p2 in
         aux acc Module p1
-      | _ -> (* TODO Handle extra ? *) acc
+      | Pextra_ty (p, Pcstr_ty _) -> aux acc Type p
+      | Pextra_ty (p, Pext_ty) -> aux acc Extension_constructor p
     in
     aux init kind path
 
