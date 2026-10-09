@@ -24,15 +24,15 @@ and module type aliases.
   > EOF
 
 
-FIXME [M.t] is a different abstract type, this should be [Foo.S.t]:
+[M.t] is a different abstract type, this should be [Foo.S.t]:
   $ $MERLIN single type-enclosing -short-paths -position 2:4 -index 0 \
   > -filename test.ml < test.ml | jq -r '.value[0].type'
-  M.t
+  Foo.S.t
 
-FIXME Should be [Long.S.t]:
+Should be [Long.S.t]:
   $ $MERLIN single type-enclosing -short-paths -position 6:4 -index 0 \
   > -filename test2.ml < test2.ml | jq -r '.value[0].type'
-  M.t
+  Long.S.t
 
 Should be [M.t]:
   $ $MERLIN single type-enclosing -short-paths -position 7:4 -index 0 \

@@ -295,9 +295,9 @@ module U = struct
     let u = define ~from Module ?root id u in
     let root = path_of_ident ?root id in
     match decl.md_type with
-    | Mty_ident path | Mty_alias path -> add_subst_u path root u
+    | Mty_alias path -> add_subst_u path root u
     | Mty_signature module_type -> define_signature ~from ~root module_type u
-    | _ -> u
+    | Mty_ident _ | Mty_functor _ | Mty_for_hole -> u
 
   and define_modtype ?(from = `File) ?root ?full_path id u =
     define ~from ?root ?full_path Module_type id u
