@@ -196,19 +196,6 @@ module U = struct
   let merge_discourse paths u =
     { u with discourse = Path_trie.union (trie_of_paths paths) u.discourse }
 
-  let fold_on_common_lid_and_path_segments ~init ~kind ~f (lid, path) =
-    let rec aux acc kind ((lid, path) : Longident.t * Path.t) =
-      let acc = f acc kind (lid, path) in
-      match (lid, path) with
-      | Lident _, Pident _ -> acc
-      | Ldot (l, _), Pdot (p, _) -> aux acc Module (l.txt, p)
-      | Lapply (l1, l2), Papply (p1, p2) ->
-        let acc = aux acc Module (l2.txt, p2) in
-        aux acc Module (l1.txt, p1)
-      | _ -> acc
-    in
-    aux init kind (lid, path)
-
   let fold_on_path_segments ~init ~kind ~f path =
     let rec aux acc kind (path : Path.t) =
       let acc = f acc kind path in
