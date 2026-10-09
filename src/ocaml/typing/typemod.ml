@@ -3346,8 +3346,6 @@ and type_str_item ~names ~toplevel ~funct_body anchor env shape_map
           Builtin_attributes.warning_scope sincl.pincl_attributes
             (fun () -> type_module ~strengthen:true ~funct_body None env smodl)
         in
-        Option.iter (fun (_, (_, path)) -> Discourse.open_module env path)
-          discourse.alias;
         let scope = Ctype.create_scope () in
         (* Rename all identifiers bound by this signature to avoid clashes *)
         let sg, shape, new_env =
@@ -3380,6 +3378,8 @@ and type_str_item ~names ~toplevel ~funct_body anchor env shape_map
             | sig_item -> sig_item)
             sg
         in
+        Option.iter (fun (_, (_, path)) -> Discourse.include_module env path)
+          discourse.alias;
         let () = Discourse.define_signature sg in
         Signature_group.iter (Signature_names.check_sig_item names loc) sg;
         let incl =
@@ -3448,6 +3448,7 @@ let type_module_type_of env smod =
     | Pmod_ident lid -> (* turn off strengthening in this case *)
         let path, md = Env.lookup_module ~loc:smod.pmod_loc lid.txt env in
         Discourse.use_module env lid path;
+        Discourse.modtype_of_components env path;
           { mod_desc = Tmod_ident (path, lid);
             mod_type = md.md_type;
             mod_env = env;

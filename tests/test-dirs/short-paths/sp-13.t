@@ -125,17 +125,17 @@ Dump the discourse so regressions show up as a diff in this test:
     Async!.Let_syntax -> {item = (module, Async!.Let_syntax)};
     Async!.Let_syntax.return -> {item = (value, Async!.Let_syntax.return)}];
     substs =
-    Async!.Deferred -> [Deferred/17];
-    Async!.Let_syntax -> [Let_syntax/18];
-    Async_kernel__!.Deferred -> [Deferred/17];
-    Async_kernel__Deferred!.Let_syntax.Let_syntax -> [Let_syntax/18] }
+    Async!.Deferred -> [Deferred/19];
+    Async!.Let_syntax -> [Let_syntax/20];
+    Async_kernel__!.Deferred -> [Deferred/19];
+    Async_kernel__Deferred!.Let_syntax.Let_syntax -> [Let_syntax/20] }
   # discourse-recap - D
   Final D:
   Discourse {
     size = 74;
     paths =
-    Let_syntax/18 [module: Async!.Let_syntax];
-    Deferred/17 [module: Async!.Deferred];
+    Let_syntax/20 [module: Async!.Let_syntax];
+    Deferred/19 [module: Async!.Deferred];
     Async_kernel__Deferred! [module: Async_kernel__Deferred!];
     Async_kernel__Deferred!.t [type: Async_kernel__Deferred!.t];
     Async_kernel__Deferred!.Let_syntax
@@ -178,12 +178,12 @@ Dump the discourse so regressions show up as a diff in this test:
     substs =
     [Async_kernel__Deferred! -> [Async!.Deferred; Async_kernel__!.Deferred];
     Async_kernel__Deferred0! -> [Async_kernel__!.Deferred0];
-    Async!.Deferred -> [Deferred/17; Async_kernel__!.Deferred];
-    Async!.Let_syntax -> [Let_syntax/18; Async!.Deferred.Let_syntax.Let_syntax];
-    Async_kernel__!.Deferred -> [Async_kernel__Deferred!; Deferred/17];
+    Async!.Deferred -> [Deferred/19; Async_kernel__!.Deferred];
+    Async!.Let_syntax -> [Let_syntax/20; Async!.Deferred.Let_syntax.Let_syntax];
+    Async_kernel__!.Deferred -> [Async_kernel__Deferred!; Deferred/19];
     Async_kernel__Deferred!.Let_syntax -> [Async!.Deferred.Let_syntax];
     Async_kernel__Deferred!.Let_syntax.Let_syntax ->
-      [Let_syntax/18; Async!.Let_syntax; Async!.Deferred.Let_syntax.Let_syntax]]
+      [Let_syntax/20; Async!.Let_syntax; Async!.Deferred.Let_syntax.Let_syntax]]
     }
   # discourse-recap - U
   U at start of D.of_U:
@@ -192,12 +192,12 @@ Dump the discourse so regressions show up as a diff in this test:
     substs =
     Async_kernel__Deferred! -> [Async!.Deferred; Async_kernel__!.Deferred];
     Async_kernel__Deferred0! -> [Async_kernel__!.Deferred0];
-    Async!.Deferred -> [Deferred/17; Async_kernel__!.Deferred];
-    Async!.Let_syntax -> [Let_syntax/18; Async!.Deferred.Let_syntax.Let_syntax];
-    Async_kernel__!.Deferred -> [Async_kernel__Deferred!; Deferred/17];
+    Async!.Deferred -> [Deferred/19; Async_kernel__!.Deferred];
+    Async!.Let_syntax -> [Let_syntax/20; Async!.Deferred.Let_syntax.Let_syntax];
+    Async_kernel__!.Deferred -> [Async_kernel__Deferred!; Deferred/19];
     Async_kernel__Deferred!.Let_syntax -> [Async!.Deferred.Let_syntax];
     Async_kernel__Deferred!.Let_syntax.Let_syntax ->
-      [Let_syntax/18; Async!.Let_syntax; Async!.Deferred.Let_syntax.Let_syntax] }
+      [Let_syntax/20; Async!.Let_syntax; Async!.Deferred.Let_syntax.Let_syntax] }
   # discourse-recap - D
   Final D:
   Discourse {
@@ -207,12 +207,12 @@ Dump the discourse so regressions show up as a diff in this test:
     substs =
     [Async_kernel__Deferred! -> [Async!.Deferred; Async_kernel__!.Deferred];
     Async_kernel__Deferred0! -> [Async_kernel__!.Deferred0];
-    Async!.Deferred -> [Deferred/17; Async_kernel__!.Deferred];
-    Async!.Let_syntax -> [Let_syntax/18; Async!.Deferred.Let_syntax.Let_syntax];
-    Async_kernel__!.Deferred -> [Async_kernel__Deferred!; Deferred/17];
+    Async!.Deferred -> [Deferred/19; Async_kernel__!.Deferred];
+    Async!.Let_syntax -> [Let_syntax/20; Async!.Deferred.Let_syntax.Let_syntax];
+    Async_kernel__!.Deferred -> [Async_kernel__Deferred!; Deferred/19];
     Async_kernel__Deferred!.Let_syntax -> [Async!.Deferred.Let_syntax];
     Async_kernel__Deferred!.Let_syntax.Let_syntax ->
-      [Let_syntax/18; Async!.Let_syntax; Async!.Deferred.Let_syntax.Let_syntax]]
+      [Let_syntax/20; Async!.Let_syntax; Async!.Deferred.Let_syntax.Let_syntax]]
     }
   {
     "class": "return",

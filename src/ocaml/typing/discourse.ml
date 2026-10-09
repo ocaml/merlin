@@ -95,6 +95,8 @@ open Discourse_types
 module Item_map = Map.Make (Item)
 
 module U = struct
+  type ident_mode = Keep | Refresh
+
   (* We build U lazily: during typing we only log [event]s, and the actual work
      (walking signatures, looking up the environment, building the tries) only
      happens in [force], which is called by [D.of_U] the first time something
@@ -125,8 +127,10 @@ module U = struct
     | Defined_signature of Types.signature
         (** Rule U3: the components brought by an [include], or by opening a
             module expression ([open struct ... end]) *)
-    | Opened of { env : Env.t; path : Path.t }
-        (** Rule U3: the components brought by opening a module path *)
+    | Brought_in_scope of
+        { env : Env.t; path : Path.t; ident_mode : ident_mode }
+        (** Rule U3: the components of a module path brought in scope by an
+            [open], an [include] (or a [module type of]) *)
 
   type u =
     { u_paths : Env.t Item_map.t;
@@ -325,52 +329,71 @@ module U = struct
      just to make sure they do.
   *)
 
-  (* [open_path] is the path of the module being opened. [path_under_open] is
-     the current path relative to the path of the module being opened.
+  (* [open_path] is the path of the module whose components are brought in
+     scope. [path_under_open] is the current path relative to [open_path].
 
      A component [x] is known under two paths: [path_under_open.x], the one the
      user can write now that the module is opened (and the one we want to print)
      and [open_path.x], the one valid in the current environment. We record the
      pair, so that a candidate coming out of an [open] can still be checked
      against an environment and filed under the right canonical path. *)
-  let define_signature_for_open ~env ~open_path ?path_under_open
+  let define_signature_components ~mode ~env ~open_path ?path_under_open
       (sg : Subst.Lazy.signature) u =
-    (* We add every component's apparent name to D and full path to U *)
+    let from, by =
+      match mode with
+      | Refresh -> (`Open, "open")
+      | Keep -> (`Include, "include")
+    in
+    (* We add every component's full path to U and its apparent name, if any,
+       to D *)
     List.fold_left
       (fun u sig_item ->
         let lid id = Location.mknoloc (Longident.Lident (Ident.name id)) in
+        let map_id id =
+          (* In some cases we don't want to keep the signature ids because they
+             don't make sense in the current environement. This is notable the
+             case when opening a module. *)
+          match mode with
+          | Refresh ->
+            (* We keep the scope for sorting *)
+            let scope = Ident.scope id in
+            if scope = Ident.highest_scope then Ident.rename id
+            else Ident.create_scoped ~scope (Ident.name id)
+          | Keep -> id
+        in
         match (sig_item : Subst.Lazy.signature_item) with
         | SigL_type (id, _, _, _) ->
-          (* TODO CR Ulysse we probably want to use a fresh ident here *)
-          log ~title:"U3" "U3: type %a brought in scope by open" Logger.fmt
-            (Fun.flip Ident.print id);
+          let id = map_id id in
+          log ~title:"U3" "U3: type %a brought in scope by %s" Logger.fmt
+            (Fun.flip Ident.print id) by;
           let full_path = path_of_ident ~root:open_path id in
           let u = use_type env (lid id) full_path u in
-          define_type ~from:`Open ?root:path_under_open ~full_path id u
+          define_type ~from ?root:path_under_open ~full_path id u
         | SigL_value (id, _, _) ->
-          log ~title:"U3" "U3: value %a brought in scope by open" Logger.fmt
-            (Fun.flip Ident.print id);
+          let id = map_id id in
+          log ~title:"U3" "U3: value %a brought in scope by %s" Logger.fmt
+            (Fun.flip Ident.print id) by;
           let full_path = path_of_ident ~root:open_path id in
           let u = use_value env (lid id) full_path u in
-          define_value ~from:`Open ?root:path_under_open ~full_path id u
+          define_value ~from ?root:path_under_open ~full_path id u
         | SigL_typext (_, _, _, _) -> u
         | SigL_module (id, _, { mdl_type = MtyL_signature _; _ }, _, _) ->
-          log ~title:"U3" "U3: module (known sig) %a brought in scope by open"
-            Logger.fmt (Fun.flip Ident.print id);
+          let id = map_id id in
+          log ~title:"U3" "U3: module (known sig) %a brought in scope by %s"
+            Logger.fmt (Fun.flip Ident.print id) by;
           let full_path = path_of_ident ~root:open_path id in
           let u =
             use_module env (lid id) full_path u
-            |> define ~from:`Open Module ?root:path_under_open ~full_path id
+            |> define ~from Module ?root:path_under_open ~full_path id
           in
           let path_under_open = path_of_ident ?root:path_under_open id in
           add_subst_u full_path path_under_open u
         | SigL_module (id, _, { mdl_type; _ }, _, _) ->
-          log ~title:"U3" "U3: module %a brought in scope by open" Logger.fmt
-            (Fun.flip Ident.print id);
+          let id = map_id id in
+          log ~title:"U3" "U3: module %a brought in scope by %s" Logger.fmt
+            (Fun.flip Ident.print id) by;
           let full_path = path_of_ident ~root:open_path id in
-          let u =
-            define ~from:`Open Module ?root:path_under_open ~full_path id u
-          in
+          let u = define ~from Module ?root:path_under_open ~full_path id u in
           let path_under_open = path_of_ident ?root:path_under_open id in
           let u =
             match mdl_type with
@@ -379,25 +402,27 @@ module U = struct
           in
           add_subst_u full_path path_under_open u
         | SigL_modtype (id, _, _) ->
-          log ~title:"U3" "U3: module type %a brought in scope by open"
-            Logger.fmt (Fun.flip Ident.print id);
+          let id = map_id id in
+          log ~title:"U3" "U3: module type %a brought in scope by %s" Logger.fmt
+            (Fun.flip Ident.print id) by;
           let full_path = path_of_ident ~root:open_path id in
           let u = use_modtype env (lid id) full_path u in
-          define_modtype ~from:`Open ?root:path_under_open ~full_path id u
+          define_modtype ~from ?root:path_under_open ~full_path id u
         | SigL_class (_, _, _, _) | SigL_class_type (_, _, _, _) ->
           (* TODO: do *) u)
       u
       (Subst.Lazy.force_signature_once sg)
 
-  let open_module env path u =
-    log ~title:"U3" "U3: open module %a" Logger.fmt (fun fmt ->
-        (Format_doc.compat Path.print) fmt path);
+  let bring_components ~mode env path u =
+    log ~title:"U3" "U3: components of module %a brought in scope" Logger.fmt
+      (fun fmt -> (Format_doc.compat Path.print) fmt path);
     try
-      (* When opening we need to traverse the aliases to get the components *)
+      (* We need to traverse the aliases to get the components *)
       let open_path = Env.normalize_module_path None env path in
       let md = Env.find_module_lazy open_path env in
       match Mtype.scrape_lazy env md.mdl_type with
-      | MtyL_signature sg -> define_signature_for_open ~env ~open_path sg u
+      | MtyL_signature sg ->
+        define_signature_components ~mode ~env ~open_path sg u
       | _ -> u
     with Not_found -> u
 
@@ -439,7 +464,8 @@ module U = struct
     | Defined { kind; id } -> define ~from:`File kind id u
     | Defined_module { decl; id } -> define_module ~from:`File decl id u
     | Defined_signature sg -> define_signature ~from:`Include sg u
-    | Opened { env; path } -> open_module env path u
+    | Brought_in_scope { env; path; ident_mode } ->
+      bring_components ~mode:ident_mode env path u
 
   let force u =
     match u.pending with
@@ -737,7 +763,12 @@ let define_type id = record (Defined { kind = Type; id })
 let define_modtype id = record (Defined { kind = Module_type; id })
 let define_module decl id = record (Defined_module { decl; id })
 let define_signature sg = record (Defined_signature sg)
-let open_module env path = record (Opened { env; path })
+let open_module env path =
+  record (Brought_in_scope { env; path; ident_mode = Refresh })
+let include_module env path =
+  record (Brought_in_scope { env; path; ident_mode = Keep })
+let modtype_of_components env path =
+  record (Brought_in_scope { env; path; ident_mode = Refresh })
 
 (* Process all pending U events and save the result so that this is only done
    once even if both [get] and [debug_print] are called. *)
