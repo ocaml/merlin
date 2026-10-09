@@ -92,7 +92,7 @@ let { Logger.log } = Logger.for_section log_section
 open Shape.Sig_component_kind
 open Discourse_types
 
-module Item_map = Map.Make(Item)
+module Item_map = Map.Make (Item)
 
 module U = struct
   (* We build U lazily: during typing we only log [event]s, and the actual work
@@ -156,7 +156,6 @@ module U = struct
     in
     fprintf fmt "@[<v 2>{ u_paths =@ %a;@ substs =@ %a }@]" pp_u_paths u.u_paths
       Discourse_types.pp_substs u.substs
-
 
   let add_item item env u =
     if Item_map.mem item u.u_paths then u
@@ -724,9 +723,7 @@ module D = struct
           loop (Paths.add item seen) d
         end
     in
-    let d =
-      loop Paths.empty { paths = u.U.discourse; substs = u.U.substs }
-    in
+    let d = loop Paths.empty { paths = u.U.discourse; substs = u.U.substs } in
     log_recap ~title:"D" "Final D:\n%a" Logger.fmt (Fun.flip pp_d d);
     d
 
