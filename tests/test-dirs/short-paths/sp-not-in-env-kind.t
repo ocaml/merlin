@@ -7,8 +7,8 @@ restored when the environment changes. It should be correctly restored.
   > let _ : (module M.S) = 1
   > EOF
 
-FIXME: The first error, printed in second, should show [module S]
+The first error, printed in second, should show [module S]
   $ $MERLIN single errors -short-paths -filename test.ml < test.ml \
   > | tr '\n' ' ' | jq -r '.value[] | "\(.start.line): \(.message)"'
-  2: The constant 1 has type int but an expression was expected of type   (module M.S)
+  2: The constant 1 has type int but an expression was expected of type (module S)
   3: The constant 1 has type int but an expression was expected of type   (module M.S)

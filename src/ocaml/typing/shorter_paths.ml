@@ -507,7 +507,9 @@ let process_queue env state ~table ~canon_path target_kind best =
            called multiple times with the same environment. This notably happens
            when printing module signatures, and they can be quite large. *)
         let queue = Priority_queue.remove item state.queue in
-        let not_in_env = Path_trie.add path Type state.not_in_env in
+        let not_in_env =
+          Path_trie.add ~full_path path (kind_of_kind kind) state.not_in_env
+        in
         { queue; not_in_env }
         end
     in
