@@ -3346,6 +3346,8 @@ and type_str_item ~names ~toplevel ~funct_body anchor env shape_map
           Builtin_attributes.warning_scope sincl.pincl_attributes
             (fun () -> type_module ~strengthen:true ~funct_body None env smodl)
         in
+        Option.iter (fun (_, (_, path)) -> Discourse.open_module env path)
+          discourse.alias;
         let scope = Ctype.create_scope () in
         (* Rename all identifiers bound by this signature to avoid clashes *)
         let sg, shape, new_env =

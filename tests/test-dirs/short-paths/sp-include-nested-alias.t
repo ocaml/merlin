@@ -30,7 +30,7 @@ Including a module path should bring its components in U
   > -filename test_open.ml < test_open.ml | tr '\n' ' ' | jq -r '.value[0].type'
   sig   module For_tests :     sig module Compact_position = Mylib.For_tests.Compact_position end end
 
-FIXME This should also be [Mylib.For_tests.Compact_position]:
+This should also be [Mylib.For_tests.Compact_position]:
   $ $MERLIN single type-enclosing -short-paths -position 1:9 -index 0 \
   > -filename test_include.ml < test_include.ml | tr '\n' ' ' | jq -r '.value[0].type'
-  sig   module For_tests :     sig module Compact_position = Mylib__Compact_position end end
+  sig   module For_tests :     sig module Compact_position = Mylib.For_tests.Compact_position end end
