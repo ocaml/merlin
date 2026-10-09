@@ -532,10 +532,19 @@ module D = struct
     loop substs path
 
   let special_rule_for_aliases env { paths; substs } path alias_lid alias_path =
+    (* TODO CR Ulysse Working on the longident here does not feel right. *)
     try
+      let recorded_path = alias_path in
       let alias_path, _ =
         Env.find_module_by_name_lazy (Untypeast.lident_of_path alias_path) env
       in
+      if
+        not
+          (Path.same alias_path recorded_path
+          || Path.same
+               (Env.normalize_module_path None env alias_path)
+               (Env.normalize_module_path None env recorded_path))
+      then raise Not_found;
       let substs =
         log ~title:"D12S" "D12S: subst %a -> %a[%a] (alias at %a)" Logger.fmt
           (Fun.flip (Format_doc.compat Path.print) path)
