@@ -21,7 +21,7 @@ In the implementation:
   > -filename b.ml < b.ml | jq -r '.value[0].type'
   t -> t
 
-FIXME In the interface, this should also be [t -> t]:
+In the interface, this should also be [t -> t]:
   $ $MERLIN single type-enclosing -short-paths -position 2:4 -index 0 \
   > -filename b.mli < b.mli | jq -r '.value[0].type'
-  Long.Path.u -> Long.Path.u
+  t -> t
