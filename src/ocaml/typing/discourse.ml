@@ -395,7 +395,7 @@ module U = struct
       (* When opening we need to traverse the aliases to get the components *)
       let open_path = Env.normalize_module_path None env path in
       let md = Env.find_module_lazy open_path env in
-      match md.mdl_type with
+      match Mtype.scrape_lazy env md.mdl_type with
       | MtyL_signature sg -> define_signature_for_open ~env ~open_path sg u
       | _ -> u
     with Not_found -> u

@@ -11,4 +11,4 @@ in scope.
 FIXME This should be [t]:
   $ $MERLIN single type-enclosing -short-paths -position 4:4 -index 0 \
   > -filename test.ml < test.ml | jq -r '.value[0].type'
-  M.t
+  t

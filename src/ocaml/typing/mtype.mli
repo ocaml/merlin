@@ -17,6 +17,7 @@
 
 open Types
 
+val scrape_lazy: Env.t -> Subst.Lazy.modtype -> Subst.Lazy.modtype
 val scrape: Env.t -> module_type -> module_type
         (* Expand toplevel module type abbreviations
            till hitting a "hard" module type (signature, functor,
