@@ -31,16 +31,16 @@ type defined in an internal compilation unit:
   > module F (X : Per_item) = X
   > EOF
 
-FIXME The definition of [Per_item] should not mention the internal [Mylib__]:
+The definition of [Per_item] should not mention the internal [Mylib__]:
   $ $MERLIN single type-enclosing -short-paths -position 1:9 -index 0 \
   > -filename test.ml < test.ml | tr '\n' ' ' | jq -r '.value[0].type'
-  sig   module type Per_item = Mylib__.Per_item_intf.S   module type Other = sig type u end end
+  sig   module type Per_item = Mylib.Per_item   module type Other = sig type u end end
 
   $ $MERLIN single type-enclosing -short-paths -position 2:7 -index 0 \
   > -filename test.ml < test.ml | tr '\n' ' ' | jq -r '.value[0].type'
   (X : Per_item) -> sig type t = X.t val x : t end
 
-FIXME [Per_item] is in scope thanks to the open:
+[Per_item] is in scope thanks to the open:
   $ $MERLIN single type-enclosing -short-paths -position 2:7 -index 0 \
   > -filename test2.ml < test2.ml | jq -r '.value[0].type'
-  (X : Mylib.Per_item) -> sig type t = X.t val x : t end
+  (X : Per_item) -> sig type t = X.t val x : t end

@@ -2080,7 +2080,7 @@ let add_sigitem env x =
 
 let rec tree_of_modtype ?(ellipsis=false) = function
   | Mty_ident p ->
-    let p = best_module_path p in
+    let p = best_module_type_path p in
       Omty_ident (tree_of_path (Some Module_type) p)
   | Mty_signature sg ->
       Omty_signature (if ellipsis then [Osig_ellipsis]
