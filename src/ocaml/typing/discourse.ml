@@ -11,7 +11,9 @@ We call U the set of all paths used directly in a file:
 - 3. All paths for things “defined” using include or open in the current file
      are in U. It is possible that all of these would end up in D anyway via
      other rules, but it's not entirely obvious so I've included this rule here
-     just to make sure they do.
+     just to make sure they do. [We refined the rule a bit: opened components
+     are put in U except opened module aliases for which we only register a
+     substitution, to avoid loading their compilation unit.]
 - Note that constructors or fields only used via type-based disambiguation are
   not in U.
 
@@ -301,89 +303,6 @@ module U = struct
   and define_modtype ?(from = `File) ?root ?full_path id u =
     define ~from ?root ?full_path Module_type id u
 
-  (** {1 Rule U3}
-
-     All paths for things “defined” using include or open in the current file
-     are in U. It is possible that all of these would end up in D anyway via
-     other rules, but it's not entirely obvious so I've included this rule here
-     just to make sure they do.
-  *)
-
-  (* [open_path] is the path of the module being opened. [path_under_open] is
-     the current path relative to the path of the module being opened.
-
-     A component [x] is known under two paths: [path_under_open.x], the one the
-     user can write now that the module is opened (and the one we want to print)
-     and [open_path.x], the one valid in the current environment. We record the
-     pair, so that a candidate coming out of an [open] can still be checked
-     against an environment and filed under the right canonical path. *)
-  let rec define_signature_for_open ~open_path ?path_under_open
-      (sg : Subst.Lazy.signature) u =
-    List.fold_left
-      (fun u sig_item ->
-        match (sig_item : Subst.Lazy.signature_item) with
-        | SigL_type (id, _, _, _) ->
-          (* TODO CR Ulysse we probably want to use a fresh ident here *)
-          log ~title:"U3" "U3: type %a brought in scope by open" Logger.fmt
-            (Fun.flip Ident.print id);
-          let full_path = path_of_ident ~root:open_path id in
-          define_type ~from:`Open ?root:path_under_open ~full_path id u
-        | SigL_value (id, _, _) ->
-          log ~title:"U3" "U3: value %a brought in scope by open" Logger.fmt
-            (Fun.flip Ident.print id);
-          let full_path = path_of_ident ~root:open_path id in
-          define_value ~from:`Open ?root:path_under_open ~full_path id u
-        | SigL_typext (_, _, _, _) -> u
-        | SigL_module (id, Mp_present, { mdl_type = MtyL_signature s; _ }, _, _)
-          ->
-          (* TODO CR Ulysse we should not recurse here *)
-          (* We recursively bring everything that is directly defined in the
-             opened module, but without following aliases. *)
-          log ~title:"U3" "U3: module (present) %a brought in scope by open"
-            Logger.fmt (Fun.flip Ident.print id);
-          let full_path = path_of_ident ~root:open_path id in
-          let u =
-            define ~from:`Open Module ?root:path_under_open ~full_path id u
-          in
-          let path_under_open = path_of_ident ?root:path_under_open id in
-          let u = add_subst_u full_path path_under_open u in
-          define_signature_for_open ~open_path:full_path ~path_under_open s u
-        | SigL_module (id, _, { mdl_type; _ }, _, _) ->
-          log ~title:"U3" "U3: module %a brought in scope by open" Logger.fmt
-            (Fun.flip Ident.print id);
-          let full_path = path_of_ident ~root:open_path id in
-          let u =
-            define ~from:`Open Module ?root:path_under_open ~full_path id u
-          in
-          let path_under_open = path_of_ident ?root:path_under_open id in
-          let u =
-            match mdl_type with
-            | MtyL_alias alias_path -> add_subst_u alias_path path_under_open u
-            | _ -> u
-          in
-          add_subst_u full_path path_under_open u
-        | SigL_modtype (id, _, _) ->
-          log ~title:"U3" "U3: module type %a brought in scope by open"
-            Logger.fmt (Fun.flip Ident.print id);
-          let full_path = path_of_ident ~root:open_path id in
-          define_modtype ~from:`Open ?root:path_under_open ~full_path id u
-        | SigL_class (_, _, _, _) | SigL_class_type (_, _, _, _) ->
-          (* TODO: do *) u)
-      u
-      (Subst.Lazy.force_signature_once sg)
-
-  let open_module env path u =
-    log ~title:"U3" "U3: open module %a" Logger.fmt (fun fmt ->
-        (Format_doc.compat Path.print) fmt path);
-    try
-      (* When opening we need to traverse the aliases to get the components *)
-      let open_path = Env.normalize_module_path None env path in
-      let md = Env.find_module_lazy open_path env in
-      match md.mdl_type with
-      | MtyL_signature sg -> define_signature_for_open ~open_path sg u
-      | _ -> u
-    with Not_found -> u
-
   (** {1 Rule U1}
 
       Any path occurring in the file is in U. For example, List.map occurring in
@@ -410,6 +329,90 @@ module U = struct
   let use_modtype env lid path = add_used env Module_type lid path
   let use_type env lid path = add_used env Type lid path
   let use_value env lid path = add_used env Value lid path
+
+  (** {1 Rule U3}
+
+     All paths for things “defined” using include or open in the current file
+     are in U. It is possible that all of these would end up in D anyway via
+     other rules, but it's not entirely obvious so I've included this rule here
+     just to make sure they do.
+  *)
+
+  (* [open_path] is the path of the module being opened. [path_under_open] is
+     the current path relative to the path of the module being opened.
+
+     A component [x] is known under two paths: [path_under_open.x], the one the
+     user can write now that the module is opened (and the one we want to print)
+     and [open_path.x], the one valid in the current environment. We record the
+     pair, so that a candidate coming out of an [open] can still be checked
+     against an environment and filed under the right canonical path. *)
+  let define_signature_for_open ~env ~open_path ?path_under_open
+      (sg : Subst.Lazy.signature) u =
+    (* We add every component's apparent name to D and full path to U *)
+    List.fold_left
+      (fun u sig_item ->
+        let lid id = Location.mknoloc (Longident.Lident (Ident.name id)) in
+        match (sig_item : Subst.Lazy.signature_item) with
+        | SigL_type (id, _, _, _) ->
+          (* TODO CR Ulysse we probably want to use a fresh ident here *)
+          log ~title:"U3" "U3: type %a brought in scope by open" Logger.fmt
+            (Fun.flip Ident.print id);
+          let full_path = path_of_ident ~root:open_path id in
+          let u = use_type env (lid id) full_path u in
+          define_type ~from:`Open ?root:path_under_open ~full_path id u
+        | SigL_value (id, _, _) ->
+          log ~title:"U3" "U3: value %a brought in scope by open" Logger.fmt
+            (Fun.flip Ident.print id);
+          let full_path = path_of_ident ~root:open_path id in
+          let u = use_value env (lid id) full_path u in
+          define_value ~from:`Open ?root:path_under_open ~full_path id u
+        | SigL_typext (_, _, _, _) -> u
+        | SigL_module (id, _, { mdl_type = MtyL_signature _; _ }, _, _) ->
+          log ~title:"U3" "U3: module (known sig) %a brought in scope by open"
+            Logger.fmt (Fun.flip Ident.print id);
+          let full_path = path_of_ident ~root:open_path id in
+          let u =
+            use_module env (lid id) full_path u
+            |> define ~from:`Open Module ?root:path_under_open ~full_path id
+          in
+          let path_under_open = path_of_ident ?root:path_under_open id in
+          add_subst_u full_path path_under_open u
+        | SigL_module (id, _, { mdl_type; _ }, _, _) ->
+          log ~title:"U3" "U3: module %a brought in scope by open" Logger.fmt
+            (Fun.flip Ident.print id);
+          let full_path = path_of_ident ~root:open_path id in
+          let u =
+            define ~from:`Open Module ?root:path_under_open ~full_path id u
+          in
+          let path_under_open = path_of_ident ?root:path_under_open id in
+          let u =
+            match mdl_type with
+            | MtyL_alias alias_path -> add_subst_u alias_path path_under_open u
+            | _ -> u
+          in
+          add_subst_u full_path path_under_open u
+        | SigL_modtype (id, _, _) ->
+          log ~title:"U3" "U3: module type %a brought in scope by open"
+            Logger.fmt (Fun.flip Ident.print id);
+          let full_path = path_of_ident ~root:open_path id in
+          let u = use_modtype env (lid id) full_path u in
+          define_modtype ~from:`Open ?root:path_under_open ~full_path id u
+        | SigL_class (_, _, _, _) | SigL_class_type (_, _, _, _) ->
+          (* TODO: do *) u)
+      u
+      (Subst.Lazy.force_signature_once sg)
+
+  let open_module env path u =
+    log ~title:"U3" "U3: open module %a" Logger.fmt (fun fmt ->
+        (Format_doc.compat Path.print) fmt path);
+    try
+      (* When opening we need to traverse the aliases to get the components *)
+      let open_path = Env.normalize_module_path None env path in
+      let md = Env.find_module_lazy open_path env in
+      match md.mdl_type with
+      | MtyL_signature sg -> define_signature_for_open ~env ~open_path sg u
+      | _ -> u
+    with Not_found -> u
 
   (* [what] is ["constructor"] or ["label"], [discourse] is the discourse of
      the constructor or label ([cstr_discourse] or [lbl_discourse]). *)
