@@ -35,10 +35,10 @@ and not `Uchar.utf_decode`. Removing the `type uch.. := int` fixes the issue.
   > end
   > EOF 
 
-FIXME Here we also expect is_valid: t -> bool
+The items printed before [is_valid] are candidates: we expect [is_valid : t -> bool]
   $ $MERLIN single type-enclosing -position 11:1 -short-paths \
   > -filename uchar_intf.ml < uchar_intf.ml | tr '\n' ' ' | jq '.value[0].type'
-  "sig   type t = Uchar.t   module Decode_result :     sig       type tlong = Uchar.utf_decode       type t = tlong       val is_valid : tlong -> bool     end end"
+  "sig   type t = Uchar.t   module Decode_result :     sig       type tlong = Uchar.utf_decode       type t = tlong       val is_valid : t -> bool     end end"
 
 
 Example from the manual

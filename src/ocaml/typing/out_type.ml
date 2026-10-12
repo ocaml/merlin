@@ -2076,7 +2076,11 @@ let with_hidden_items ids f =
 
 
 let add_sigitem env x =
-  Env.add_signature (Signature_group.flatten x) env
+  let sg = Signature_group.flatten x in
+  let env = Env.add_signature sg env in
+  if not (!Clflags.real_paths || !Clflags.legacy_short_path) then
+    Discourse.printed_signature env sg;
+  env
 
 let rec tree_of_modtype ?(ellipsis=false) = function
   | Mty_ident p ->
@@ -2132,11 +2136,14 @@ and trees_of_recursive_sigitem_group env
   let display (x:Signature_group.sig_item) = x.src, tree_of_sigitem x.src in
   let env = Env.add_signature syntactic_group.pre_ghosts env in
   match syntactic_group.group with
-  | Not_rec x -> add_sigitem env x, [display x]
+  (* We have to print the item before adding them to the environment *)
+  | Not_rec x ->
+      let trees = [display x] in
+      add_sigitem env x, trees
   | Rec_group items ->
       let ids = List.map (fun x -> ident_sigitem x.Signature_group.src) items in
-      List.fold_left add_sigitem env items,
-      with_hidden_items ids (fun () -> List.map display items)
+      let trees = with_hidden_items ids (fun () -> List.map display items) in
+      List.fold_left add_sigitem env items, trees
 
 and tree_of_sigitem = function
   | Sig_value(id, decl, _) ->

@@ -86,6 +86,8 @@ This mocks the Async --include--> Async_kernel --exports--> Deferred
     Async_kernel__Deferred! -> [Deferred/24];
     Async!.Deferred -> [Deferred/24];
     Async!.Let_syntax -> [Let_syntax/25];
+    Async_kernel!.Deferred -> [Deferred/24];
+    Async_kernel!.Let_syntax -> [Let_syntax/25];
     Async_kernel__Deferred!.Let_syntax.Let_syntax -> [Let_syntax/25] }
   # discourse-recap - D
   Final D:
@@ -228,6 +230,8 @@ Dump the discourse so regressions show up as a diff in this test:
     Async_kernel__Deferred! -> [Deferred/24];
     Async!.Deferred -> [Deferred/24];
     Async!.Let_syntax -> [Let_syntax/25];
+    Async_kernel!.Deferred -> [Deferred/24];
+    Async_kernel!.Let_syntax -> [Let_syntax/25];
     Async_kernel__Deferred!.Let_syntax.Let_syntax -> [Let_syntax/25] }
   # discourse-recap - D
   Final D:
