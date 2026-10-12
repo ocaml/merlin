@@ -397,7 +397,9 @@ module U = struct
           let path_under_open = path_of_ident ?root:path_under_open id in
           let u =
             match mdl_type with
-            | MtyL_alias alias_path -> add_subst_u alias_path path_under_open u
+            | MtyL_alias alias_path ->
+              let target = Env.normalize_module_path None env alias_path in
+              add_subst_u target path_under_open u
             | _ -> u
           in
           add_subst_u full_path path_under_open u
