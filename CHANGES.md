@@ -1,5 +1,6 @@
-unreleased
+merlin 5.9
 ==========
+Mon Oct 01 15:31:42 CEST 2026
 
   + merlin library
     - destruct: allow to destruct let-bindings's patterns (#2117)
