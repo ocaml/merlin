@@ -20,7 +20,7 @@
 In single mode the signature of [M] is printed with [t]
   $ $MERLIN single type-enclosing -short-paths -position 12:9 \
   > -filename main.ml < main.ml | jq '.value[0].type'
-  "sig type 'a t = 'a option list val id : 'a t -> 'a t end"
+  "sig type 'a t = 'a option list val id : 'a T.t -> 'a T.t end"
 
 A first query, after [include M], fills the short-paths state
   $ $MERLIN server type-enclosing -short-paths -position 14:5 \
@@ -30,6 +30,6 @@ A first query, after [include M], fills the short-paths state
 We expect the same result as in single mode
   $ $MERLIN server type-enclosing -short-paths -position 12:9 \
   > -filename main.ml < main.ml | jq '.value[0].type'
-  "sig type 'a t = 'a option list val id : 'a t -> 'a t end"
+  "sig type 'a t = 'a option list val id : 'a T.t -> 'a T.t end"
 
   $ $MERLIN server stop-server

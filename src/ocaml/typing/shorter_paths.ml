@@ -286,24 +286,6 @@ let normalize env kind path =
   | Module -> Env.normalize_module_path None env path
   | Module_type -> Env.normalize_modtype_path env path
 
-(* Two type paths that do not normalize to the same path can still denote equal
-   types, e.g. a type and its copy made by [include]: normalization stops on the
-   copy when its parameters do not match its manifest's arguments (see test
-   sp-include-copy-server). *)
-let equal_types env kind path path' =
-  match kind with
-  | Module | Module_type -> false
-  | Type ->
-    let decl = Env.find_type path env in
-    let decl' = Env.find_type path' env in
-    decl.type_arity = decl'.type_arity
-    &&
-    let mk_constr p =
-      (* Same construction as in [Includecore.type_declarations]. *)
-      Btype.newgenty (Types.Tconstr (p, decl.type_params, ref Types.Mnil))
-    in
-    Ctype.is_equal env false [ mk_constr path ] [ mk_constr path' ]
-
 let find_path_by_name env kind apparent_path full_path =
   (* TODO it might be worth it to memoïze this function *)
   match find_path_by_name env kind apparent_path with
@@ -329,11 +311,7 @@ let find_path_by_name env kind apparent_path full_path =
         log ~title:"find_path_in_env" "%a <>? %a" Logger.fmt
           (Fun.flip path_print path) Logger.fmt
           (Fun.flip path_print path');
-        if Path.compare path path' == 0 then Some path_in_env
-        else
-          let equal = equal_types env kind path path' in
-          log ~title:"find_path_in_env" "Equal types: %b" equal;
-          if equal then Some path_in_env else None
+        if Path.compare path path' == 0 then Some path_in_env else None
       with Not_found -> None)
 
 (* [full_path] is used to disambiguate when a lookup by name is required *)
