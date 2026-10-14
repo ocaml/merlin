@@ -382,17 +382,6 @@ module U = struct
           let u = use_value env (lid id) full_path u in
           define_value ~from ?root:path_under_open ~full_path id u
         | SigL_typext (_, _, _, _) -> u
-        | SigL_module (id, _, { mdl_type = MtyL_signature _; _ }, _, _) ->
-          let id = map_id id in
-          log ~title:"U3" "U3: module (known sig) %a brought in scope by %s"
-            Logger.fmt (Fun.flip Ident.print id) by;
-          let full_path = path_of_ident ?root:open_path id in
-          let u =
-            use_module env (lid id) full_path u
-            |> define ~from Module ?root:path_under_open ~full_path id
-          in
-          let path_under_open = path_of_ident ?root:path_under_open id in
-          add_subst_u full_path ~by:path_under_open u
         | SigL_module (id, _, { mdl_type; _ }, _, _) ->
           let id = map_id id in
           log ~title:"U3" "U3: module %a brought in scope by %s" Logger.fmt
@@ -403,9 +392,14 @@ module U = struct
           let u =
             match mdl_type with
             | MtyL_alias alias_path ->
+              (* This cuts CMI loading by a lot while providing reasonnable
+                 results. *)
+              (* TODO CR Ulysse Maybe we could have some lazynes here to keep
+                      the benefit of adding to U while preventing unnecessary
+                      CMI loads ? *)
               let target = Env.normalize_module_path None env alias_path in
               add_subst_u target ~by:path_under_open u
-            | _ -> u
+            | _ -> use_module env (lid id) full_path u
           in
           add_subst_u full_path ~by:path_under_open u
         | SigL_modtype (id, _, _) ->
