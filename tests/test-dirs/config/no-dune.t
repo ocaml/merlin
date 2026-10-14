@@ -1,6 +1,6 @@
   $ mkdir bin
-  $ cp $(which ocamlmerlin) bin/ocamlmerlin
-  $ cp $(which ocamlmerlin-server) bin/ocamlmerlin-server
+  $ cp $(command -v ocamlmerlin) bin/ocamlmerlin
+  $ cp $(command -v ocamlmerlin-server) bin/ocamlmerlin-server
 
   $ cat >dune-project <<EOF
   > (lang dune 2.0)
