@@ -216,22 +216,24 @@ module U = struct
     in
     aux init kind path
 
-  let add_subst substs path by_path =
+  let add_subst substs path ~by:by_path =
     log ~title:"subst" "subst: %a -> %a (open/alias defined in file)" Logger.fmt
       (Fun.flip (Format_doc.compat Path.print) path)
       Logger.fmt
       (Fun.flip (Format_doc.compat Path.print) by_path);
-    let substs =
-      Path.Map.update path
-        (function
-          | None -> Some (Path.Set.singleton by_path)
-          | Some paths -> Some (Path.Set.add by_path paths))
-        substs
-    in
-    substs
+    if Path.same path by_path then substs
+    else
+      let substs =
+        Path.Map.update path
+          (function
+            | None -> Some (Path.Set.singleton by_path)
+            | Some paths -> Some (Path.Set.add by_path paths))
+          substs
+      in
+      substs
 
-  let add_subst_u path path' u =
-    { u with substs = add_subst u.substs path path' }
+  let add_subst_u path ~by:path' u =
+    { u with substs = add_subst u.substs path ~by:path' }
 
   (** {1 Rules U2 and U3: paths defined in the current file, or brought in scope
       by an include or an open} *)
@@ -289,7 +291,7 @@ module U = struct
     let u = define ~from Module ?root id u in
     let root = path_of_ident ?root id in
     match decl.md_type with
-    | Mty_alias path -> add_subst_u path root u
+    | Mty_alias path -> add_subst_u path ~by:root u
     | Mty_signature module_type -> define_signature ~from ~root module_type u
     | Mty_ident _ | Mty_functor _ | Mty_for_hole -> u
 
@@ -347,11 +349,6 @@ module U = struct
       | Refresh, Some _ -> (`Open, "open")
       | Keep, Some _ -> (`Include, "include")
     in
-    (* Without [open_path] the full path and the apparent path of a component
-       are the same. *)
-    let add_subst_u path path' u =
-      if Path.same path path' then u else add_subst_u path path' u
-    in
     (* We add every component's full path to U and its apparent name, if any,
        to D *)
     List.fold_left
@@ -395,7 +392,7 @@ module U = struct
             |> define ~from Module ?root:path_under_open ~full_path id
           in
           let path_under_open = path_of_ident ?root:path_under_open id in
-          add_subst_u full_path path_under_open u
+          add_subst_u full_path ~by:path_under_open u
         | SigL_module (id, _, { mdl_type; _ }, _, _) ->
           let id = map_id id in
           log ~title:"U3" "U3: module %a brought in scope by %s" Logger.fmt
@@ -407,10 +404,10 @@ module U = struct
             match mdl_type with
             | MtyL_alias alias_path ->
               let target = Env.normalize_module_path None env alias_path in
-              add_subst_u target path_under_open u
+              add_subst_u target ~by:path_under_open u
             | _ -> u
           in
-          add_subst_u full_path path_under_open u
+          add_subst_u full_path ~by:path_under_open u
         | SigL_modtype (id, _, _) ->
           let id = map_id id in
           log ~title:"U3" "U3: module type %a brought in scope by %s" Logger.fmt
@@ -525,14 +522,14 @@ module D = struct
   (* TODO: this is not really a chain, just increasingly large jumps. This
      reduces the number of combinations when unrolling substitutions but we might
      need the missing internal aliases. *)
-  let follow_aliases_adding_subst log_detail env substs path path' =
+  let follow_aliases_adding_subst log_detail env substs path ~subst_by:path' =
     let add_to_substs substs path path' =
       log ~title:"D12" "D12: subst %a -> %a (%s)" Logger.fmt
         (Fun.flip (Format_doc.compat Path.print) path)
         Logger.fmt
         (Fun.flip (Format_doc.compat Path.print) path')
         log_detail;
-      U.add_subst substs path path'
+      U.add_subst substs path ~by:path'
     in
     let rec loop substs path =
       match path with
@@ -569,7 +566,7 @@ module D = struct
           (Fun.flip (Format_doc.compat Path.print) alias_path)
           Logger.fmt
           (Fun.flip Location.print_loc alias_lid.loc);
-        U.add_subst substs path alias_path
+        U.add_subst substs alias_path ~by:path
       in
       (* TODO: This is an unwritten rule (yet): If a module in U is an alias
          then this alias is also in U. The alias path and its module prefixes
@@ -608,7 +605,7 @@ module D = struct
             match md.mdl_type with
             | MtyL_alias path' ->
               follow_aliases_adding_subst "sub-component is a module alias" env
-                substs path' (pdot id)
+                substs path' ~subst_by:(pdot id)
             | _ -> substs
           in
           (paths, substs)
@@ -644,7 +641,8 @@ module D = struct
            We accumulate such substitution and will apply them when shortening
            a path. *)
       let substs =
-        follow_aliases_adding_subst "Mty_alias target" env substs path' path
+        follow_aliases_adding_subst "Mty_alias target" env substs path'
+          ~subst_by:path
       in
       (* We have to follow aliases to be able to add module components to
            the discourse.
