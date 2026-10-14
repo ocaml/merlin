@@ -429,7 +429,7 @@ module U = struct
       let md = Env.find_module_lazy open_path env in
       match Mtype.scrape_lazy env md.mdl_type with
       | MtyL_signature sg ->
-        define_signature_components ~mode ~env ~open_path sg u
+        define_signature_components ~mode ~env ~open_path:path sg u
       | _ -> u
     with Not_found -> u
 
