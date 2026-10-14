@@ -165,7 +165,6 @@ module Path_tbl = Hashtbl.Make (struct
   let hash = Hashtbl.hash
 end)
 
-module Uid = Shape.Uid
 module Kinds = Discourse_types.Kinds
 module Priority_queue = Path_set
 module Path_trie = Discourse_types.Path_trie
@@ -287,84 +286,23 @@ let normalize env kind path =
   | Module -> Env.normalize_module_path None env path
   | Module_type -> Env.normalize_modtype_path env path
 
-let find_uid env kind path =
+(* Two type paths that do not normalize to the same path can still denote equal
+   types, e.g. a type and its copy made by [include]: normalization stops on the
+   copy when its parameters do not match its manifest's arguments (see test
+   sp-include-copy-server). *)
+let equal_types env kind path path' =
   match kind with
-  | Type -> (Env.find_type path env).type_uid
-  | Module -> (Env.find_module_lazy path env).mdl_uid
-  | Module_type -> (Env.find_modtype_lazy path env).mtdl_uid
-
-(* TODO CR Ulysse: should we instead add more informations to the discourse CMIs
-   and stop using that workaround ?
-
-   Two paths can canonicalize differently while denoting the same type
-   declaration: [include] preserves declarations uid, but included types that
-   are not a pure alias will not [normalize_type_path] through (see test sp-14).
-   We workaround this by choosing  a single representative for canonical paths
-   that share the same uid. Note that a shared uid does not necessarily means
-   identity: two applications of the same functor share the uids of the
-   declarations while producing different types (see test
-   short-paths-functor-uid)
-
-   We only do that for [Type] paths module aliases are already resolved by
-   [Env.normalize_module_path]. *)
-type uid_canon_entry =
-  { repr : Path.t;
-    mutable accepted : Path.Set.t;
-    mutable rejected : Path.Set.t
-  }
-
-let canon_reprs : uid_canon_entry Uid.Tbl.t ref =
-  Local_store.s_table Uid.Tbl.create 64
-
-let equal_type_decls env (path, (decl : Types.type_declaration))
-    (path', (decl' : Types.type_declaration)) =
-  decl.type_arity = decl'.type_arity
-  &&
-  let mk_constr p =
-    (* Same construction as in [Includecore.type_declarations]. *)
-    Btype.newgenty (Types.Tconstr (p, decl.type_params, ref Types.Mnil))
-  in
-  Ctype.is_equal env false [ mk_constr path ] [ mk_constr path' ]
-
-let canon_repr env kind path =
-  match kind with
-  | Module | Module_type -> path
-  | Type -> (
-    match Env.find_type path env with
-    | exception Not_found -> path
-    | decl when not (Uid.for_actual_declaration decl.type_uid) -> path
-    | decl -> (
-      match Uid.Tbl.find_opt !canon_reprs decl.type_uid with
-      | None ->
-        Uid.Tbl.add !canon_reprs decl.type_uid
-          { repr = path;
-            accepted = Path.Set.singleton path;
-            rejected = Path.Set.empty
-          };
-        path
-      | Some entry -> (
-        if Path.Set.mem path entry.accepted then entry.repr
-        else if Path.Set.mem path entry.rejected then path
-        else
-          match Env.find_type entry.repr env with
-          | exception Not_found ->
-            (* Repr is not reachable in the current environement: skip *)
-            path
-          | repr_decl ->
-            if equal_type_decls env (path, decl) (entry.repr, repr_decl) then begin
-              log ~title:"unify_canon" "%a has repr %a" Logger.fmt
-                (Fun.flip path_print path) Logger.fmt
-                (Fun.flip path_print entry.repr);
-              entry.accepted <- Path.Set.add path entry.accepted;
-              entry.repr
-            end
-            else begin
-              log ~title:"unify_canon" "Cannot repr %a with %a: types differ"
-                Logger.fmt (Fun.flip path_print path) Logger.fmt
-                (Fun.flip path_print entry.repr);
-              entry.rejected <- Path.Set.add path entry.rejected;
-              path
-            end)))
+  | Module | Module_type -> false
+  | Type ->
+    let decl = Env.find_type path env in
+    let decl' = Env.find_type path' env in
+    decl.type_arity = decl'.type_arity
+    &&
+    let mk_constr p =
+      (* Same construction as in [Includecore.type_declarations]. *)
+      Btype.newgenty (Types.Tconstr (p, decl.type_params, ref Types.Mnil))
+    in
+    Ctype.is_equal env false [ mk_constr path ] [ mk_constr path' ]
 
 let find_path_by_name env kind apparent_path full_path =
   (* TODO it might be worth it to memoïze this function *)
@@ -392,15 +330,10 @@ let find_path_by_name env kind apparent_path full_path =
           (Fun.flip path_print path) Logger.fmt
           (Fun.flip path_print path');
         if Path.compare path path' == 0 then Some path_in_env
-        else begin
-          (* [find_uid] might trigger more cmi loading. we only do it if we were
-             not able to check validity by comparing the paths. *)
-          let uid = find_uid env kind path in
-          let uid' = find_uid env kind path' in
-          log ~title:"find_path_in_env" "%a <>? %a" Logger.fmt
-            (Fun.flip Uid.print uid) Logger.fmt (Fun.flip Uid.print uid');
-          if Uid.compare uid uid' == 0 then Some path_in_env else None
-        end
+        else
+          let equal = equal_types env kind path path' in
+          log ~title:"find_path_in_env" "Equal types: %b" equal;
+          if equal then Some path_in_env else None
       with Not_found -> None)
 
 (* [full_path] is used to disambiguate when a lookup by name is required *)
@@ -471,14 +404,7 @@ let process_queue env state ~table ~canon_path target_kind best =
       in
       match is_valid_in_current_env with
       | Some path_in_env -> begin
-        (* Even if it would feel natural to use Uids as keys in the table,
-           Trying to `Env.find_*` them naively here would results in unwanted
-           cmi loading. TODO: we could try to isolate these cases were that
-           happen, but even then it's unclear which Uid we would use to identity
-           them. *)
-        let canonical_path =
-          canon_repr env kind (normalize env kind full_path)
-        in
+        let canonical_path = normalize env kind full_path in
         log ~title:"fill_by_level"
           "Updating table: %a -> { %a (%s) (in env: %a) }" Logger.fmt
           (fun fmt -> path_print fmt canonical_path)
@@ -560,7 +486,6 @@ let rec path_mask (path : Path.t) (lid : Longident.t) : Path.t =
     masked_path
 
 let rec shorten ~env ~initial ~canon_path kind =
-  let canon_path = canon_repr env kind canon_path in
   let discourse = Discourse.get () in
   let queue, table = (!priority_queue, !canon_table) in
   log_dbg ~title:"shorten" "Current discourse: %a\n%!" Logger.fmt (fun fmt ->

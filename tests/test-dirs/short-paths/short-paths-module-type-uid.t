@@ -35,7 +35,7 @@ they are not the same types.
   > S .
   > EOF
 
-FIXME We expect [Name.Map.t], and in particular not [Map.t] which is another type
+We expect [Name.Map.t], and in particular not [Map.t] which is another type
   $ $MERLIN single type-enclosing -position 3:5 \
   > -filename main.ml < main.ml | jq '.value[0].type'
-  "int Map.t -> int Map.t"
+  "int Name.Map.t -> int Name.Map.t"
