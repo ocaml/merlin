@@ -90,7 +90,7 @@ This mocks the Async --include--> Async_kernel --exports--> Deferred
   # discourse-recap - D
   Final D:
   Discourse {
-    size = 80;
+    size = 76;
     paths =
     Let_syntax/25 [module: Async!.Let_syntax];
     Deferred/24 [module: Async!.Deferred];
@@ -100,8 +100,6 @@ This mocks the Async --include--> Async_kernel --exports--> Deferred
       [module: Async_kernel__Deferred!.Let_syntax];
     Async_kernel__Deferred!.Let_syntax.Let_syntax
       [module: Async_kernel__Deferred!.Let_syntax.Let_syntax];
-    Async_kernel__Deferred!.Let_syntax.Let_syntax.return
-      [value: Async_kernel__Deferred!.Let_syntax.Let_syntax.return];
     Async_kernel__! [module: Async_kernel__!];
     Async_kernel__!.Deferred0 [module: Async_kernel__!.Deferred0];
     Async_kernel__!.Deferred [module: Async_kernel__!.Deferred];
@@ -114,7 +112,6 @@ This mocks the Async --include--> Async_kernel --exports--> Deferred
       [module: Async_kernel!.Deferred.Let_syntax.Let_syntax];
     Async! [module: Async!];
     Async!.Let_syntax [module: Async!.Let_syntax];
-    Async!.Let_syntax.return [value: Async!.Let_syntax.return];
     Async!.Deferred [module: Async!.Deferred];
     atomic_loc/21! [type: atomic_loc/21!];
     iarray/20! [type: iarray/20!];
@@ -232,7 +229,7 @@ Dump the discourse so regressions show up as a diff in this test:
   # discourse-recap - D
   Final D:
   Discourse {
-    size = 80;
+    size = 76;
     paths =
     Let_syntax/25 [module: Async!.Let_syntax];
     Deferred/24 [module: Async!.Deferred];
@@ -242,8 +239,6 @@ Dump the discourse so regressions show up as a diff in this test:
       [module: Async_kernel__Deferred!.Let_syntax];
     Async_kernel__Deferred!.Let_syntax.Let_syntax
       [module: Async_kernel__Deferred!.Let_syntax.Let_syntax];
-    Async_kernel__Deferred!.Let_syntax.Let_syntax.return
-      [value: Async_kernel__Deferred!.Let_syntax.Let_syntax.return];
     Async_kernel__! [module: Async_kernel__!];
     Async_kernel__!.Deferred0 [module: Async_kernel__!.Deferred0];
     Async_kernel__!.Deferred [module: Async_kernel__!.Deferred];
@@ -256,7 +251,6 @@ Dump the discourse so regressions show up as a diff in this test:
       [module: Async_kernel!.Deferred.Let_syntax.Let_syntax];
     Async! [module: Async!];
     Async!.Let_syntax [module: Async!.Let_syntax];
-    Async!.Let_syntax.return [value: Async!.Let_syntax.return];
     Async!.Deferred [module: Async!.Deferred];
     atomic_loc/21! [type: atomic_loc/21!];
     iarray/20! [type: iarray/20!];

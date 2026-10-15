@@ -47,6 +47,13 @@ We call D the domain of discourse:
       substituting the m for n in p is also in D.
 *)
 
+(* Only paths of some kinds can be shortened *)
+let map_if_shortenable (kind : Shape.Sig_component_kind.t) v f =
+  match kind with
+  | Type | Module | Module_type -> f v
+  | Value | Extension_constructor | Class | Class_type | Constructor | Label ->
+    v
+
 (* This logging section logs a "recap" of the discourse creation: The value of
    [U] before [D.of_U] is called, and the value of [D] at the end.
 
@@ -57,7 +64,10 @@ let { Logger.log = log_recap } = Logger.for_section recap_log_section
 
 let trie_of_paths (d : Discourse_types.t) =
   let open Discourse_types in
-  fold (fun (kind, path) acc -> Path_trie.add path kind acc) d Path_trie.empty
+  fold
+    (fun (kind, path) acc ->
+      map_if_shortenable kind acc @@ Path_trie.add path kind)
+    d Path_trie.empty
 
 let pp_d fmt d =
   let open Discourse_types in
@@ -245,6 +255,7 @@ module U = struct
 
   (* [full_path] is the complete path in the environment. *)
   let define ~from kind ?root ?full_path id u =
+    map_if_shortenable kind u @@ fun u ->
     let path = path_of_ident ?root id in
     let title, origin =
       match from with
@@ -578,15 +589,18 @@ module D = struct
     List.fold_left
       (fun (paths, substs) item ->
         let add kind id =
-          log ~title:"D3" "D3: signature component %s %a (%a) under module %a"
-            (Shape.Sig_component_kind.to_string kind)
-            Logger.fmt
-            (fun fmt -> Ident.print fmt id)
-            Logger.fmt
-            (Fun.flip (Format_doc.compat Path.print) (pdot id))
-            Logger.fmt
-            (Fun.flip (Format_doc.compat Path.print) path);
-          Path_trie.add (pdot id) kind paths
+          map_if_shortenable kind paths @@ fun paths ->
+          begin
+            log ~title:"D3" "D3: signature component %s %a (%a) under module %a"
+              (Shape.Sig_component_kind.to_string kind)
+              Logger.fmt
+              (fun fmt -> Ident.print fmt id)
+              Logger.fmt
+              (Fun.flip (Format_doc.compat Path.print) (pdot id))
+              Logger.fmt
+              (Fun.flip (Format_doc.compat Path.print) path);
+            Path_trie.add (pdot id) kind paths
+          end
         in
         match (item : Subst.Lazy.signature_item) with
         | Subst.Lazy.SigL_value (id, _, _) -> (add Value id, substs)
@@ -703,6 +717,7 @@ module D = struct
       (Shape.Sig_component_kind.to_string kind);
     let d =
       (* D2 items in U are in D *)
+      map_if_shortenable kind d @@ fun d ->
       { d with paths = Path_trie.add path kind d.paths }
     in
     (* In some cases, [consequences] tries to load its own compilation unit,
@@ -728,6 +743,7 @@ module D = struct
        /path/to/this/ocamlmerlin server type-enclosing -position '201:18' -index 0  -filename /path/to/base/src/int32.ml < /path/to/base/src/int32.ml
        ]}
 
+       TODO: Is that still a thing ?
        TODO: find why there is such a self-module added/why it sometimes load
        sometimes raises. *)
     try consequences d env item

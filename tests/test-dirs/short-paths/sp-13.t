@@ -184,8 +184,6 @@ Dump the discourse so regressions show up as a diff in this test:
   D2: Async_kernel__Deferred!.Let_syntax.Let_syntax in U so in D (kind: module)
   # discourse-verbose - D5
   D5: merging discourse of module Async_kernel__Deferred!.Let_syntax.Let_syntax
-  # discourse-verbose - D3
-  D3: signature component value return/10 (Async_kernel__Deferred!.Let_syntax.Let_syntax.return) under module Async_kernel__Deferred!.Let_syntax.Let_syntax
   # discourse-verbose - D2
   D2: Async!.Deferred in U so in D (kind: module)
   # discourse-verbose - D12S
