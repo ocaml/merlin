@@ -419,18 +419,22 @@ let process_queue env state ~table ~canon_path target_kind best =
     in
     fill_by_level ~compare:(compare_paths_weight path) next state best_path
   in
-  match (Priority_queue.min_elt_opt state.queue, best) with
-  | None, _ -> (best, state)
-  | Some (_kind, shortest_path_in_queue, _), Some best'
+  (* We only examine candidates of the requested kind *)
+  let seq =
+    Priority_queue.to_seq state.queue
+    |> Seq.filter (fun (kind, _, _) -> kind = target_kind)
+  in
+  match (seq (), best) with
+  | Seq.Nil, _ -> (best, state)
+  | Seq.Cons ((_kind, shortest_path_in_queue, _), _), Some best'
     when compare_paths_weight shortest_path_in_queue best' > 0 ->
     (* There cannot be a better candidate in the queue *)
     log ~title:"process_queue" "No shorter paths in the queue. (> %a)"
       Logger.fmt
     @@ Fun.flip path_print shortest_path_in_queue;
     (best, state)
-  | Some (_kind, shortest_path_in_queue, _), best ->
+  | Seq.Cons ((_kind, shortest_path_in_queue, _), _), best ->
     let compare = compare_paths_weight shortest_path_in_queue in
-    let seq = Priority_queue.to_seq state.queue in
     fill_by_level ~compare seq state best
 
 (* Given a Path and a Longident that represents a suffix  of that path,
