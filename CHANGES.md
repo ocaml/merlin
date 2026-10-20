@@ -1,3 +1,9 @@
+unreleased
+==========
+
+  + merlin library
+    - Fix a caching issue making inconsistant units stale (#2141)
+
 merlin 5.9
 ==========
 Mon Oct 01 15:31:42 CEST 2026
