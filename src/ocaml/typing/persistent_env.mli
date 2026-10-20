@@ -119,5 +119,6 @@ val with_cmis : 'a t -> ('b -> 'c) -> 'b -> 'c
 
 val forall :
   found:(modname -> filepath -> string -> 'a -> bool) ->
+  invalid:(modname -> filepath -> string -> 'a -> bool) ->
   missing:(modname -> bool) ->
   'a t -> bool
