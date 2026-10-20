@@ -5,7 +5,7 @@
  (locks merlin_server))
 
 (cram
- (applies_to chdir_to_root incremental-index)
+ (applies_to chdir_to_root incremental-index partial-rebuild)
  (enabled_if
   (<> %{os_type} Win32)))
 
