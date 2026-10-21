@@ -1,12 +1,5 @@
-Partial rebuilds leave the build directory inconsistent for a while. Here
-Dep_base has been rebuilt but Dep_tag (compiled against the old Dep_base) has
-not been yet. Importing the old Dep_tag correctly fails with "inconsistent
-assumptions". Once Dep_tag is rebuilt and everything on disk is consistent
-again, the error should go away.
-It doesn't: the failed unit is never added to the state's persistent env, so
-`Env.check_state_consistency` never re-checks it, and the error stays in the
-typer items reused from the cache and in the lazily computed components of the
-alias module Import. Only a fresh typer state (here, a new filename) recovers.
+Partial rebuilds used to lead to stale cache entries in Merlin because inconsistent persistent
+units were not registered as such and thus changing them did not invalidate the cache.
 
   $ $MERLIN server stop-server
   $ mkdir dep
