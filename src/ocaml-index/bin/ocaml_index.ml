@@ -41,8 +41,8 @@ let speclist =
     ("--debug", Arg.Set debug, "Output debugging information");
     ( "-o",
       Arg.Set_string output_file,
-      "Set output file name. Note that sub-indexes paths remains relative to \
-       the current directory." );
+      "Set output file name. Pointers to sub-indexes are stored relative to \
+       the output file's directory." );
     ( "--root",
       Arg.Set_string root,
       "Set the root path for all relative locations" );

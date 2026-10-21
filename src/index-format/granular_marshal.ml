@@ -346,15 +346,6 @@ let fetch_on_disk_dirty lnk store loc =
   add_to_cache v lnk ~loc store ~size small_children None;
   small_children
 
-(* Smalls are stored along their parents so they share the same loc *)
-let store_and_loc_of_parent (PLink lnk : parent_link) =
-  match !lnk with
-  | In_cache { store; loc; _ } | On_disk { store; loc; _ } -> (store, loc)
-  | _ ->
-    invalid_arg
-      ("Granular_marshal.fetch_parent: Unexpected parent link "
-     ^ string_of_link lnk)
-
 (** Fetch the parent of a small value in order to read its smalls. If the parent
   has not yet been loaded in memory it will be read from the disk and kept dirty
   because its schema is unknown.*)
@@ -445,7 +436,7 @@ let relativize ~wrt:path =
 
 let write ?(flags = []) fd ~filename ~id root_schema root_value =
   let relativize =
-    relativize ~wrt:Filename.(dirname (concat (Unix.getcwd ()) filename))
+    relativize ~wrt:(Filename.dirname (Misc.canonicalize_filename filename))
   in
   let id' = binstring_of_int id in
   output_string fd id';
@@ -470,6 +461,7 @@ let write ?(flags = []) fd ~filename ~id root_schema root_value =
               lnk := !original_lnk
             | On_disk { store = { filename; id; _ }; loc; _ }
             | In_cache { loc; store = { filename; id; _ }; _ } ->
+              let filename = relativize filename in
               lnk := On_disk_ptr { filename; id; loc }
             | _ ->
               failwith
@@ -485,9 +477,25 @@ let write ?(flags = []) fd ~filename ~id root_schema root_value =
                somewhere in the file. *)
             let filename = relativize filename in
             lnk := On_disk_ptr { filename; id; loc }
-          | On_disk_small { parent; small_pos; _ } ->
-            let { filename; id; _ }, loc = store_and_loc_of_parent parent in
-            let filename = relativize filename in
+          | On_disk_small { parent = PLink parent_lnk; small_pos; _ } ->
+            (* Smalls are stored along their parents so they share the same
+               loc. *)
+            let filename, id, loc =
+              match !parent_lnk with
+              | In_cache { store = { filename; id; _ }; loc; _ }
+              | On_disk { store = { filename; id; _ }; loc; _ } ->
+                (relativize filename, id, loc)
+              | On_disk_ptr { filename; id; loc } ->
+                (* The parent was already visited: its filename is already
+                   relative to the output file. *)
+                (filename, id, loc)
+              | _ ->
+                failwith
+                  (Format.sprintf
+                     "Granular_marshal.write: unexpected parent of small value \
+                      %s"
+                     (string_of_link parent_lnk))
+            in
             lnk := On_disk_small_ptr { filename; id; loc; pos = small_pos })
     }
   and output_and_mark (V v) (small_children : any_val_link list) =
@@ -549,11 +557,7 @@ let write ?(flags = []) fd ~filename ~id root_schema root_value =
 
 let read filename fd root_schema =
   let id = int_of_binstring (really_input_string fd 8) in
-  let filename =
-    if Filename.is_relative filename then
-      Filename.concat (Unix.getcwd ()) filename
-    else filename
-  in
+  let filename = Misc.canonicalize_filename filename in
   let store = { filename; id; cache = Cache_cache.read filename } in
   let root_loc = int_of_binstring (really_input_string fd 8) in
   let parent_link =
