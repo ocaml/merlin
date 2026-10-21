@@ -46,38 +46,62 @@ An absolute output path:
 
   $ ocaml-index aggregate a.ocaml-index b.ocaml-index -o $PWD/out/absolute.ocaml-index
   $ ocaml-index stats out/absolute.ocaml-index
-  Missing file "$TESTCASE_ROOT/out/../../../../../../../../../../../../../../a.ocaml-index".
-  Hint: try to rebuild indexes with dune build @ocaml-index.
-  [1]
+  Index "out/absolute.ocaml-index" contains:
+  - 5 definitions
+  - 10 locations
+  - 0 approximated definitions
+  - 0 compilation units shapes
+  - root dir: none
+  
   $ (cd elsewhere && ocaml-index stats ../out/absolute.ocaml-index)
-  Missing file "$TESTCASE_ROOT/elsewhere/../out/../../../../../../../../../../../../../../a.ocaml-index".
-  Hint: try to rebuild indexes with dune build @ocaml-index.
-  [1]
+  Index "../out/absolute.ocaml-index" contains:
+  - 5 definitions
+  - 10 locations
+  - 0 approximated definitions
+  - 0 compilation units shapes
+  - root dir: none
+  
 
 An output path starting with `./`:
 
   $ ocaml-index aggregate a.ocaml-index b.ocaml-index -o ./out/dot.ocaml-index
   $ ocaml-index stats out/dot.ocaml-index
-  Missing file "$TESTCASE_ROOT/out/../../a.ocaml-index".
-  Hint: try to rebuild indexes with dune build @ocaml-index.
-  [1]
+  Index "out/dot.ocaml-index" contains:
+  - 5 definitions
+  - 10 locations
+  - 0 approximated definitions
+  - 0 compilation units shapes
+  - root dir: none
+  
   $ (cd elsewhere && ocaml-index stats ../out/dot.ocaml-index)
-  Missing file "$TESTCASE_ROOT/elsewhere/../out/../../a.ocaml-index".
-  Hint: try to rebuild indexes with dune build @ocaml-index.
-  [1]
+  Index "../out/dot.ocaml-index" contains:
+  - 5 definitions
+  - 10 locations
+  - 0 approximated definitions
+  - 0 compilation units shapes
+  - root dir: none
+  
 
 Aggregating from a subdirectory into its parent, with `..` in the output path:
 
   $ cp a.ocaml-index b.ocaml-index out/
   $ (cd out && ocaml-index aggregate a.ocaml-index b.ocaml-index -o ../dotdot.ocaml-index)
   $ ocaml-index stats dotdot.ocaml-index
-  Missing file "$TESTCASE_ROOT/../a.ocaml-index".
-  Hint: try to rebuild indexes with dune build @ocaml-index.
-  [1]
+  Index "dotdot.ocaml-index" contains:
+  - 5 definitions
+  - 10 locations
+  - 0 approximated definitions
+  - 0 compilation units shapes
+  - root dir: none
+  
   $ (cd elsewhere && ocaml-index stats ../dotdot.ocaml-index)
-  Missing file "$TESTCASE_ROOT/elsewhere/../../a.ocaml-index".
-  Hint: try to rebuild indexes with dune build @ocaml-index.
-  [1]
+  Index "../dotdot.ocaml-index" contains:
+  - 5 definitions
+  - 10 locations
+  - 0 approximated definitions
+  - 0 compilation units shapes
+  - root dir: none
+  
 
 Inputs given with `..` in their path:
 

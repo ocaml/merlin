@@ -436,7 +436,7 @@ let relativize ~wrt:path =
 
 let write ?(flags = []) fd ~filename ~id root_schema root_value =
   let relativize =
-    relativize ~wrt:Filename.(dirname (concat (Unix.getcwd ()) filename))
+    relativize ~wrt:(Filename.dirname (Misc.canonicalize_filename filename))
   in
   let id' = binstring_of_int id in
   output_string fd id';
@@ -557,11 +557,7 @@ let write ?(flags = []) fd ~filename ~id root_schema root_value =
 
 let read filename fd root_schema =
   let id = int_of_binstring (really_input_string fd 8) in
-  let filename =
-    if Filename.is_relative filename then
-      Filename.concat (Unix.getcwd ()) filename
-    else filename
-  in
+  let filename = Misc.canonicalize_filename filename in
   let store = { filename; id; cache = Cache_cache.read filename } in
   let root_loc = int_of_binstring (really_input_string fd 8) in
   let parent_link =
