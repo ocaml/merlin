@@ -104,3 +104,22 @@ Index each module separately:
 Then aggregate the two indexes (with backtraces disabled, to keep the output
 stable):
   $ OCAMLRUNPARAM=b=0 ocaml-index aggregate ea.ocaml-index sl.ocaml-index -o all.ocaml-index
+
+The result must be complete, as if aggregated directly from the cmt files:
+
+  $ ocaml-index aggregate ea.cmt sl.cmt -o direct.ocaml-index
+  $ ocaml-index stats all.ocaml-index direct.ocaml-index
+  Index "direct.ocaml-index" contains:
+  - 86 definitions
+  - 238 locations
+  - 0 approximated definitions
+  - 0 compilation units shapes
+  - root dir: none
+  
+  Index "all.ocaml-index" contains:
+  - 86 definitions
+  - 238 locations
+  - 0 approximated definitions
+  - 0 compilation units shapes
+  - root dir: none
+  
