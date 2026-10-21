@@ -1,9 +1,5 @@
-Aggregating two indexes crashes while writing the output: the writer reaches a
-small value whose parent link it has already rewritten to an `On_disk_ptr`.
-The modules below were reduced from merlin's own `extract_ranges` and
-`show_location` test helpers. The crash depends on the exact shape of the
-index maps, so small changes (including renaming the modules) can hide it.
-A stub for the external `Yojson` library:
+Granular marshal with pointing indexes use to crash on some specific cases
+such as the one illustrated in this test.
 
   $ cat >yojson.ml <<'EOF'
   > module Safe = struct
@@ -108,5 +104,3 @@ Index each module separately:
 Then aggregate the two indexes (with backtraces disabled, to keep the output
 stable):
   $ OCAMLRUNPARAM=b=0 ocaml-index aggregate ea.ocaml-index sl.ocaml-index -o all.ocaml-index
-  Fatal error: exception Invalid_argument("Granular_marshal.fetch_parent: Unexpected parent link On_disk_ptr(loc=317)")
-  [2]
