@@ -63,11 +63,13 @@ type pers_struct = {
 
 module String = Misc.Stdlib.String
 
-(* If a .cmi file is missing (or invalid), we
-   store it as Missing in the cache. *)
+(* If a .cmi file is missing (or failed to load), we store it as Missing in the
+   cache. We use Invalid when a .cmi is present, readable, but is inconsistent.
+   *)
 type 'a pers_struct_info =
   | Missing of { hidden_were_allowed : bool }
   | Found of pers_struct * 'a
+  | Invalid of pers_struct * 'a
 
 type 'a t = {
   persistent_structures : (string, 'a pers_struct_info) Hashtbl.t;
@@ -109,7 +111,7 @@ let clear_missing {persistent_structures; _} =
     Hashtbl.fold
       (fun name r acc -> match r with
        | Missing _ -> name :: acc
-       | Found _ -> acc)
+       | Found _ | Invalid _ -> acc)
       persistent_structures []
   in
   List.iter (Hashtbl.remove persistent_structures) missing_entries
@@ -123,7 +125,7 @@ let register_import_as_opaque {imported_opaque_units; _} s =
 let find_in_cache {persistent_structures; _} s =
   match Hashtbl.find persistent_structures s with
   | exception Not_found -> None
-  | Missing _ -> None
+  | Missing _ | Invalid _ -> None
   | Found (_ps, pm) -> Some pm
 
 let import_crcs penv ~source crcs =
@@ -164,7 +166,7 @@ let without_cmis penv f x =
 
 let fold {persistent_structures; _} f x =
   Hashtbl.fold (fun modname pso x -> match pso with
-      | Missing _ -> x
+      | Missing _ | Invalid _ -> x
       | Found (_, pm) -> f modname pm x)
     persistent_structures x
 
@@ -222,6 +224,7 @@ let acknowledge_pers_struct penv short_path_comps check modname pers_sig pm =
              ps_flags = flags;
              ps_visibility = visibility;
            } in
+  begin try
   if ps.ps_name <> modname then
     error (Illegal_renaming(modname, ps.ps_name, filename));
   List.iter
@@ -232,7 +235,13 @@ let acknowledge_pers_struct penv short_path_comps check modname pers_sig pm =
         | Alerts _ -> ()
         | Opaque -> register_import_as_opaque penv modname)
     ps.ps_flags;
-  if check then check_consistency penv ps;
+  if check then check_consistency penv ps
+  with Error _ as exn ->
+    (* Merlin needs to know that a module was found even if it is invalid to
+       properly invalidate the cache. *)
+    Hashtbl.replace penv.persistent_structures modname (Invalid (ps, pm));
+    raise exn
+  end;
   let {persistent_structures; _} = penv in
   Hashtbl.add persistent_structures modname (Found (ps, pm));
   register_pers_for_short_paths penv ps (short_path_comps ps.ps_name pm);
@@ -257,7 +266,7 @@ let find_pers_struct ~allow_hidden penv val_of_pers_sig short_path_comps check n
   | Found _ -> raise Not_found
   | Missing { hidden_were_allowed = true } -> raise Not_found
   | Missing { hidden_were_allowed = false }
-  | exception Not_found ->
+  | Invalid _ | exception Not_found ->
     match can_load_cmis penv with
     | Cannot_load_cmis _ -> raise Not_found
     | Can_load_cmis ->
@@ -313,9 +322,13 @@ let read penv f1 f2 a =
 let find ~allow_hidden penv f1 f2 name =
   snd (find_pers_struct ~allow_hidden penv f1 f2 true name)
 
+let looked_up {persistent_structures; _} modname =
+  match Hashtbl.find persistent_structures modname with
+  | Found _ | Missing _ -> true
+  | Invalid _ | exception Not_found -> false
+
 let check ~allow_hidden penv f1 f2 ~loc name =
-  let {persistent_structures; _} = penv in
-  if not (Hashtbl.mem persistent_structures name) then begin
+  if not (looked_up penv name) then begin
     (* PR#6843: record the weak dependency ([add_import]) regardless of
        whether the check succeeds, to help make builds more
        deterministic. *)
@@ -339,9 +352,6 @@ let crc_of_unit penv f1 f2 name =
 
 let imports {imported_units; crc_units; _} =
   Consistbl.extract (String.Set.elements !imported_units) crc_units
-
-let looked_up {persistent_structures; _} modname =
-  Hashtbl.mem persistent_structures modname
 
 let is_imported {imported_units; _} s =
   String.Set.mem s !imported_units
@@ -421,11 +431,13 @@ let with_cmis penv f x =
           [R (penv.can_load_cmis, Can_load_cmis)]
           (fun () -> f x))
 
-let forall ~found ~missing t =
+let forall ~found ~invalid ~missing t =
   Std.Hashtbl.forall t.persistent_structures (fun name -> function
       | Missing _ -> missing name
       | Found (pers_struct, a) ->
         found name pers_struct.ps_filename pers_struct.ps_name a
+      | Invalid (pers_struct, a) ->
+        invalid name pers_struct.ps_filename pers_struct.ps_name a
     )
 
 let () =

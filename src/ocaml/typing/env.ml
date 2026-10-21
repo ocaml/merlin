@@ -4043,12 +4043,12 @@ let check_state_consistency () =
     match Load_path.find_normalized (modname ^ ".cmi") with
     | _ -> false
     | exception Not_found -> true
-  and found _modname filename ps_name _md =
+  and present _modname filename ps_name _md =
     match Cmi_cache.get_cached_entry filename with
     | cmi_infos -> ps_name == cmi_infos.Cmi_format.cmi_name
     | exception Not_found -> false
   in
-  Persistent_env.forall ~found ~missing !persistent_env
+  Persistent_env.forall ~found:present ~invalid:present ~missing !persistent_env
 
 let with_cmis f =
   Persistent_env.with_cmis !persistent_env f ()

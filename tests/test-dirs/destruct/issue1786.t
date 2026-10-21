@@ -28,7 +28,7 @@ In Persistent_env.find_pers_struct, the module Either fails to be found:
     match x with
     | Box █ -> 10
   $ $MERLIN single case-analysis -start 3:8 -end 3:8 -filename foo.ml < foo.ml | grep Raised
-  Raised at Ocaml_typing__Persistent_env.find_pers_struct in file \"src/ocaml/typing/persistent_env.ml\", line 262, characters 28-43
+  Raised at Ocaml_typing__Persistent_env.find_pers_struct in file \"src/ocaml/typing/persistent_env.ml\", line 271, characters 28-43
 
 If we explicitly use Either (by opening it), we force it to load and the query works
 as expected:
