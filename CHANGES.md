@@ -3,6 +3,7 @@ unreleased
 
   + merlin library
     - Fix a caching issue making inconsistant units stale (#2141)
+    - Fixed occurrences not working on exception definitions (#2146, fixes #853)
 
 merlin 5.9
 ==========
