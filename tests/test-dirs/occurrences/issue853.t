@@ -22,6 +22,14 @@
     "col": 6
   }
 
-FIXME: We expect the same result as the previous query
+We expect the same result as the previous query
   $ $MERLIN single occurrences -identifier-at 1:13 \
   > -filename test.ml <test.ml | jq '.value[].start'
+  {
+    "line": 1,
+    "col": 10
+  }
+  {
+    "line": 2,
+    "col": 6
+  }

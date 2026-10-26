@@ -103,6 +103,8 @@ let uid_and_loc_of_node env node =
   | Constructor_declaration { cd_uid; cd_name; _ } -> Some (cd_uid, cd_name.loc)
   | Value_description { val_val; val_name; _ } ->
     Some (val_val.val_uid, val_name.loc)
+  | Extension_constructor { ext_type; ext_name; _ } ->
+    Some (ext_type.ext_uid, ext_name.loc)
   | _ -> None
 
 let comp_unit_of_uid = function
