@@ -4,8 +4,9 @@
     granular file, only a pointer to the original file is present in the new
     one. This means the original file should not be moved or deleted.
 
-    These pointers are relative to the working directory of the tool that wrote
-    the new file. *)
+    These pointers are stored relative to the directory of the file that
+    contains them, so a file and the files it points to can be moved together.
+    They are resolved relative to the directory of the file being read. *)
 
 (** A pointer to an ['a] value, either residing in memory or on disk. *)
 type 'a link
@@ -76,10 +77,11 @@ exception
   Outdated_store of
     { filename : string; reason : [ `Missing_file | `Index_ids_do_not_match ] }
 
-(** [write oc ~id schema value] writes the [value] in the output channel [oc],
-    creating unmarshalling boundaries on every link in [value] specified by the
-    [schema]. [id] is used as index UID. File pointers are made relative to the
-    current working directory. *)
+(** [write oc ~filename ~id schema value] writes the [value] in the output
+    channel [oc], creating unmarshalling boundaries on every link in [value]
+    specified by the [schema]. [id] is used as index UID. [filename] is the
+    path of the file being written (relative to the current working directory
+    or absolute): file pointers are made relative to its directory. *)
 val write :
   ?flags:Marshal.extern_flags list ->
   out_channel ->
@@ -89,8 +91,9 @@ val write :
   'a ->
   unit
 
-(** [read ic schema] reads the value marshalled in the input channel [ic],
-    stopping the unmarshalling on every link boundary indicated by the [schema].
-    It returns the root [value] read. File pointers are resolved relatively to
-    the current working directory.  *)
+(** [read filename ic schema] reads the value marshalled in the input channel
+    [ic], stopping the unmarshalling on every link boundary indicated by the
+    [schema]. It returns the root [value] read. [filename] is the path of the
+    file being read (relative to the current working directory or absolute):
+    file pointers are resolved relatively to its directory. *)
 val read : string -> in_channel -> 'a schema -> 'a

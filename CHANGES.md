@@ -3,6 +3,9 @@ unreleased
 
   + merlin library
     - Fix a caching issue making inconsistant units stale (#2141)
+  + ocaml index
+    - Fix a regression due to the new "pointing indexes" mechanism (#2144)
+    - Fix an issue when using absolute output paths for the indexer (#2144)
 
 merlin 5.9
 ==========
