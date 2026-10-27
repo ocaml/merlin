@@ -77,15 +77,29 @@ exception
   Outdated_store of
     { filename : string; reason : [ `Missing_file | `Index_ids_do_not_match ] }
 
-(** [write oc ~filename ~id schema value] writes the [value] in the output
+module File_kind : sig
+  type t =
+    | No_standalone
+        (** The file may point at other files on disk. This reduces the size of
+            the file, but the pointed-at files must be available when reading
+            the file. *)
+    | Standalone
+        (** The file cannot point at other files. The file is larger as a
+            result, but it is standalone. *)
+end
+
+(** [write oc ~filename ~file_kind ~id schema value] writes the [value] in the output
     channel [oc], creating unmarshalling boundaries on every link in [value]
     specified by the [schema]. [id] is used as index UID. [filename] is the
     path of the file being written (relative to the current working directory
-    or absolute): file pointers are made relative to its directory. *)
+    or absolute): file pointers are made relative to its directory. [file_kind]
+    determines whether the output may point into the files that [value] was
+    read from. *)
 val write :
   ?flags:Marshal.extern_flags list ->
   out_channel ->
   filename:string ->
+  file_kind:File_kind.t ->
   id:int ->
   'a schema ->
   'a ->
