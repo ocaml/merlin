@@ -77,11 +77,10 @@ exception
   Outdated_store of
     { filename : string; reason : [ `Missing_file | `Index_ids_do_not_match ] }
 
-(** [write oc ~filename ~id schema value] writes the [value] in the output
-    channel [oc], creating unmarshalling boundaries on every link in [value]
-    specified by the [schema]. [filename] is the path of the file being written (relative
-    to the current working directory or absolute): file pointers are made relative to its
-    directory. *)
+(** [write oc ~filename schema value] writes the [value] in the output channel [oc],
+    creating unmarshalling boundaries on every link in [value] specified by the [schema].
+    [filename] is the path of the file being written (relative to the current working
+    directory or absolute): file pointers are made relative to its directory. *)
 val write :
   ?flags:Marshal.extern_flags list ->
   out_channel ->
