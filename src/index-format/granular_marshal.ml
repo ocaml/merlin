@@ -436,6 +436,11 @@ let relativize ~wrt:path =
 
 let write ?(flags = []) fd ~filename ~id root_schema root_value =
   let relativize =
+    (* Note: the target path to relativize could look like
+    /abs/olute/../semirelative (due to the Filename.concat in resolve_filename
+    which made the relative path absolute, without canonicalize to drop the
+    olute/..), and further relativize would keep on stacking more dir/../
+    intermediate folders. *)
     relativize ~wrt:(Filename.dirname (Misc.canonicalize_filename filename))
   in
   let id' = binstring_of_int id in
