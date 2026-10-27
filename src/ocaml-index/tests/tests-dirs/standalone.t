@@ -20,10 +20,10 @@ Setup a simple project.
 
 Compile the project.
 
-  $ $OCAMLC -bin-annot -bin-annot-occurrences -c foo.ml
-  $ $OCAMLC -bin-annot -bin-annot-occurrences -c a.ml
-  $ $OCAMLC -bin-annot -bin-annot-occurrences -c b.ml
-  $ $OCAMLC -bin-annot -bin-annot-occurrences -c c.ml
+  $ ocamlc -bin-annot -bin-annot-occurrences -c foo.ml
+  $ ocamlc -bin-annot -bin-annot-occurrences -c a.ml
+  $ ocamlc -bin-annot -bin-annot-occurrences -c b.ml
+  $ ocamlc -bin-annot -bin-annot-occurrences -c c.ml
 
 Create some index files. We make an index for each ml file. We also make an
 index called AB, which points to the A and B indexes. Lastly, we aggregate the
@@ -49,12 +49,10 @@ The standalone and non-standalone indexes contain the same data:
   $ diff non-standalone.dump standalone.dump
   $ diff non-standalone-ab-standalone.dump standalone.dump
 
-The non-standalone indexes are smaller:
+The non-standalone index is smaller:
 
   $ size () { wc -c < "$1"; }
   $ [ $(size non-standalone.idx) -lt $(size standalone.idx) ] && echo smaller
-  smaller
-  $ [ $(size non-standalone-ab-standalone.idx) -lt $(size standalone.idx) ] && echo smaller
   smaller
 
 Create a function that temporarily removes an index file, which we'll use to

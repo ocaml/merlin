@@ -435,9 +435,14 @@ let materialize root_schema root_value =
     match !lnk with
     | On_disk { store; loc; _ } | In_cache { store; loc; _ } ->
       (store.filename, loc, -1)
-    | On_disk_small { parent; small_pos; _ } ->
-      let store, loc = store_and_loc_of_parent parent in
-      (store.filename, loc, small_pos)
+    | On_disk_small { parent = PLink parent_lnk; small_pos; _ } -> (
+      match !parent_lnk with
+      | In_cache { store; loc; _ } | On_disk { store; loc; _ } ->
+        (store.filename, loc, small_pos)
+      | _ ->
+        invalid_arg
+          ("Granular_marshal.materialize: unexpected parent of small value "
+         ^ string_of_link parent_lnk))
     | _ ->
       invalid_arg
         ("Granular_marshal.materialize: not an on-disk link "
