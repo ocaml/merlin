@@ -13,6 +13,7 @@ let output_file = ref "project.ocaml-index"
 let root = ref ""
 let rewrite_root = ref false
 let store_shapes = ref false
+let file_kind = ref Granular_marshal.File_kind.No_standalone
 let do_not_use_cmt_loadpath = ref false
 let cache_size_kb = ref 1_000_000
 
@@ -52,6 +53,15 @@ let speclist =
     ( "--store-shapes",
       Arg.Set store_shapes,
       "Aggregate input-indexes shapes and store them in the new index" );
+    ( "--standalone",
+      Arg.Unit (fun () -> file_kind := Standalone),
+      "The output index will not contain pointers to the input index/shape \
+       files. All data is copied into the output index." );
+    ( "--no-standalone",
+      Arg.Unit (fun () -> file_kind := No_standalone),
+      "The output may contain pointers to the input index/shape files. This \
+       will make the output index smaller, but to use it, the input \
+       index/shape files must still be available. (default)" );
     ( "-I",
       Arg.String
         (fun arg ->
@@ -87,7 +97,7 @@ let () =
     (match !command with
     | Some Aggregate ->
       let root = if String.equal "" !root then None else Some !root in
-      Index.from_files ~store_shapes:!store_shapes ~root
+      Index.from_files ~store_shapes:!store_shapes ~file_kind:!file_kind ~root
         ~rewrite_root:!rewrite_root ~output_file:!output_file
         ~build_path:
           { visible = List.rev !build_path_rev.visible;
