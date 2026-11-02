@@ -14,7 +14,7 @@
   ocaml-index [COMMAND] [-verbose] <file1> [<file2>] ... -o <output>
     --verbose Output more information
     --debug Output debugging information
-    -o Set output file name. Note that sub-indexes paths remains relative to the current directory.
+    -o Set output file name. Pointers to sub-indexes are stored relative to the output file's directory.
     --root Set the root path for all relative locations
     --rewrite-root Rewrite locations paths using the provided root
     --store-shapes Aggregate input-indexes shapes and store them in the new index
