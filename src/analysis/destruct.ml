@@ -800,10 +800,6 @@ let destruct_pattern (type a) (patt : a Typedtree.general_pattern) config source
     refine_complete_match parents patt config source patterns
   | patterns -> refine_partial_match last_case_loc config source patterns
 
-let expanded_wildcard selected_node = function
-  | parent :: _ -> Mbrowse.expanded_wildcard_of ~parent selected_node
-  | [] -> None
-
 let rec destruct_record config source selected_node = function
   | (Expression { exp_desc = Texp_field _; _ } as parent) :: rest ->
     node config source parent rest
@@ -816,9 +812,5 @@ and node config source selected_node parents =
   | Record_field (`Expression _, _, _) ->
     destruct_record config source selected_node parents
   | Expression expr -> destruct_expression loc config source parents expr
-  | Pattern _ when expanded_wildcard selected_node parents <> None ->
-    let args = Option.get (expanded_wildcard selected_node parents) in
-    let wildcards = List.map args ~f:(fun _ -> "_") in
-    (loc, "(" ^ String.concat ~sep:", " wildcards ^ ")")
   | Pattern patt -> destruct_pattern patt config source loc parents
   | node -> raise (Not_allowed (string_of_node node))

@@ -292,18 +292,3 @@ let is_recovered = function
 let print_node () node = Browse_raw.string_of_node node
 
 let print () t = List.print (fun () (_, node) -> print_node () node) () t
-
-let expanded_wildcard_args (type k) (p : k general_pattern) =
-  match p.pat_desc with
-  | Tpat_construct (_, _, (first :: _ :: _ as args), _)
-    when List.for_all args ~f:(fun a ->
-             (match a.pat_desc with
-               | Tpat_any -> true
-               | _ -> false)
-             && a.pat_loc = first.pat_loc) -> Some args
-  | _ -> None
-
-let expanded_wildcard_of ~parent child =
-  match (child, parent) with
-  | Pattern { pat_desc = Tpat_any; _ }, Pattern p -> expanded_wildcard_args p
-  | _ -> None
