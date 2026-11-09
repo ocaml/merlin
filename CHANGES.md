@@ -1,3 +1,9 @@
+unreleased
+==========
+
+  + merlin library
+    - Fix hover and destruct in presence of `_` pattern for multi-arguments constructor (#2149 fixes #1792)
+
 merlin 5.9.1
 ============
 Wed Nov 04 15:27:42 CET 2026

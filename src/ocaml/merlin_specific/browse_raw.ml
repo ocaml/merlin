@@ -347,6 +347,20 @@ let of_exp_record_field obj lid_loc lbl =
 
 let of_pat_record_field obj loc lbl = of_record_field (`Pattern obj) loc lbl
 
+let of_constructor_args (ps : pattern list) =
+  match ps with
+  | first :: _ :: _
+    when List.for_all ps ~f:(fun p ->
+             (match p.pat_desc with
+               | Tpat_any -> true
+               | _ -> false)
+             && p.pat_loc = first.pat_loc) ->
+    let pat_type =
+      Btype.newgenty (Ttuple (List.map ps ~f:(fun p -> (None, p.pat_type))))
+    in
+    of_pattern { first with pat_type }
+  | _ -> list_fold of_pattern ps
+
 let of_pattern_desc (type k) (desc : k pattern_desc) =
   match desc with
   | Tpat_any | Tpat_var _ | Tpat_constant _ | Tpat_variant (_, None, _) ->
@@ -358,10 +372,10 @@ let of_pattern_desc (type k) (desc : k pattern_desc) =
   | Tpat_value p -> of_pattern (p :> value general_pattern)
   | Tpat_tuple ps ->
     list_fold of_pattern (List.map ~f:snd ps) (* todo handle labels *)
-  | Tpat_construct (_, _, ps, None) | Tpat_array (_, ps) ->
-    list_fold of_pattern ps
+  | Tpat_construct (_, _, ps, None) -> of_constructor_args ps
+  | Tpat_array (_, ps) -> list_fold of_pattern ps
   | Tpat_construct (_, _, ps, Some (_, ct)) ->
-    list_fold of_pattern ps ** of_core_type ct
+    of_constructor_args ps ** of_core_type ct
   | Tpat_record (ls, _) ->
     list_fold
       (fun (lid_loc, desc, p) ->
