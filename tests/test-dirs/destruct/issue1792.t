@@ -15,7 +15,7 @@
 The type of all the constructor arguments is shown
   $ $MERLIN single type-enclosing -position 2:9 \
   > -filename test.ml <test.ml | jq '.value[0].type'
-  "string"
+  "int * string"
 
   $ $MERLIN single case-analysis -start 2:9 -end 2:9 \
   > -filename test.ml <test.ml | jq '.value'
@@ -23,14 +23,14 @@ The type of all the constructor arguments is shown
     {
       "start": {
         "line": 2,
-        "col": 6
+        "col": 9
       },
       "end": {
         "line": 2,
-        "col": 11
+        "col": 10
       }
     },
-    "A (_, \"\") | A (_, _)"
+    "(_, _)"
   ]
 
   $ cat >test.ml <<'EOF'
