@@ -31,3 +31,24 @@ And that it also works outside of the current buffer:
     "value": "incorrect doc for foo",
     "notifications": []
   }
+
+A doc comment written for a local let is not attached by the compiler either:
+
+  $ cat >test.ml <<EOF
+  > let foo () =
+  >   (** doc of y *)
+  >   let y = 1 in y
+  > EOF
+
+  $ $OCAMLC -c -w +50 test.ml
+  File "test.ml", line 2, characters 2-17:
+  2 |   (** doc of y *)
+        ^^^^^^^^^^^^^^^
+  Warning 50 [unexpected-docstring]: unattached documentation comment (ignored)
+
+  $ $MERLIN single document -position 3:15 -filename test.ml < test.ml
+  {
+    "class": "return",
+    "value": "doc of y",
+    "notifications": []
+  }
