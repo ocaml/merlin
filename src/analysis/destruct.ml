@@ -84,8 +84,9 @@ let placeholder = Ast_helper.Exp.hole ()
 let rec gen_patterns ?(recurse = true) env type_expr =
   let open Types in
   log ~title:"gen_patterns" "%a" Logger.fmt (fun fmt ->
-      Format.fprintf fmt "Generating patterns for type %a" Printtyp.type_expr
-        type_expr);
+      Printtyp.wrap_printing_env ~error:true env (fun () ->
+          Format.fprintf fmt "Generating patterns for type %a"
+            Printtyp.type_expr type_expr));
   match get_desc type_expr with
   | Tlink _ -> assert false (* impossible after [Btype.repr] *)
   | Tvar _ -> raise (Not_allowed "non-immediate type")
@@ -137,10 +138,11 @@ let rec gen_patterns ?(recurse = true) env type_expr =
             && not (are_types_unifiable cstr_descr.cstr_res)
           then (
             log ~title:"gen_patterns" "%a" Logger.fmt (fun fmt ->
-                Format.fprintf fmt
-                  "Eliminating '%s' branch, its return type is not compatible \
-                   with the expected type (%a)"
-                  cstr_descr.cstr_name Printtyp.type_expr type_expr);
+                Printtyp.wrap_printing_env ~error:true env (fun () ->
+                    Format.fprintf fmt
+                      "Eliminating '%s' branch, its return type is not \
+                       compatible with the expected type (%a)"
+                      cstr_descr.cstr_name Printtyp.type_expr type_expr));
             None)
           else
             let args =
