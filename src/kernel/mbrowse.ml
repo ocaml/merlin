@@ -298,8 +298,8 @@ let expanded_wildcard_args (type k) (p : k general_pattern) =
   | Tpat_construct (_, _, (first :: _ :: _ as args), _)
     when List.for_all args ~f:(fun a ->
              (match a.pat_desc with
-             | Tpat_any -> true
-             | _ -> false)
+               | Tpat_any -> true
+               | _ -> false)
              && a.pat_loc = first.pat_loc) -> Some args
   | _ -> None
 
