@@ -174,7 +174,8 @@ let rec gen_patterns ?(recurse = true) env type_expr =
           None)
   | _ ->
     let fmt, to_string = Format.to_string () in
-    Printtyp.type_expr fmt type_expr;
+    Printtyp.wrap_printing_env ~error:true env (fun () ->
+        Printtyp.type_expr fmt type_expr);
     raise (Not_allowed (to_string ()))
 
 and from_type_decl env path texpr =
