@@ -42,7 +42,7 @@ let print_type ~verbosity type_info =
   | String s -> s
 
 let from_nodes ~path =
-  let aux (env, node, tail) =
+  let aux ~parent (env, node, tail) =
     let open Browse_raw in
     let ret x = Some (Mbrowse.node_loc node, x, tail) in
     let filter_method_arrow exp_type =
@@ -53,7 +53,19 @@ let from_nodes ~path =
       | Tarrow (_, _, t, _) -> t
       | _ -> exp_type
     in
+    let expanded =
+      match parent with
+      | Some (_, parent, _) -> Mbrowse.expanded_wildcard_of ~parent node
+      | None -> None
+    in
     match[@ocaml.warning "-9"] node with
+    | Pattern _ when Option.is_some expanded ->
+      let args = Option.get expanded in
+      let t =
+        Btype.newgenty
+          (Ttuple (List.map args ~f:(fun a -> (None, a.Typedtree.pat_type))))
+      in
+      ret (Type (env, t))
     | Expression { exp_type = t }
     | Pattern { pat_type = t }
     | Core_type { ctyp_type = t }
@@ -101,7 +113,19 @@ let from_nodes ~path =
     | Binding_op { bop_op_type; _ } -> ret (Type (env, bop_op_type))
     | _ -> None
   in
-  List.filter_map ~f:aux path
+  let rec loop = function
+    | [] -> []
+    | x :: rest -> (
+      let parent =
+        match rest with
+        | p :: _ -> Some p
+        | [] -> None
+      in
+      match aux ~parent x with
+      | Some r -> r :: loop rest
+      | None -> loop rest)
+  in
+  loop path
 
 let from_reconstructed ~nodes ~cursor ~verbosity exprs =
   let open Browse_raw in
