@@ -1,3 +1,10 @@
+unreleased
+==========
+
+  + ocaml index
+    - Add `--files-from` to read input files from a file, one per line, to
+      avoid exceeding command-line length limits
+
 merlin 5.9.1
 ============
 Wed Nov 04 15:27:42 CET 2026

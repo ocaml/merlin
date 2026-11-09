@@ -19,6 +19,8 @@ index.
 - Input `cmt` files are indexed and merged into the final output
 - Input index files are directly merged into the output
 - If no input files is provided an empty index is created
+- `--files-from <file>` adds the input files listed in `file`, one per line.
+  Use it when there are too many input files for the command line
 - The default output file name is `project.ocaml-index`
 
 ### Load path:

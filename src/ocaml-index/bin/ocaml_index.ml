@@ -36,6 +36,17 @@ let anon_fun arg =
       input_files := arg :: !input_files)
   | Some _ -> input_files := arg :: !input_files
 
+(* Reading input files from a file keeps command lines short when there are
+   many input files. *)
+let add_input_files_from file =
+  let files =
+    try Arg.read_arg file with Sys_error msg -> raise (Arg.Bad msg)
+  in
+  Array.iter
+    (fun file ->
+      if not (String.equal file "") then input_files := file :: !input_files)
+    files
+
 let speclist =
   [ ("--verbose", Arg.Set verbose, "Output more information");
     ("--debug", Arg.Set debug, "Output debugging information");
@@ -68,6 +79,9 @@ let speclist =
       Arg.Set do_not_use_cmt_loadpath,
       "Do not initialize the load path with the paths found in the first input \
        cmt file" );
+    ( "--files-from",
+      Arg.String add_input_files_from,
+      "<file> Read input files from <file>, one per line. Can be repeated." );
     ( "--cache-size",
       Arg.Set_int cache_size_kb,
       "Set LRU cache size in kb. Will bound memory usage in read-heavy \
@@ -81,6 +95,10 @@ let set_log_level debug verbose =
 
 let () =
   Arg.parse speclist anon_fun usage_msg;
+  (* As with positional input files, default to [aggregate] when input files
+     are only given with [--files-from]. *)
+  if Option.is_none !command && not (List.is_empty !input_files) then
+    command := Some Aggregate;
   set_log_level !debug !verbose;
   Granular_marshal.set_lru_size (!cache_size_kb * 1000);
   try
