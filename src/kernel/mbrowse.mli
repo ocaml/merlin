@@ -110,6 +110,19 @@ val is_recovered : Browse_raw.node -> bool
 val optional_label_sugar :
   Typedtree.expression_desc -> Typedtree.expression option
 
+(** When a constructor has multiple arguments is matched with a single
+    wildcard ([A _]), the typer replicates the wildcard [n] times, all
+    copies sharing the location of the original
+    [_]. [expanded_wildcard_args p] returns these copies when [p] is
+    such a pattern (because multi-argument constructors are not tuple
+    in the typedtree). *)
+val expanded_wildcard_args :
+  'k Typedtree.general_pattern -> Typedtree.pattern list option
+
+(** [expanded_wildcard_of ~parent child] returns the expanded
+    wildcards of [parent] when [child] is one of them. *)
+val expanded_wildcard_of : parent:node -> node -> Typedtree.pattern list option
+
 (** {1 Dump} *)
 
 val print_node : unit -> node -> string
