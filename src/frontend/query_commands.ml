@@ -655,11 +655,9 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
         `List (List.map nodes ~f:dump_node));
     begin match nodes with
     | [] -> raise Destruct.Nothing_to_do
-    | (env, node) :: parents ->
+    | (_, node) :: parents ->
       let source = Mpipeline.input_source pipeline in
       let config = Mpipeline.final_config pipeline in
-      let verbosity = verbosity pipeline in
-      Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
       Destruct.node config source node (List.map ~f:snd parents)
     end
   | Holes ->

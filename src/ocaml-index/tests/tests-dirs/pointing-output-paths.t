@@ -42,9 +42,11 @@ elsewhere:
   - root dir: none
   
 
-An absolute output path:
+An absolute output path (on Windows, $PWD is a Cygwin path that the native
+binary cannot open, so we convert it):
 
-  $ ocaml-index aggregate a.ocaml-index b.ocaml-index -o $PWD/out/absolute.ocaml-index
+  $ ABS_PWD=$(if command -v cygpath >/dev/null; then cygpath -m "$PWD"; else echo "$PWD"; fi)
+  $ ocaml-index aggregate a.ocaml-index b.ocaml-index -o "$ABS_PWD/out/absolute.ocaml-index"
   $ ocaml-index stats out/absolute.ocaml-index
   Index "out/absolute.ocaml-index" contains:
   - 5 definitions

@@ -15,7 +15,7 @@ Create the file that we'll use to demonstrate the error
 
   $ touch foo.ml
 
-In Persistent_env.find_pers_struct, the module Either fails to be found:
+In Persistent_env.find_pers_struct, the module Either does not fails anymore to be found:
 
   $ cat > foo.ml <<EOF
   > let f (x : Box.t) =
@@ -27,11 +27,27 @@ In Persistent_env.find_pers_struct, the module Either fails to be found:
   let f (x : Box.t) =
     match x with
     | Box █ -> 10
-  $ $MERLIN single case-analysis -start 3:8 -end 3:8 -filename foo.ml < foo.ml | grep Raised
-  Raised at Ocaml_typing__Persistent_env.find_pers_struct in file \"src/ocaml/typing/persistent_env.ml\", line 271, characters 28-43
+  $ $MERLIN single case-analysis -start 3:8 -end 3:8 -filename foo.ml < foo.ml
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 3,
+          "col": 4
+        },
+        "end": {
+          "line": 3,
+          "col": 9
+        }
+      },
+      "Box (Either.Left) | Box (Either.Right)"
+    ],
+    "notifications": []
+  }
 
 If we explicitly use Either (by opening it), we force it to load and the query works
-as expected:
+(also) as expected:
 
   $ $MERLIN single case-analysis -start 4:8 -end 4:8 -filename foo.ml <<EOF
   > open Either

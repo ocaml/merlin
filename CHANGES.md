@@ -5,6 +5,10 @@ unreleased
     - Add `--files-from` to read input files from a file, one per line, to
       avoid exceeding command-line length limits
 
+  + merlin library
+    - Fix hover and destruct in presence of `_` pattern for multi-arguments constructor (#2149 fixes #1792)
+    - Fix loading modules in some cases for `case-analysis` (#2152 fixes #1786)
+
 merlin 5.9.1
 ============
 Wed Nov 04 15:27:42 CET 2026
