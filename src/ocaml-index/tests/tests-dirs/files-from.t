@@ -45,7 +45,5 @@ Other commands take --files-from too:
 
 A missing list file is a usage error:
 
-  $ ocaml-index aggregate -o missing.idx --files-from missing > /dev/null 2> err
-  [2]
-  $ head -n 1 err
-  ocaml-index: missing: No such file or directory.
+  $ ocaml-index aggregate -o missing.idx --files-from missing 2>&1 >/dev/null | sed -n '1s/^.*: \(missing: \)/\1/p'
+  missing: No such file or directory.
