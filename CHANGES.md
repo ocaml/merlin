@@ -14,6 +14,7 @@ Wed Nov 04 15:27:42 CET 2026
   + ocaml index
     - Fix a regression due to the new "pointing indexes" mechanism (#2144)
     - Fix an issue when using absolute output paths for the indexer (#2144)
+    - Make index files deterministic rather than including a randon id (#2147)
 
 merlin 5.9
 ==========

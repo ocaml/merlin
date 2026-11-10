@@ -61,9 +61,16 @@ An error is expected, a pointer references an index file, but it doesn't exist a
   [1]
   $ mv index-files test_sig.ocaml-index
 
-An error is expected, a pointer references an index file that is considered outdated because we rebuilt it:
+Regenerating a referenced index doesn't invalidate the pointer to it:
 
   $ ocaml-index aggregate test.cmti test.cmt sig.cmti sig.cmt --root . --rewrite-root -o test_sig.ocaml-index
+  $ ocaml-index dump project.ocaml-index | head -n 1
+  4101 uids:
+
+But if a referenced index changes (we drop sig.cmt to change it), it invalidates
+the pointer:
+
+  $ ocaml-index aggregate test.cmti test.cmt sig.cmti --root . --rewrite-root -o test_sig.ocaml-index
   $ ocaml-index dump project.ocaml-index
   Index IDs doesn't match for "$TESTCASE_ROOT/test_sig.ocaml-index".
   Hint: try to rebuild indexes with dune build @ocaml-index.
