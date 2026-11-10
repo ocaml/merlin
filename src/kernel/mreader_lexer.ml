@@ -343,7 +343,7 @@ let for_completion t pos =
     | exception Exit -> t
     | acc, items ->
       { t with
-        items = List.rev_append acc (Triple (LIDENT "", pos, pos) :: items)
+        items = List.rev_append acc (Triple (LIDENT "_", pos, pos) :: items)
       }
   in
   (!no_labels, t)
