@@ -4,6 +4,9 @@ unreleased
   + merlin library
     - Fix hover and destruct in presence of `_` pattern for multi-arguments constructor (#2149 fixes #1792)
     - Fix loading modules in some cases for `case-analysis` (#2152 fixes #1786)
+    - Fix `document` and completion documentation returning the doc comment of
+      the enclosing item for locally bound names such as function or functor
+      parameters: they now get no documentation (#2154, fixes #1809)
 
 merlin 5.9.1
 ============
