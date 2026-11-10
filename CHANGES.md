@@ -4,6 +4,7 @@ Wed Nov 04 15:27:42 CET 2026
 
   + merlin library
     - Fix a caching issue making inconsistant units stale (#2141)
+    - Fix Ppxlib.Longident.parse from crashing on empty strings when completing/expanding prefex (#2158)
   + ocaml index
     - Fix a regression due to the new "pointing indexes" mechanism (#2144)
     - Fix an issue when using absolute output paths for the indexer (#2144)
