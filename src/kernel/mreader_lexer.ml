@@ -342,6 +342,9 @@ let for_completion t pos =
     match aux [] t.items with
     | exception Exit -> t
     | acc, items ->
+      (* when cursor is not on an identifier this inserts a generic
+         [LIDENT] at [pos] so that parsing produces an AST node with the expected type and typing environment at the cursor.
+         we use _ rather than "" because "" breaks for ppx rewriters (such as ppxlib's longident.parse which rejects empty identifier strings. *)
       { t with
         items = List.rev_append acc (Triple (LIDENT "_", pos, pos) :: items)
       }
