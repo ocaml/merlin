@@ -590,7 +590,7 @@ let complete_prefix ?get_doc ?target_type ?(kinds = []) ~keywords ~prefix
       if not (valid `Label name) then candidates
       else
         make_candidate ~prefix_path ~exact:(name = prefix) name (`Label l)
-          ~attrs:[]
+          ~attrs:l.lbl_attributes
         :: candidates
     in
     let add_label_declaration ty ({ Types.ld_id = name; _ } as l) candidates =
@@ -599,7 +599,7 @@ let complete_prefix ?get_doc ?target_type ?(kinds = []) ~keywords ~prefix
       else
         make_candidate ~prefix_path ~exact:(name = prefix) name
           (`Label_decl (ty, l))
-          ~attrs:[]
+          ~attrs:l.ld_attributes
         :: candidates
     in
     let base_completion =
