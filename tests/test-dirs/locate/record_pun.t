@@ -20,8 +20,8 @@ With punning we jump to the definition of the value and not the record:
   > -filename ./func.ml < ./func.ml |
   > jq '.value.pos'
   {
-    "line": 4,
-    "col": 6
+    "line": 7,
+    "col": 4
   }
 
 ###############
@@ -41,11 +41,11 @@ Without punning
   > 
   > EOF
 
-FIXME should jump to the re-definition of `foo` line 7
+We jump to the re-definition of `foo` line 7
   $ $MERLIN single locate -look-for ml -position 9:14  \
   > -filename ./func.ml < ./func.ml |
   > jq '.value.pos'
   {
-    "line": 4,
-    "col": 6
+    "line": 7,
+    "col": 4
   }

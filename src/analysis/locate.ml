@@ -861,6 +861,23 @@ let infer_namespace ?namespaces ~pos lid browse is_label =
         "dropping inferred context, it is not precise enough";
       `Ok [ `Labels ])
 
+(* In a punned record field such as [{ M.x }], the expression is the variable
+   [x], at the same location as the label [M.x]. When the cursor is on it, look
+   for [x] rather than [M.x]. *)
+let unpun_field_ident ~pos browse ident =
+  match
+    Mbrowse.enclosing ~disambiguate:Mbrowse.Tie_breaker.prefer_expression pos
+      [ browse ]
+  with
+  | ( _,
+      Browse_raw.Expression
+        { exp_desc = Texp_ident (_, { txt = Lident name as var; _ }, _); _ } )
+    :: _ -> (
+    match ident with
+    | Longident.Ldot (_, { txt; _ }) when String.equal txt name -> var
+    | _ -> ident)
+  | _ -> ident
+
 let from_string ~config ~env ~local_defs ~pos ?namespaces path =
   File_switching.reset ();
   let browse = Mbrowse.of_typedtree local_defs in
@@ -870,6 +887,7 @@ let from_string ~config ~env ~local_defs ~pos ?namespaces path =
     match infer_namespace ?namespaces ~pos lid browse is_label with
     | `Error e -> e
     | `Ok nss ->
+      let ident = unpun_field_ident ~pos browse ident in
       log ~title:"from_string"
         "looking for the source of '%s' (prioritizing %s files)" path
         (match config.ml_or_mli with
