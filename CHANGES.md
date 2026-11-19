@@ -8,6 +8,8 @@ unreleased
   + merlin library
     - Fix hover and destruct in presence of `_` pattern for multi-arguments constructor (#2149 fixes #1792)
     - Fix loading modules in some cases for `case-analysis` (#2152 fixes #1786)
+    - Fix locate on a punned record field with a module path, such as
+      `{ M.x }`, which jumped to `M.x` instead of the variable `x` (#2163 fixes #1929)
 
 merlin 5.9.1
 ============
