@@ -13,7 +13,7 @@ index.
 ## Process cmt files and merge indexes
 
 
-> ocaml-index aggregate [-o _output_file_] _cmt_file_ ... _index_file_ ... [-I _dir_] ... [--no-cmt-load-path]
+> ocaml-index aggregate [-o _output_file_] _cmt_file_ ... _index_file_ ... [-I _dir_] ... [--no-cmt-load-path] [--standalone]
 
 
 - Input `cmt` files are indexed and merged into the final output
@@ -22,6 +22,8 @@ index.
 - `--files-from <file>` adds the input files listed in `file`, one per line.
   Use it when there are too many input files for the command line
 - The default output file name is `project.ocaml-index`
+- Unless [--standalone] is passed, the output index may store pointers to some
+  of the input files. Those files must be available when reading the index
 
 ### Load path:
 Identifying definitions while processing `cmt` files may require loading any of
