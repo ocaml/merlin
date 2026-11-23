@@ -1,3 +1,10 @@
+These guidelines are a slightly updated and context adjusted version of the ones
+enforced by the OCaml compiler maintainers, at revision
+[700894c](https://github.com/ocaml/ocaml/blob/a065f409676e3abccc57dd8a317c4cfdcca61ca7/AI.md).
+
+The main difference is that we expect all human-addressed prose to be written
+by the contributor(s).
+
 ## Guidelines relevant to AI-assisted contributions
 
 Tools using AI are increasingly used to produce text and code, but verifying the
@@ -12,11 +19,13 @@ a direct counterpart, with entirely human-produced content.
    It is strongly recommended that you review a proposed contribution in full
    even if you wrote all of it.
 
-3. If a significant portion of your code, PR description, review comments or
-   messages has been AI-generated, this must be disclosed, stating which tool
-   was used and for what.  Reviewing AI-produced code can require a different
-   approach from human-written code.  You should have an acknowledgement
-   anyway even if another *human* contributor did some of the work.
+3. We ask that any human-addressed prose be written by yourself. This notably
+   includes Github comments, issues and PR descriptions, but also code comments
+   and documentation. Additionally, if a significant portion of your code has
+   been AI-generated, this must be disclosed, stating which tool was used and
+   for what.  Reviewing AI-produced code can require a different approach from
+   human-written code.  You should have an acknowledgement anyway even if
+   another *human* contributor did some of the work.
 
 4. Please be mindful that reviewer time is a scarce resource. Contributions
    (whether human- or AI-authored) should strive to conserve it.
