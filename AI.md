@@ -31,8 +31,7 @@ a direct counterpart, with entirely human-produced content.
    (whether human- or AI-authored) should strive to conserve it.
 
 5. When you submit code, however it was written, you take responsibility for
-   its provenance.  You will need to sign the OCaml contributor licence
-   agreement (CLA) for any significant contribution.
+   its provenance.
 
 6. The following are never acceptable as contributions: low-effort productions
    of code that contributors do not understand; plagiarised works; hallucinated
