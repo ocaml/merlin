@@ -9,6 +9,7 @@ unreleased
     - Fix hover and destruct in presence of `_` pattern for multi-arguments constructor (#2149 fixes #1792)
     - Fix loading modules in some cases for `case-analysis` (#2152 fixes #1786)
     - Preserve deprecation flag in completion results (##2165 fixes #2123)
+    - Fix crash on method bodies for `case-analysis` (#2164 fixes #2112)
 
 merlin 5.9.1
 ============

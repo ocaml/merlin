@@ -5,7 +5,22 @@ https://github.com/ocaml/merlin/issues/2112
 
 FIXME: destruct should not fail with an assertion failure.
   $ $MERLIN single case-analysis -start 1:21 -end 1:21 \
-  > -filename test.ml <test.ml | head -3
+  > -filename test.ml <test.ml
   {
-    "class": "exception",
-    "value": "File \"src/analysis/destruct.ml\", line 245, characters 17-23: Assertion failed
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 1,
+          "col": 22
+        },
+        "end": {
+          "line": 1,
+          "col": 22
+        }
+      },
+      "
+  | 1 -> _"
+    ],
+    "notifications": []
+  }
