@@ -221,7 +221,7 @@ let rec get_match = function
       match m.Typedtree.exp_desc with
       | Typedtree.Texp_match (e, _, _, _) -> (m, e.exp_type)
       | Typedtree.Texp_function _ -> (
-        let typ = m.exp_type in
+        let typ = Ctype.maybe_instance_poly m.exp_type in
         (* Since OCaml 5.5 the argument type of an arrow is wrapped in a
                  mono [Tpoly] node; we unwrap it so that the resulting type can
                  be used to typecheck counter-examples. *)
