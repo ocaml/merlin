@@ -7,16 +7,13 @@ https://github.com/ocaml/merlin/issues/2123
   > let make : t = { legacy = 1; current = 2 }
   > EOF
 
-FIXME: completing a deprecated field in a field access should report
-"deprecated": true.
   $ $MERLIN single complete-prefix -position 2:23 -prefix r.leg \
   > -filename record.ml <record.ml | jq -c '.value.entries[] | {name, kind, deprecated}'
-  {"name":"legacy","kind":"Label","deprecated":false}
+  {"name":"legacy","kind":"Label","deprecated":true}
 
-FIXME: same thing in a record construction.
   $ $MERLIN single complete-prefix -position 3:20 -prefix leg \
   > -filename record.ml <record.ml | jq -c '.value.entries[] | {name, kind, deprecated}'
-  {"name":"legacy","kind":"Label","deprecated":false}
+  {"name":"legacy","kind":"Label","deprecated":true}
 
 A non-deprecated field must stay non-deprecated.
   $ $MERLIN single complete-prefix -position 3:31 -prefix cur \
@@ -33,10 +30,9 @@ The [ocaml.deprecated] spelling, with a qualified record.
   > let g ({ M.old_field; _ } : M.t) = old_field
   > EOF
 
-FIXME: field access through a module path.
   $ $MERLIN single complete-prefix -position 4:27 -prefix r.M.ol \
   > -filename qualified.ml <qualified.ml | jq -c '.value.entries[] | {name, kind, deprecated}'
-  {"name":"old_field","kind":"Label","deprecated":false}
+  {"name":"old_field","kind":"Label","deprecated":true}
 
 In a record pattern, the field is completed through another code path
 (environment lookup) and is already correctly reported as deprecated.
