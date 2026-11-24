@@ -92,7 +92,7 @@ let compatible_prefix result_items tree_items =
     | _, pitems ->
       let reused = List.length acc in
       let typed = List.length pitems in
-      let cache_stat = Hit { reused; typed } in
+      let cache_stat = if reused = 0 then Miss else Hit { reused; typed } in
       log ~title:"compatible_prefix" "reusing %d items, %d new items to type"
         reused typed;
       (acc, pitems, cache_stat)

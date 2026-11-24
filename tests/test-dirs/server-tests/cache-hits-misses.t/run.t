@@ -57,7 +57,7 @@
     "cache": {
       "reader_phase": "miss",
       "ppx_phase": "miss",
-      "typer": { "reused": 0, "typed": 1 },
+      "typer": "miss",
       "cmt": { "hit": 0, "miss": 0 },
       "cmi": { "hit": 1, "miss": 0 }
     },
@@ -252,7 +252,7 @@
     "cache": {
       "reader_phase": "miss",
       "ppx_phase": "miss",
-      "typer": "miss",
+      "typer": { "reused": 1, "typed": 0 },
       "cmt": { "hit": 0, "miss": 0 },
       "cmi": { "hit": 2, "miss": 0 }
     },
@@ -263,9 +263,9 @@
   1
   $ cat merlin_logs | grep -A 8 '"cache":'
     "cache": {
-      "reader_phase": "miss",
-      "ppx_phase": "miss",
-      "typer": "miss",
+      "reader_phase": "hit",
+      "ppx_phase": "hit",
+      "typer": { "reused": 1, "typed": 0 },
       "cmt": { "hit": 0, "miss": 0 },
       "cmi": { "hit": 2, "miss": 0 }
     },

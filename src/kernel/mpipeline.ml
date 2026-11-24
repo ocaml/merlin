@@ -375,10 +375,14 @@ let for_completion position
       ppx_time;
       typer_time;
       error_time;
+      ppx_cache_hit;
+      reader_cache_hit;
+      typer_cache_stats;
       _
     } =
   process config raw_source ~for_completion:position ~state ~pp_time
-    ~reader_time ~ppx_time ~typer_time ~error_time
+    ~reader_time ~ppx_time ~typer_time ~error_time ~ppx_cache_hit
+    ~reader_cache_hit ~typer_cache_stats
 
 let timing_information t =
   [ ("pp", !(t.pp_time));
