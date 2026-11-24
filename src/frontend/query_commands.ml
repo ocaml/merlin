@@ -702,23 +702,23 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
         result
     in
     let parser_errors = List.filter_map ~f:filter_parser_error parser_errors in
+    (* Filter anything after first parse error *)
+    let limit = !first_syntax_error in
+    let filter_after_syntax_error errors =
+      if limit = Lexing.dummy_pos then errors
+      else
+        List.filter errors ~f:(fun err ->
+            Lexing.compare_pos (error_start err) limit <= 0)
+    in
     (* Sort errors *)
-    let cmp e1 e2 =
+    let cmp (e1 : Location.error) (e2 : Location.error) =
       let n = Lexing.compare_pos (error_start e1) (error_start e2) in
       if n <> 0 then n
       else
         let n = Lexing.compare_pos (error_end e1) (error_end e2) in
         if n <> 0 then n
         else
-          let severity (e : Location.error) =
-            match e.source with
-            | Location.Warning ->
-              let msg = Format.asprintf "@[%a@]" Location.print_main e |> String.trim in
-              if String.is_prefixed ~by:"Error" msg then 1
-              else 2
-            | _ -> 0
-          in
-          let n = Int.compare (severity e1) (severity e2) in
+          let n = Stdlib.compare e1.source e2.source in
           if n <> 0 then n
           else
             let m1 = Format.asprintf "%a" Location.print_main e1 in
@@ -726,25 +726,18 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
             String.compare m1 m2
     in
     let errors =
-      List.sort_uniq ~cmp
-        ((if lexing then lexer_errors else [])
-        @ (if parsing then parser_errors else [])
-        @ if typing then typer_errors else [])
+      ((if lexing then lexer_errors else [])
+      @ (if parsing then parser_errors else [])
+      @ if typing then typer_errors else [])
+      |> filter_after_syntax_error
+      |> List.sort_uniq ~cmp
     in
     (* Add configuration errors *)
-    let errors =
-      let cfg = Mpipeline.final_config pipeline in
-      let failures =
-        List.map ~f:(Location.error ~source:Location.Config) cfg.merlin.failures
-      in
-      failures @ errors
+    let cfg = Mpipeline.final_config pipeline in
+    let failures =
+      List.map ~f:(Location.error ~source:Location.Config) cfg.merlin.failures
     in
-    (* Filter anything after first parse error *)
-    let limit = !first_syntax_error in
-    if limit = Lexing.dummy_pos then errors
-    else
-      List.take_while errors ~f:(fun err ->
-          Lexing.compare_pos (error_start err) limit <= 0)
+    failures @ errors
   | Dump args -> dump pipeline args
   | Path_of_source xs ->
     let config = Mpipeline.final_config pipeline in
