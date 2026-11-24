@@ -46,3 +46,78 @@
     },
     "notifications": []
   }
+
+  $ cat >opt_arg.ml <<EOF
+  > module S = struct module Key = struct type t end end
+  > let lcas t ?(max_depth = 0) ?(n = 0) (c1 : S.Key.t) (c2 : S.Key.t) = ()
+  > let lca_aux t ?max_depth ?n c1 c2 =
+  >   lcas t ?max_depth ?n c1 c2
+  > EOF
+
+  $ LOC=4:21
+  $ show_location opt_arg.ml $LOC
+  module S = struct module Key = struct type t end end
+  let lcas t ?(max_depth = 0) ?(n = 0) (c1 : S.Key.t) (c2 : S.Key.t) = ()
+  let lca_aux t ?max_depth ?n c1 c2 =
+    lcas t ?max_depth ?█ c1 c2
+
+
+FIXME: At ?█ completing optional argument ?n, the argument_type in the application context is incorect and is reported reported as S.Key.t which is the type of the positional argument c1. the expected type should be int option.
+
+  $ $MERLIN single complete-prefix -prefix n -position $LOC -filename opt_arg.ml <opt_arg.ml
+  {
+    "class": "return",
+    "value": {
+      "entries": [
+        {
+          "name": "n",
+          "kind": "Value",
+          "desc": "'a option",
+          "info": "",
+          "deprecated": false
+        },
+        {
+          "name": "nan",
+          "kind": "Value",
+          "desc": "float",
+          "info": "",
+          "deprecated": false
+        },
+        {
+          "name": "neg_infinity",
+          "kind": "Value",
+          "desc": "float",
+          "info": "",
+          "deprecated": false
+        },
+        {
+          "name": "not",
+          "kind": "Value",
+          "desc": "bool -> bool",
+          "info": "",
+          "deprecated": false
+        },
+        {
+          "name": "nativeint",
+          "kind": "Type",
+          "desc": "type nativeint = external \"nativeint\"",
+          "info": "",
+          "deprecated": false
+        }
+      ],
+      "context": [
+        "application",
+        {
+          "argument_type": "S.Key.t",
+          "labels": [
+            {
+              "name": "?n",
+              "type": "int"
+            }
+          ]
+        }
+      ]
+    },
+    "notifications": []
+  }
+
