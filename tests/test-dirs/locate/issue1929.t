@@ -15,7 +15,7 @@
   > ;;
   > EOF
 
-FIXME: this answer is wrong. The correct value jumping to `foo` line 11
+The punned field refers to the local `foo`, line 11
   $ $MERLIN single locate -position 13:10 \
   > -filename test.ml <test.ml
   {
@@ -23,7 +23,7 @@ FIXME: this answer is wrong. The correct value jumping to `foo` line 11
     "value": {
       "file": "$TESTCASE_ROOT/test.ml",
       "pos": {
-        "line": 7,
+        "line": 11,
         "col": 6
       }
     },

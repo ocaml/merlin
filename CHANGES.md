@@ -10,6 +10,8 @@ unreleased
     - Fix loading modules in some cases for `case-analysis` (#2152 fixes #1786)
     - Preserve deprecation flag in completion results (##2165 fixes #2123)
     - Fix crash on method bodies for `case-analysis` (#2164 fixes #2112)
+    - Fix locate on a punned record field with a module path, such as
+      `{ M.x }`, which jumped to `M.x` instead of the variable `x` (#2163 fixes #1929)
 
 merlin 5.9.1
 ============
