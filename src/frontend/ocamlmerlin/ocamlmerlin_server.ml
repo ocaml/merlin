@@ -5,6 +5,25 @@ module Server = struct
   let process_request { Os_ipc.wd; environ; argv; context = _ } =
     match Array.to_list argv with
     | "stop-server" :: _ -> raise Exit
+    | "-batch" :: path :: _args ->
+      let p =
+        if Filename.is_relative path then Filename.concat wd path else path
+      in
+      let ic = In_channel.open_text p in
+      Fun.protect
+        ~finally:(fun () -> In_channel.close ic)
+        (fun () ->
+          let rec loop () =
+          match In_channel.input_line ic with
+          | None ->
+            raise Exit
+          | Some line ->
+            let json = Yojson.Basic.from_string line in
+            let cmd = Yojson.Basic.Util.(member "cmd" json |> to_string) in
+            let _ = New_merlin.run ~new_env:(Some environ) (Some wd)
+              (Std.Shell.split_command cmd) in
+              loop ()
+          in loop ())
     | args -> New_merlin.run ~new_env:(Some environ) (Some wd) args
 
   let process_client client =
