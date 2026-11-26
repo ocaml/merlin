@@ -5,7 +5,7 @@ module Server = struct
   let process_request { Os_ipc.wd; environ; argv; context = _ } =
     match Array.to_list argv with
     | "stop-server" :: _ -> raise Exit
-    | "-batch" :: path :: _args ->
+    | "batch" :: path :: _args ->
       let p =
         if Filename.is_relative path then Filename.concat wd path else path
       in
