@@ -21,6 +21,7 @@ single query.
 In `server` mode, the wrapper looks for an existing server. If none are found,
 it executes a new one. Then it redirects the query to the server, wait for an
 answer and terminates.
+Server mode also includes a `-batch` flag which executes commands written in a file. 
 
 The editor plugin does the same work in both cases, caching & calling the
 server is transparent.
