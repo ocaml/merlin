@@ -14,16 +14,29 @@ module Server = struct
         ~finally:(fun () -> In_channel.close ic)
         (fun () ->
           let rec loop () =
-          match In_channel.input_line ic with
-          | None ->
-            raise Exit
-          | Some line ->
-            let json = Yojson.Basic.from_string line in
-            let cmd = Yojson.Basic.Util.(member "cmd" json |> to_string) in
-            let _ = New_merlin.run ~new_env:(Some environ) (Some wd)
-              (Std.Shell.split_command cmd) in
+            match In_channel.input_line ic with
+            | None -> raise Exit
+            | Some line ->
+              let args, file =
+                match Std.Shell.split_command line with
+                | _merlin :: _mode :: rest -> (
+                  match List.rev rest with
+                  | file :: "<" :: rev_args -> (List.rev rev_args, file)
+                  | _ ->
+                    Printf.eprintf
+                      "expected a command but got: %s\n%!" line;
+                    raise Exit)
+                | _ ->
+                  Printf.eprintf "bad command: got %s\n%!" line;
+                  raise Exit
+              in
+              let _ =
+                New_merlin.run ~source_file:file ~new_env:(Some environ)
+                  (Some wd) args
+              in
               loop ()
-          in loop ())
+          in
+          loop ())
     | args -> New_merlin.run ~new_env:(Some environ) (Some wd) args
 
   let process_client client =
